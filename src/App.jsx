@@ -226,8 +226,8 @@ function YourQuotes({ userId, book }) {
   return (
     <div style={{ marginTop: "2rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "0.8rem", marginBottom: "1.2rem" }}>
-        <h3 style={{ fontFamily: theme.display, fontWeight: theme.displayWeight, fontSize: "1.3rem", margin: 0, color: theme.ink }}>Your quotes</h3>
-        <span style={{ fontFamily: theme.mono, fontSize: "0.7rem", color: theme.inkFaint }}>saved to your book mind</span>
+        <h3 style={{ fontFamily: theme.display, fontWeight: theme.displayWeight, fontSize: "1.3rem", margin: 0, color: theme.ink }}>{USERS[userId].name}'s Quotes</h3>
+        <span style={{ fontFamily: theme.mono, fontSize: "0.7rem", color: theme.inkFaint }}>saved to {USERS[userId].name}'s book mind</span>
       </div>
       <form onSubmit={handleAdd} style={{ display: "grid", gridTemplateColumns: "1fr 130px 160px auto", gap: "0.6rem", marginBottom: "1.6rem" }} className="quote-form">
         <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste the quote here…" rows={1} style={{ background: theme.card, border: `1px solid ${theme.border}`, color: theme.ink, fontFamily: theme.display, fontSize: "0.88rem", padding: "0.6rem 0.8rem", borderRadius: 3, resize: "vertical", minHeight: 40 }} />
@@ -700,9 +700,9 @@ function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack }) {
     <div style={{ minHeight: "100vh", background: "#0F1A2B", padding: "0 0 5rem" }}>
       <div style={{ background: "linear-gradient(180deg, #2A2118, #1C160F)", borderBottom: "3px solid #0B0805", padding: "2.6rem 1.8rem 2.2rem", textAlign: "center", position: "relative" }}>
         <button onClick={onBack} style={{ position: "absolute", top: "1.4rem", left: "1.4rem", background: "none", border: "1px solid rgba(244,239,228,0.3)", color: "rgba(244,239,228,0.7)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", padding: "0.4rem 0.8rem", borderRadius: 3, cursor: "pointer" }}>← Back</button>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", letterSpacing: "0.22em", textTransform: "uppercase", color: userAccent, marginBottom: "0.7rem" }}>Card Catalog</div>
-        <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.1rem, 5.5vw, 3.2rem)", lineHeight: 1.05, margin: "0 0 0.5rem", color: "#F4EFE4" }}>My Books</h1>
-        <p style={{ color: "rgba(244,239,228,0.55)", fontSize: "0.92rem", margin: "0 auto", maxWidth: "46ch", lineHeight: 1.5 }}>Full summaries — key ideas, highlighted stories, your quotes, and reading trackers.</p>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", letterSpacing: "0.22em", textTransform: "uppercase", color: userAccent, marginBottom: "0.7rem" }}>{USERS[userId].name}'s Card Catalog</div>
+        <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.1rem, 5.5vw, 3.2rem)", lineHeight: 1.05, margin: "0 0 0.5rem", color: "#F4EFE4" }}>{USERS[userId].name}'s Books</h1>
+        <p style={{ color: "rgba(244,239,228,0.55)", fontSize: "0.92rem", margin: "0 auto", maxWidth: "46ch", lineHeight: 1.5 }}>Full summaries — key ideas, highlighted stories, {USERS[userId].name}'s quotes, and reading trackers.</p>
         <div style={{ width: 64, height: 6, background: `linear-gradient(180deg, ${userAccent}, #4a3a20)`, borderRadius: 3, margin: "1.6rem auto 0", boxShadow: "0 2px 4px rgba(0,0,0,0.5)" }} />
       </div>
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "2.6rem 1.8rem 0" }}>
@@ -880,8 +880,8 @@ function Bookshelf({ userId, userAccent, onBack }) {
     <div style={{ minHeight: "100vh", background: "#0F1A2B", padding: "0 0 5rem" }}>
       <div style={{ background: "linear-gradient(180deg, #2A2118, #1C160F)", borderBottom: "3px solid #0B0805", padding: "2.6rem 1.8rem 2.2rem", textAlign: "center", position: "relative" }}>
         <button onClick={onBack} style={{ position: "absolute", top: "1.4rem", left: "1.4rem", background: "none", border: "1px solid rgba(244,239,228,0.3)", color: "rgba(244,239,228,0.7)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", padding: "0.4rem 0.8rem", borderRadius: 3, cursor: "pointer" }}>← Back</button>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", letterSpacing: "0.22em", textTransform: "uppercase", color: userAccent, marginBottom: "0.7rem" }}>Want to read</div>
-        <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.1rem, 5.5vw, 3.2rem)", lineHeight: 1.05, margin: "0 0 0.5rem", color: "#F4EFE4" }}>Bookshelf</h1>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", letterSpacing: "0.22em", textTransform: "uppercase", color: userAccent, marginBottom: "0.7rem" }}>{USERS[userId].name}'s Reading List</div>
+        <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.1rem, 5.5vw, 3.2rem)", lineHeight: 1.05, margin: "0 0 0.5rem", color: "#F4EFE4" }}>{USERS[userId].name}'s Bookshelf</h1>
         <p style={{ color: "rgba(244,239,228,0.55)", fontSize: "0.92rem", margin: "0 auto", maxWidth: "46ch", lineHeight: 1.5 }}>Books on deck — tap a cover for a quick look.</p>
       </div>
       <div style={{ maxWidth: 920, margin: "0 auto", padding: "2.8rem 1.8rem 0" }}>
@@ -932,15 +932,15 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onBack }) {
         <button onClick={onOpenMyBooks} style={{ background: "#162338", border: "1px solid rgba(244,239,228,0.18)", borderLeft: `4px solid ${user.accent}`, borderRadius: 4, padding: "1.6rem 1.8rem", textAlign: "left", cursor: "pointer", color: "#F4EFE4", transition: "transform .18s ease" }}
           onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; }}>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.1em", textTransform: "uppercase", color: user.accent, marginBottom: "0.5rem" }}>Card catalog</div>
-          <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.5rem", marginBottom: "0.4rem" }}>My Books</div>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.1em", textTransform: "uppercase", color: user.accent, marginBottom: "0.5rem" }}>{user.name}'s Card Catalog</div>
+          <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.5rem", marginBottom: "0.4rem" }}>{user.name}'s Books</div>
           <p style={{ margin: 0, fontSize: "0.86rem", color: "rgba(244,239,228,0.6)", lineHeight: 1.5 }}>Full summaries — key ideas, highlighted stories, quotes, and reading trackers.</p>
         </button>
         <button onClick={onOpenShelf} style={{ background: "#162338", border: "1px solid rgba(244,239,228,0.18)", borderLeft: `4px solid ${user.accent}`, borderRadius: 4, padding: "1.6rem 1.8rem", textAlign: "left", cursor: "pointer", color: "#F4EFE4", transition: "transform .18s ease" }}
           onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; }}>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.1em", textTransform: "uppercase", color: user.accent, marginBottom: "0.5rem" }}>Want to read</div>
-          <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.5rem", marginBottom: "0.4rem" }}>Bookshelf</div>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.1em", textTransform: "uppercase", color: user.accent, marginBottom: "0.5rem" }}>{user.name}'s Reading List</div>
+          <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.5rem", marginBottom: "0.4rem" }}>{user.name}'s Bookshelf</div>
           <p style={{ margin: 0, fontSize: "0.86rem", color: "rgba(244,239,228,0.6)", lineHeight: 1.5 }}>Books on deck — covers, page counts, and estimated read time.</p>
         </button>
       </div>
