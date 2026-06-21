@@ -2887,16 +2887,53 @@ function LoginScreen({ onLogin, allPasswords }) {
 // ---------------------------------------------------------------------------
 // ROOT APP
 // ---------------------------------------------------------------------------
+// Parse the current URL path into app state
+function parseLocation(userId) {
+  const path = window.location.pathname;
+  if (!userId) return { screen: "userHome", activeBookId: null };
+  const base = `/${userId}`;
+  if (path === `${base}/marginalia`) return { screen: "myBooks", activeBookId: null };
+  if (path === `${base}/shelf`) return { screen: "shelf", activeBookId: null };
+  const bookMatch = path.match(new RegExp(`^${base}/book/(.+)$`));
+  if (bookMatch) return { screen: "userHome", activeBookId: bookMatch[1] };
+  return { screen: "userHome", activeBookId: null };
+}
+
 export default function App() {
   const [loggedInUserId, setLoggedInUserId] = useState(() => sessionStorage.getItem(SESSION_KEY) || null);
-  const [screen, setScreen] = useState("userHome");
-  const [activeBookId, setActiveBookId] = useState(null);
+  const [screen, setScreen] = useState(() => parseLocation(sessionStorage.getItem(SESSION_KEY) || null).screen);
+  const [activeBookId, setActiveBookId] = useState(() => parseLocation(sessionStorage.getItem(SESSION_KEY) || null).activeBookId);
   const [customBooksVersion, setCustomBooksVersion] = useState(0);
   const [allCustomBooks, setAllCustomBooks] = useState([]);
   const [dynamicUsers, setDynamicUsers] = useState([]);
   const [dynamicPasswords, setDynamicPasswords] = useState({});
   const [usersLoaded, setUsersLoaded] = useState(false);
   const [tooltips, setTooltips] = useState({});
+
+  // Push a URL path and update state together
+  const navigate = useCallback((nextScreen, nextBookId = null, userId = loggedInUserId) => {
+    if (!userId) return;
+    let path = `/${userId}`;
+    if (nextBookId) path = `/${userId}/book/${nextBookId}`;
+    else if (nextScreen === "myBooks") path = `/${userId}/marginalia`;
+    else if (nextScreen === "shelf") path = `/${userId}/shelf`;
+    window.history.pushState({ screen: nextScreen, activeBookId: nextBookId, userId }, "", path);
+    setScreen(nextScreen);
+    setActiveBookId(nextBookId);
+  }, [loggedInUserId]);
+
+  // Sync back/forward browser navigation
+  useEffect(() => {
+    const onPop = (e) => {
+      const userId = sessionStorage.getItem(SESSION_KEY);
+      if (!userId) { setLoggedInUserId(null); return; }
+      const { screen: s, activeBookId: b } = e.state || parseLocation(userId);
+      setScreen(s || "userHome");
+      setActiveBookId(b || null);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   // Load dynamic users and tooltips once on mount
   useEffect(() => {
@@ -2923,9 +2960,21 @@ export default function App() {
   const staticBooks = activeUser ? activeUser.books : [];
   const activeBook = [...staticBooks, ...allCustomBooks].find((b) => b.id === activeBookId);
 
-  const handleLogin = (userId) => { setLoggedInUserId(userId); setScreen("userHome"); setActiveBookId(null); };
-  const handleLogout = () => { sessionStorage.removeItem(SESSION_KEY); setLoggedInUserId(null); setScreen("userHome"); setActiveBookId(null); };
-  const goUserHome = () => { setScreen("userHome"); setActiveBookId(null); };
+  const handleLogin = (userId) => {
+    setLoggedInUserId(userId);
+    const path = `/${userId}`;
+    window.history.pushState({ screen: "userHome", activeBookId: null, userId }, "", path);
+    setScreen("userHome");
+    setActiveBookId(null);
+  };
+  const handleLogout = () => {
+    sessionStorage.removeItem(SESSION_KEY);
+    setLoggedInUserId(null);
+    window.history.pushState({}, "", "/");
+    setScreen("userHome");
+    setActiveBookId(null);
+  };
+  const goUserHome = () => navigate("userHome", null);
 
   const handleUserCreated = ({ dynamicUsers: du, dynamicPasswords: dp }) => {
     setDynamicUsers(du);
@@ -2942,11 +2991,11 @@ export default function App() {
   if (activeBook && activeUser) {
     content = <BookDashboard userId={activeUser.id} book={activeBook} onBack={goUserHome} onLogout={handleLogout} />;
   } else if (screen === "myBooks" && activeUser) {
-    content = <MyBooksHome userId={activeUser.id} userAccent={activeUser.accent} staticBooks={staticBooks} onSelect={(id) => setActiveBookId(id)} onBack={goUserHome} onLogout={handleLogout} />;
+    content = <MyBooksHome userId={activeUser.id} userAccent={activeUser.accent} staticBooks={staticBooks} onSelect={(id) => navigate("userHome", id)} onBack={goUserHome} onLogout={handleLogout} />;
   } else if (screen === "shelf" && activeUser) {
     content = <Bookshelf userId={activeUser.id} userAccent={activeUser.accent} onBack={goUserHome} onLogout={handleLogout} />;
   } else if (activeUser) {
-    content = <UserHome user={activeUser} onOpenMyBooks={() => setScreen("myBooks")} onOpenShelf={() => setScreen("shelf")} onLogout={handleLogout} dynamicUsers={dynamicUsers} dynamicPasswords={dynamicPasswords} onUserCreated={handleUserCreated} tooltips={tooltips} onTooltipsChanged={setTooltips} />;
+    content = <UserHome user={activeUser} onOpenMyBooks={() => navigate("myBooks")} onOpenShelf={() => navigate("shelf")} onLogout={handleLogout} dynamicUsers={dynamicUsers} dynamicPasswords={dynamicPasswords} onUserCreated={handleUserCreated} tooltips={tooltips} onTooltipsChanged={setTooltips} />;
   }
 
   return (
