@@ -69,6 +69,8 @@ const AMY_BOOKS = [
 
 const LYNNELL_BOOKS = [];
 
+const CHRISTINA_BOOKS = [];
+
 // Brand palette
 const BRAND = {
   dark: "#2C1A0E",
@@ -79,9 +81,17 @@ const BRAND = {
   coral: "#F25C5C",
 };
 
+// ---------------------------------------------------------------------------
+// USERS — to add a new user:
+//   1. Add their books array above (e.g. const JANE_BOOKS = [];)
+//   2. Add an entry here: jane: { id: "jane", name: "Jane", accent: "#hexcolor", books: JANE_BOOKS }
+//   3. Add their password below in PASSWORDS: jane: import.meta.env.VITE_PASSWORD_JANE || "fallback"
+//   4. Add VITE_PASSWORD_JANE to Netlify environment variables
+// ---------------------------------------------------------------------------
 const USERS = {
-  amy: { id: "amy", name: "Amy", accent: "#F25C5C", books: AMY_BOOKS },
-  lynnell: { id: "lynnell", name: "Lynnell", accent: "#BF755A", books: LYNNELL_BOOKS },
+  amy:      { id: "amy",      name: "Amy",      accent: "#F25C5C", books: AMY_BOOKS },
+  lynnell:  { id: "lynnell",  name: "Lynnell",  accent: "#BF755A", books: LYNNELL_BOOKS },
+  christina:{ id: "christina",name: "Christina", accent: "#8C5634", books: CHRISTINA_BOOKS },
 };
 
 // ---------------------------------------------------------------------------
@@ -1636,8 +1646,9 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
 // LOGIN SCREEN
 // ---------------------------------------------------------------------------
 const PASSWORDS = {
-  amy: import.meta.env.VITE_PASSWORD_AMY || "estes",
-  lynnell: import.meta.env.VITE_PASSWORD_LYNNELL || "grube",
+  amy:       import.meta.env.VITE_PASSWORD_AMY       || "estes",
+  lynnell:   import.meta.env.VITE_PASSWORD_LYNNELL   || "grube",
+  christina: import.meta.env.VITE_PASSWORD_CHRISTINA || "brown",
 };
 
 const SESSION_KEY = "bookbrain:loggedInUser";
