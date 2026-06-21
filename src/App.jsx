@@ -1427,9 +1427,11 @@ function AddBookModal({ drawers, onAdd, onClose }) {
     setFetching(true);
     try {
       const q = encodeURIComponent(`intitle:${title.trim()}${author.trim() ? `+inauthor:${author.trim()}` : ""}`);
-      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&langRestrict=en`);
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&langRestrict=en`);
       const data = await res.json();
-      const item = data.items?.[0]?.volumeInfo;
+      // Pick the first result that has a description; fall back to first result
+      const items = data.items || [];
+      const item = (items.find((i) => i.volumeInfo?.description) || items[0])?.volumeInfo;
       if (item) {
         if (!summary && item.description) setSummary(item.description.replace(/<[^>]+>/g, "").slice(0, 600));
         if (!pages && item.pageCount) setPages(String(item.pageCount));
@@ -1456,9 +1458,10 @@ function AddBookModal({ drawers, onAdd, onClose }) {
       setFetching(true);
       try {
         const q = encodeURIComponent(`intitle:${title.trim()}+inauthor:${author.trim()}`);
-        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&langRestrict=en`);
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&langRestrict=en`);
         const data = await res.json();
-        const item = data.items?.[0]?.volumeInfo;
+        const items = data.items || [];
+        const item = (items.find((i) => i.volumeInfo?.description) || items[0])?.volumeInfo;
         if (item) {
           if (!finalSummary && item.description) finalSummary = item.description.replace(/<[^>]+>/g, "").slice(0, 600);
           if (!finalPages && item.pageCount) finalPages = item.pageCount;
@@ -3254,6 +3257,8 @@ export default function App() {
     window.history.pushState({ screen: nextScreen, activeBookId: nextBookId, userId }, "", path);
     setScreen(nextScreen);
     setActiveBookId(nextBookId);
+    // Always refresh custom books when navigating so newly-sent shelf books are found
+    if (nextBookId) setCustomBooksVersion((v) => v + 1);
   }, [loggedInUserId]);
 
   // Sync back/forward browser navigation
