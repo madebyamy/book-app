@@ -69,9 +69,19 @@ const AMY_BOOKS = [
 
 const LYNNELL_BOOKS = [];
 
+// Brand palette
+const BRAND = {
+  dark: "#262020",
+  darkCard: "#2E2525",
+  cream: "#F2EFEB",
+  tan: "#D9A282",
+  terracotta: "#BF755A",
+  coral: "#F25C5C",
+};
+
 const USERS = {
-  amy: { id: "amy", name: "Amy", accent: "#C1432B", books: AMY_BOOKS },
-  lynnell: { id: "lynnell", name: "Lynnell", accent: "#5B8A6E", books: LYNNELL_BOOKS },
+  amy: { id: "amy", name: "Amy", accent: "#F25C5C", books: AMY_BOOKS },
+  lynnell: { id: "lynnell", name: "Lynnell", accent: "#BF755A", books: LYNNELL_BOOKS },
 };
 
 // ---------------------------------------------------------------------------
@@ -929,25 +939,68 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
 // ---------------------------------------------------------------------------
 function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#0F1A2B", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "3rem 1.8rem", position: "relative" }}>
-      <button onClick={onLogout} style={{ position: "absolute", top: "1.4rem", right: "1.4rem", background: "none", border: "1px solid rgba(244,239,228,0.2)", color: "rgba(244,239,228,0.5)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", padding: "0.4rem 0.8rem", borderRadius: 3, cursor: "pointer" }}>Log out</button>
-      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", letterSpacing: "0.22em", textTransform: "uppercase", color: user.accent, marginBottom: "0.6rem" }}>Book Mind</div>
-      <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.2rem, 6vw, 3.2rem)", lineHeight: 1.05, margin: "0 0 2.6rem", color: "#F4EFE4", textAlign: "center" }}>{user.name}'s Library</h1>
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem", width: "100%", maxWidth: 420 }}>
-        <button onClick={onOpenMyBooks} style={{ background: "#162338", border: "1px solid rgba(244,239,228,0.18)", borderLeft: `4px solid ${user.accent}`, borderRadius: 4, padding: "1.6rem 1.8rem", textAlign: "left", cursor: "pointer", color: "#F4EFE4", transition: "transform .18s ease" }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; }}>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.1em", textTransform: "uppercase", color: user.accent, marginBottom: "0.5rem" }}>{user.name}'s Card Catalog</div>
-          <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.5rem", marginBottom: "0.4rem" }}>{user.name}'s Books</div>
-          <p style={{ margin: 0, fontSize: "0.86rem", color: "rgba(244,239,228,0.6)", lineHeight: 1.5 }}>Full summaries — key ideas, highlighted stories, quotes, and reading trackers.</p>
-        </button>
-        <button onClick={onOpenShelf} style={{ background: "#162338", border: "1px solid rgba(244,239,228,0.18)", borderLeft: `4px solid ${user.accent}`, borderRadius: 4, padding: "1.6rem 1.8rem", textAlign: "left", cursor: "pointer", color: "#F4EFE4", transition: "transform .18s ease" }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; }}>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.1em", textTransform: "uppercase", color: user.accent, marginBottom: "0.5rem" }}>{user.name}'s Reading List</div>
-          <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.5rem", marginBottom: "0.4rem" }}>{user.name}'s Bookshelf</div>
-          <p style={{ margin: 0, fontSize: "0.86rem", color: "rgba(244,239,228,0.6)", lineHeight: 1.5 }}>Books on deck — covers, page counts, and estimated read time.</p>
-        </button>
+    <div style={{
+      minHeight: "100vh", background: BRAND.dark,
+      display: "flex", flexDirection: "column",
+      position: "relative", overflow: "hidden",
+    }}>
+      {/* Background image */}
+      <div style={{
+        position: "absolute", inset: 0,
+        backgroundImage: "url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=1400&q=80')",
+        backgroundSize: "cover", backgroundPosition: "center top",
+        opacity: 0.14,
+      }} />
+      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, ${BRAND.dark}bb 0%, ${BRAND.dark}f0 50%, ${BRAND.dark} 100%)` }} />
+
+      {/* Top bar */}
+      <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.2rem 1.4rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div style={{ width: 28, height: 28, borderRadius: "50%", background: `linear-gradient(135deg, ${BRAND.terracotta}, ${BRAND.coral})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem" }}>🧠</div>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", letterSpacing: "0.14em", textTransform: "uppercase", color: BRAND.tan }}>Book Brain</span>
+        </div>
+        <button onClick={onLogout} style={{ background: "none", border: `1px solid ${BRAND.cream}22`, color: `${BRAND.cream}55`, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", padding: "0.4rem 0.8rem", borderRadius: 20, cursor: "pointer", letterSpacing: "0.06em" }}>Log out</button>
+      </div>
+
+      {/* Hero */}
+      <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1.4rem 3rem" }}>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.22em", textTransform: "uppercase", color: user.accent, marginBottom: "0.5rem", textAlign: "center" }}>Book Mind</div>
+        <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.4rem, 9vw, 3.6rem)", lineHeight: 1.02, margin: "0 0 0.4rem", color: BRAND.cream, textAlign: "center" }}>{user.name}'s</h1>
+        <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.4rem, 9vw, 3.6rem)", lineHeight: 1.02, margin: "0 0 2rem", color: user.accent, textAlign: "center" }}>Library</h1>
+
+        {/* Decorative divider */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", marginBottom: "2.4rem", width: "100%", maxWidth: 340 }}>
+          <div style={{ flex: 1, height: 1, background: `linear-gradient(to right, transparent, ${BRAND.tan}55)` }} />
+          <span style={{ fontSize: "1rem" }}>📖</span>
+          <div style={{ flex: 1, height: 1, background: `linear-gradient(to left, transparent, ${BRAND.tan}55)` }} />
+        </div>
+
+        {/* Nav cards */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%", maxWidth: 400 }}>
+          <button onClick={onOpenMyBooks}
+            style={{ background: `${BRAND.darkCard}dd`, backdropFilter: "blur(10px)", border: `1px solid ${BRAND.cream}14`, borderLeft: `3px solid ${user.accent}`, borderRadius: 10, padding: "1.4rem 1.6rem", textAlign: "left", cursor: "pointer", color: BRAND.cream, transition: "transform .18s ease, background .18s ease" }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.background = `${BRAND.darkCard}ff`; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.background = `${BRAND.darkCard}dd`; }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", marginBottom: "0.5rem" }}>
+              <span style={{ fontSize: "1.3rem" }}>🗂️</span>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: user.accent }}>{user.name}'s Card Catalog</div>
+            </div>
+            <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.35rem", marginBottom: "0.3rem" }}>{user.name}'s Books</div>
+            <p style={{ margin: 0, fontSize: "0.84rem", color: `${BRAND.cream}66`, lineHeight: 1.5 }}>Full summaries, key ideas, quotes, and reading trackers.</p>
+          </button>
+
+          <button onClick={onOpenShelf}
+            style={{ background: `${BRAND.darkCard}dd`, backdropFilter: "blur(10px)", border: `1px solid ${BRAND.cream}14`, borderLeft: `3px solid ${BRAND.tan}`, borderRadius: 10, padding: "1.4rem 1.6rem", textAlign: "left", cursor: "pointer", color: BRAND.cream, transition: "transform .18s ease, background .18s ease" }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.background = `${BRAND.darkCard}ff`; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.background = `${BRAND.darkCard}dd`; }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", marginBottom: "0.5rem" }}>
+              <span style={{ fontSize: "1.3rem" }}>📚</span>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.tan }}>{user.name}'s Reading List</div>
+            </div>
+            <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.35rem", marginBottom: "0.3rem" }}>{user.name}'s Bookshelf</div>
+            <p style={{ margin: 0, fontSize: "0.84rem", color: `${BRAND.cream}66`, lineHeight: 1.5 }}>Books on deck — covers, page counts, read time estimates.</p>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -984,7 +1037,30 @@ function LoginScreen({ onLogin }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0F1A2B", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "3rem 1.8rem" }}>
+    <div style={{
+      minHeight: "100vh",
+      background: BRAND.dark,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "2rem 1.2rem",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      {/* Background image */}
+      <div style={{
+        position: "absolute", inset: 0,
+        backgroundImage: "url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=1400&q=80')",
+        backgroundSize: "cover", backgroundPosition: "center",
+        opacity: 0.18,
+      }} />
+      {/* Gradient overlay — heavier at bottom for readability */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background: `linear-gradient(to bottom, ${BRAND.dark}cc 0%, ${BRAND.dark}ee 60%, ${BRAND.dark} 100%)`,
+      }} />
+
       <style>{`
         @keyframes shake {
           0%,100% { transform: translateX(0); }
@@ -994,65 +1070,91 @@ function LoginScreen({ onLogin }) {
           80% { transform: translateX(6px); }
         }
         .shake { animation: shake 0.45s ease; }
+        .user-btn:hover { transform: translateY(-2px); }
+        .submit-btn:hover { opacity: 0.88; }
       `}</style>
-      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(244,239,228,0.45)", marginBottom: "0.8rem" }}>Welcome to</div>
-      <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.2rem, 6vw, 3.2rem)", lineHeight: 1.05, margin: "0 0 0.4rem", color: "#F4EFE4", textAlign: "center" }}>Book Brain Share</h1>
-      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", color: "rgba(244,239,228,0.45)", margin: "0 0 2.8rem", textAlign: "center" }}>mybookbrain.com</p>
 
-      <form onSubmit={handleSubmit} className={shake ? "shake" : ""} style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", gap: "1rem" }}>
-        {/* User selector */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem" }}>
-          {Object.values(USERS).map((user) => (
-            <button
-              key={user.id}
-              type="button"
-              onClick={() => { setSelectedUser(user.id); setError(null); setPassword(""); }}
-              style={{
-                background: selectedUser === user.id ? `${user.accent}22` : "#162338",
-                border: `2px solid ${selectedUser === user.id ? user.accent : "rgba(244,239,228,0.15)"}`,
-                borderRadius: 6, padding: "1.2rem 1rem", cursor: "pointer", color: "#F4EFE4",
-                transition: "all .15s ease", textAlign: "center",
-              }}
-            >
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: selectedUser === user.id ? user.accent : "rgba(244,239,228,0.4)", marginBottom: "0.35rem" }}>Book Mind</div>
-              <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.15rem" }}>{user.name}</div>
-            </button>
-          ))}
+      {/* Content */}
+      <div style={{ position: "relative", width: "100%", maxWidth: 420, display: "flex", flexDirection: "column", alignItems: "center" }}>
+        {/* Brand mark */}
+        <div style={{
+          width: 52, height: 52, borderRadius: "50%",
+          background: `linear-gradient(135deg, ${BRAND.terracotta}, ${BRAND.coral})`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          marginBottom: "1.2rem", boxShadow: `0 4px 20px ${BRAND.coral}44`,
+        }}>
+          <span style={{ fontSize: "1.6rem", lineHeight: 1 }}>🧠</span>
         </div>
 
-        {/* Password field — only shown after selecting a user */}
-        {selectedUser && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-            <input
-              autoFocus
-              type="password"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setError(null); }}
-              placeholder={`${USERS[selectedUser].name}'s password`}
-              style={{
-                background: "#162338", border: `1px solid ${error ? "#C1432B" : "rgba(244,239,228,0.2)"}`,
-                borderRadius: 4, padding: "0.85rem 1rem", color: "#F4EFE4",
-                fontFamily: "'Inter', sans-serif", fontSize: "1rem", outline: "none",
-                transition: "border-color .15s ease",
-              }}
-            />
-            {error && (
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", color: "#C1432B", textAlign: "center" }}>{error}</div>
-            )}
-            <button
-              type="submit"
-              style={{
-                background: USERS[selectedUser].accent, border: "none", borderRadius: 4,
-                padding: "0.85rem", color: "#F4EFE4", fontFamily: "'JetBrains Mono', monospace",
-                fontSize: "0.78rem", letterSpacing: "0.08em", textTransform: "uppercase",
-                fontWeight: 700, cursor: "pointer",
-              }}
-            >
-              Enter {USERS[selectedUser].name}'s Book Mind →
-            </button>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.tan, marginBottom: "0.5rem", textAlign: "center" }}>Welcome to</div>
+        <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2rem, 8vw, 3rem)", lineHeight: 1.05, margin: "0 0 0.35rem", color: BRAND.cream, textAlign: "center" }}>Book Brain</h1>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", color: `${BRAND.cream}66`, margin: "0 0 2.4rem", textAlign: "center", letterSpacing: "0.04em" }}>mybookbrain.com</p>
+
+        <form onSubmit={handleSubmit} className={shake ? "shake" : ""} style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.9rem" }}>
+          {/* User selector */}
+          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.14em", textTransform: "uppercase", color: `${BRAND.cream}55`, margin: "0 0 0.2rem", textAlign: "center" }}>Who's reading today?</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+            {Object.values(USERS).map((user) => {
+              const active = selectedUser === user.id;
+              return (
+                <button
+                  key={user.id}
+                  type="button"
+                  className="user-btn"
+                  onClick={() => { setSelectedUser(user.id); setError(null); setPassword(""); }}
+                  style={{
+                    background: active ? `${user.accent}20` : `${BRAND.darkCard}cc`,
+                    border: `2px solid ${active ? user.accent : `${BRAND.cream}18`}`,
+                    borderRadius: 10, padding: "1.1rem 0.8rem", cursor: "pointer", color: BRAND.cream,
+                    transition: "all .2s ease", textAlign: "center", backdropFilter: "blur(8px)",
+                  }}
+                >
+                  <div style={{ fontSize: "1.6rem", marginBottom: "0.4rem" }}>📚</div>
+                  <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.1rem", marginBottom: "0.2rem" }}>{user.name}</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.58rem", letterSpacing: "0.1em", textTransform: "uppercase", color: active ? user.accent : `${BRAND.cream}44` }}>Book Mind</div>
+                </button>
+              );
+            })}
           </div>
-        )}
-      </form>
+
+          {/* Password */}
+          {selectedUser && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
+              <input
+                autoFocus
+                type="password"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                placeholder={`${USERS[selectedUser].name}'s password`}
+                style={{
+                  background: `${BRAND.darkCard}cc`, backdropFilter: "blur(8px)",
+                  border: `1.5px solid ${error ? BRAND.coral : `${BRAND.cream}22`}`,
+                  borderRadius: 8, padding: "0.9rem 1rem", color: BRAND.cream,
+                  fontFamily: "'Inter', sans-serif", fontSize: "1rem", outline: "none",
+                  transition: "border-color .15s ease", width: "100%",
+                }}
+              />
+              {error && (
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: BRAND.coral, textAlign: "center" }}>{error}</div>
+              )}
+              <button
+                type="submit"
+                className="submit-btn"
+                style={{
+                  background: `linear-gradient(135deg, ${USERS[selectedUser].accent}, ${BRAND.terracotta})`,
+                  border: "none", borderRadius: 8, padding: "0.95rem",
+                  color: BRAND.cream, fontFamily: "'Fraunces', serif",
+                  fontSize: "1.05rem", fontWeight: 700, cursor: "pointer",
+                  boxShadow: `0 4px 16px ${USERS[selectedUser].accent}44`,
+                  transition: "opacity .15s ease",
+                }}
+              >
+                Enter {USERS[selectedUser].name}'s Book Mind →
+              </button>
+            </div>
+          )}
+        </form>
+      </div>
     </div>
   );
 }
