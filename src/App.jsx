@@ -71,11 +71,11 @@ const LYNNELL_BOOKS = [];
 
 // Brand palette
 const BRAND = {
-  dark: "#262020",
-  darkCard: "#2E2525",
-  cream: "#F2EFEB",
-  tan: "#D9A282",
-  terracotta: "#BF755A",
+  dark: "#2C1A0E",
+  darkCard: "#3D2512",
+  cream: "#F5EFE6",
+  tan: "#D1A88C",
+  terracotta: "#B98D6A",
   coral: "#F25C5C",
 };
 
