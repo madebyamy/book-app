@@ -82,6 +82,38 @@ const BRAND = {
 };
 
 // ---------------------------------------------------------------------------
+// ADMIN & ACCESS CONTROL
+// ---------------------------------------------------------------------------
+const ADMIN_USER_ID = "amy";
+const ACCESS_STORAGE_KEY = "admin:connections";
+
+// Default connections — which pairs of users can see each other's data.
+// Format: [userId1, userId2]. Symmetric — order doesn't matter.
+const DEFAULT_CONNECTIONS = [
+  ["amy", "lynnell"],
+  ["amy", "christina"],
+];
+
+function hasConnection(id1, id2, connections) {
+  return connections.some(([a, b]) => (a === id1 && b === id2) || (a === id2 && b === id1));
+}
+
+function getConnectedUsers(userId, connections) {
+  return Object.values(USERS).filter((u) => u.id !== userId && hasConnection(userId, u.id, connections));
+}
+
+async function loadConnections() {
+  try {
+    const res = await storage.get(ACCESS_STORAGE_KEY);
+    return res ? JSON.parse(res.value) : DEFAULT_CONNECTIONS;
+  } catch { return DEFAULT_CONNECTIONS; }
+}
+
+async function saveConnections(connections) {
+  try { await storage.set(ACCESS_STORAGE_KEY, JSON.stringify(connections)); } catch {}
+}
+
+// ---------------------------------------------------------------------------
 // USERS — to add a new user:
 //   1. Add their books array above (e.g. const JANE_BOOKS = [];)
 //   2. Add an entry here: jane: { id: "jane", name: "Jane", accent: "#hexcolor", books: JANE_BOOKS }
@@ -997,7 +1029,7 @@ function SharedChat({ activeUser }) {
       <div style={{ padding: "0.9rem 1.2rem", borderBottom: `1px solid ${BRAND.cream}14`, display: "flex", alignItems: "center", gap: "0.5rem" }}>
         <span style={{ fontSize: "1rem" }}>💬</span>
         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.tan }}>
-          Amy & Lynnell's Chat
+          Book Brain Chat
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: "0.4rem" }}>
           {Object.values(USERS).map((u) => (
@@ -1171,7 +1203,7 @@ function FriendChallenge({ friendId, year }) {
   );
 }
 
-function BookChallenge({ userId, userAccent }) {
+function BookChallenge({ userId, userAccent, friends }) {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
   const [goal, setGoal] = useState(null);
@@ -1179,8 +1211,8 @@ function BookChallenge({ userId, userAccent }) {
   const [editingGoal, setEditingGoal] = useState(false);
   const [booksRead, setBooksRead] = useState([]);
   const [loaded, setLoaded] = useState(false);
-  const [showFriend, setShowFriend] = useState(false);
-  const friend = Object.values(USERS).find((u) => u.id !== userId);
+  const [showFriendId, setShowFriendId] = useState(null);
+  const connectedFriends = friends || [];
 
   // Load goal and qualifying books whenever year changes
   useEffect(() => {
@@ -1345,41 +1377,52 @@ function BookChallenge({ userId, userAccent }) {
           </div>
         )}
 
-        {/* Toggle friend's progress */}
-        <button
-          onClick={() => setShowFriend((s) => !s)}
-          style={{
-            marginTop: "1.1rem", display: "flex", alignItems: "center", gap: "0.4rem",
-            background: "none", border: `1px solid ${friend.accent}44`, borderRadius: 20,
-            padding: "0.3rem 0.8rem", color: friend.accent, cursor: "pointer",
-            fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem",
-            letterSpacing: "0.08em", textTransform: "uppercase", transition: "all .15s ease",
-          }}
-        >
-          <span>{showFriend ? "▲" : "▼"}</span>
-          {showFriend ? `Hide ${friend.name}'s progress` : `See ${friend.name}'s ${year} progress`}
-        </button>
+        {/* Toggle friend challenge progress — one button per connected friend */}
+        {connectedFriends.length > 0 && (
+          <div style={{ marginTop: "1.1rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            {connectedFriends.map((f) => {
+              const isShowing = showFriendId === f.id;
+              return (
+                <button key={f.id}
+                  onClick={() => setShowFriendId(isShowing ? null : f.id)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "0.4rem",
+                    background: "none", border: `1px solid ${f.accent}44`, borderRadius: 20,
+                    padding: "0.3rem 0.8rem", color: f.accent, cursor: "pointer",
+                    fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem",
+                    letterSpacing: "0.08em", textTransform: "uppercase", transition: "all .15s ease",
+                  }}
+                >
+                  <span>{isShowing ? "▲" : "▼"}</span>
+                  {isShowing ? `Hide ${f.name}'s progress` : `${f.name}'s ${year}`}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
-        {showFriend && <FriendChallenge friendId={friend.id} year={year} />}
+        {showFriendId && <FriendChallenge friendId={showFriendId} year={year} />}
       </div>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// SHARED BOOKSHELF — books both users have marked "read"
+// SHARED BOOKSHELF — books the current user and their connected friends have read
 // ---------------------------------------------------------------------------
-function SharedBookshelf() {
+function SharedBookshelf({ viewerId, friends }) {
   const [sharedBooks, setSharedBooks] = useState([]);
   const [loaded, setLoaded] = useState(false);
 
+  const friendIds = (friends || []).map((f) => f.id);
+
   useEffect(() => {
+    if (!viewerId || friendIds.length === 0) { setLoaded(true); return; }
     let active = true;
     (async () => {
-      const userIds = Object.keys(USERS);
+      const participantIds = [viewerId, ...friendIds];
 
-      // For each user, collect all books with their statuses
-      const allUserBooks = await Promise.all(userIds.map(async (uid) => {
+      const allUserBooks = await Promise.all(participantIds.map(async (uid) => {
         const [customBooks, shelfBooks] = await Promise.all([
           loadCustomBooks(uid),
           loadShelfBooks(uid),
@@ -1388,37 +1431,36 @@ function SharedBookshelf() {
         const withStatus = await Promise.all(
           allBooks.map(async (b) => ({ ...b, status: await loadStatus(uid, b.id) }))
         );
-        // Deduplicate by id, keep only "read"
         const seen = new Set();
         return withStatus.filter((b) => {
           if (b.status !== "read" || seen.has(b.id)) return false;
-          seen.add(b.id);
-          return true;
+          seen.add(b.id); return true;
         });
       }));
 
       if (!active) return;
 
-      // Match across users by normalized title
       const normalize = (str) => (str || "").toLowerCase().trim().replace(/[^a-z0-9]/g, "");
-      const [amyRead, lynnellRead] = allUserBooks;
-      const lynnellTitles = new Set(lynnellRead.map((b) => normalize(b.title)));
+      const viewerBooks = allUserBooks[0];
+      const friendBooks = allUserBooks.slice(1);
 
-      const shared = amyRead
-        .filter((b) => lynnellTitles.has(normalize(b.title)))
-        .map((b) => ({
-          id: b.id,
-          title: b.title,
-          author: b.author,
-          cover: b.cover || null,
-          accent: b.accent || BRAND.terracotta,
-        }));
+      // A book qualifies if the viewer has read it AND at least one friend has read it
+      const friendTitleSets = friendBooks.map((fb) => new Set(fb.map((b) => normalize(b.title))));
+      const readByFriend = (title) => friendTitleSets.some((s) => s.has(normalize(title)));
+
+      // Collect which friends read each book
+      const shared = viewerBooks
+        .filter((b) => readByFriend(b.title))
+        .map((b) => {
+          const readers = friends.filter((f, i) => friendTitleSets[i]?.has(normalize(b.title)));
+          return { id: b.id, title: b.title, author: b.author, cover: b.cover || null, accent: b.accent || BRAND.terracotta, readers };
+        });
 
       setSharedBooks(shared);
       setLoaded(true);
     })();
     return () => { active = false; };
-  }, []);
+  }, [viewerId, friendIds.join(",")]);
 
   if (!loaded) return null;
 
@@ -1456,7 +1498,7 @@ function SharedBookshelf() {
                 <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: "0.95rem", color: BRAND.cream, lineHeight: 1.2, marginBottom: "0.15rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{book.title}</div>
                 <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: `${BRAND.cream}55`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{book.author}</div>
                 <div style={{ display: "flex", gap: "0.35rem", marginTop: "0.3rem" }}>
-                  {Object.values(USERS).map((u) => (
+                  {(book.readers || []).map((u) => (
                     <span key={u.id} style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", letterSpacing: "0.06em", textTransform: "uppercase", background: `${u.accent}33`, color: u.accent, padding: "0.15rem 0.45rem", borderRadius: 20 }}>{u.name} ✓</span>
                   ))}
                 </div>
@@ -1470,41 +1512,29 @@ function SharedBookshelf() {
 }
 
 // ---------------------------------------------------------------------------
-// FRIEND READING — shows what the other user is currently reading
+// FRIEND READING — shows what each connected friend is currently reading
 // ---------------------------------------------------------------------------
-function FriendReading({ friend }) {
+function FriendReadingCard({ friend }) {
   const [currentlyReading, setCurrentlyReading] = useState([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let active = true;
     (async () => {
-      // Pull from both My Books (static + custom) and Bookshelf
       const [customBooks, shelfBooks] = await Promise.all([
         loadCustomBooks(friend.id),
         loadShelfBooks(friend.id),
       ]);
-
       const allBooks = [...friend.books, ...customBooks, ...shelfBooks];
-
-      // Load status for every book
       const withStatus = await Promise.all(
-        allBooks.map(async (b) => {
-          const status = await loadStatus(friend.id, b.id);
-          return { ...b, status };
-        })
+        allBooks.map(async (b) => ({ ...b, status: await loadStatus(friend.id, b.id) }))
       );
-
       if (!active) return;
-      // Deduplicate by id and keep only "reading"
       const seen = new Set();
-      const reading = withStatus.filter((b) => {
+      setCurrentlyReading(withStatus.filter((b) => {
         if (b.status !== "reading" || seen.has(b.id)) return false;
-        seen.add(b.id);
-        return true;
-      });
-
-      setCurrentlyReading(reading);
+        seen.add(b.id); return true;
+      }));
       setLoaded(true);
     })();
     return () => { active = false; };
@@ -1514,7 +1544,7 @@ function FriendReading({ friend }) {
 
   return (
     <div style={{
-      width: "100%", maxWidth: 400,
+      width: "100%",
       background: `${BRAND.darkCard}cc`, backdropFilter: "blur(10px)",
       border: `1px solid ${BRAND.cream}14`, borderLeft: `3px solid ${friend.accent}`,
       borderRadius: 10, padding: "1.2rem 1.4rem",
@@ -1522,10 +1552,9 @@ function FriendReading({ friend }) {
       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.9rem" }}>
         <span style={{ fontSize: "1rem" }}>👀</span>
         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: friend.accent }}>
-          {friend.name} is currently reading
+          {friend.name} is reading
         </div>
       </div>
-
       {currentlyReading.length === 0 ? (
         <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: `${BRAND.cream}44`, margin: 0, fontStyle: "italic" }}>
           {friend.name} hasn't started anything yet.
@@ -1553,11 +1582,157 @@ function FriendReading({ friend }) {
   );
 }
 
+function FriendReading({ friends }) {
+  if (!friends || friends.length === 0) return null;
+  return (
+    <>
+      {friends.map((f) => <FriendReadingCard key={f.id} friend={f} />)}
+    </>
+  );
+}
+
 // ---------------------------------------------------------------------------
-// USER HOME — shown after selecting Amy or Lynnell
+// ADMIN PANEL — only accessible to the admin user (Amy)
+// ---------------------------------------------------------------------------
+function AdminPanel({ onClose }) {
+  const allUsers = Object.values(USERS);
+  const [connections, setConnections] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    loadConnections().then(setConnections);
+  }, []);
+
+  const toggleConnection = (id1, id2) => {
+    setConnections((prev) => {
+      const exists = hasConnection(id1, id2, prev);
+      if (exists) return prev.filter(([a, b]) => !((a === id1 && b === id2) || (a === id2 && b === id1)));
+      return [...prev, [id1, id2]];
+    });
+    setSaved(false);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    await saveConnections(connections);
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  // Build all unique user pairs
+  const pairs = [];
+  for (let i = 0; i < allUsers.length; i++) {
+    for (let j = i + 1; j < allUsers.length; j++) {
+      pairs.push([allUsers[i], allUsers[j]]);
+    }
+  }
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: "1.5rem",
+    }}>
+      <div style={{
+        background: BRAND.darkCard, border: `1px solid ${BRAND.cream}22`,
+        borderTop: `3px solid ${BRAND.coral}`, borderRadius: 12,
+        padding: "2rem", width: "100%", maxWidth: 480,
+        fontFamily: "'Inter', sans-serif",
+      }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.6rem" }}>
+          <div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: BRAND.coral, marginBottom: "0.3rem" }}>Admin · Access Control</div>
+            <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.4rem", color: BRAND.cream }}>Manage Connections</div>
+            <div style={{ fontSize: "0.8rem", color: `${BRAND.cream}66`, marginTop: "0.3rem" }}>Toggle which users can see each other's info and chat.</div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: `${BRAND.cream}55`, cursor: "pointer", fontSize: "1.2rem", lineHeight: 1, padding: "0.2rem" }}>✕</button>
+        </div>
+
+        {/* User list with avatars */}
+        <div style={{ marginBottom: "1.4rem" }}>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "0.8rem" }}>Members</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
+            {allUsers.map((u) => (
+              <div key={u.id} style={{ display: "flex", alignItems: "center", gap: "0.4rem", background: `${u.accent}18`, border: `1px solid ${u.accent}44`, borderRadius: 20, padding: "0.3rem 0.7rem" }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: u.accent }} />
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: u.accent }}>{u.name}</span>
+                {u.id === ADMIN_USER_ID && <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.5rem", color: BRAND.coral }}>admin</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Connection toggles */}
+        <div style={{ marginBottom: "1.6rem" }}>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "0.8rem" }}>Connections</div>
+          {!connections ? (
+            <div style={{ fontSize: "0.82rem", color: `${BRAND.cream}44` }}>Loading…</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.7rem" }}>
+              {pairs.map(([u1, u2]) => {
+                const connected = hasConnection(u1.id, u2.id, connections);
+                return (
+                  <div key={`${u1.id}-${u2.id}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: `${BRAND.dark}88`, borderRadius: 8, padding: "0.75rem 1rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", color: BRAND.cream }}>{u1.name}</span>
+                      <span style={{ color: `${BRAND.cream}33`, fontSize: "0.8rem" }}>↔</span>
+                      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", color: BRAND.cream }}>{u2.name}</span>
+                    </div>
+                    <button
+                      onClick={() => toggleConnection(u1.id, u2.id)}
+                      style={{
+                        width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
+                        background: connected ? BRAND.coral : `${BRAND.cream}22`,
+                        position: "relative", transition: "background .2s ease",
+                      }}
+                    >
+                      <div style={{
+                        position: "absolute", top: 3, left: connected ? 23 : 3,
+                        width: 18, height: 18, borderRadius: "50%", background: BRAND.cream,
+                        transition: "left .2s ease",
+                      }} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Save */}
+        <button
+          onClick={handleSave}
+          disabled={saving || !connections}
+          style={{
+            width: "100%", padding: "0.75rem", borderRadius: 8, border: "none", cursor: "pointer",
+            background: saved ? "#4caf50" : BRAND.coral, color: BRAND.cream,
+            fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", letterSpacing: "0.1em", textTransform: "uppercase",
+            transition: "background .2s ease",
+          }}
+        >
+          {saving ? "Saving…" : saved ? "Saved ✓" : "Save Changes"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// USER HOME
 // ---------------------------------------------------------------------------
 function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
-  const friend = Object.values(USERS).find((u) => u.id !== user.id);
+  const [connections, setConnections] = useState(null);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const isAdmin = user.id === ADMIN_USER_ID;
+
+  useEffect(() => {
+    loadConnections().then(setConnections);
+  }, [showAdmin]); // reload after admin panel closes
+
+  const friends = connections ? getConnectedUsers(user.id, connections) : [];
+
   return (
     <div style={{
       minHeight: "100vh", background: BRAND.dark,
@@ -1573,13 +1748,20 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
       }} />
       <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, ${BRAND.dark}11 0%, ${BRAND.dark}44 50%, ${BRAND.dark}99 100%)` }} />
 
+      {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
+
       {/* Top bar */}
       <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.2rem 1.4rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <div style={{ width: 28, height: 28, borderRadius: "50%", background: `linear-gradient(135deg, ${BRAND.terracotta}, ${BRAND.coral})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem" }}>🧠</div>
           <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", letterSpacing: "0.14em", textTransform: "uppercase", color: BRAND.tan }}>Book Brain</span>
         </div>
-        <button onClick={onLogout} style={{ background: "none", border: `1px solid ${BRAND.cream}22`, color: `${BRAND.cream}55`, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", padding: "0.4rem 0.8rem", borderRadius: 20, cursor: "pointer", letterSpacing: "0.06em" }}>Log out</button>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+          {isAdmin && (
+            <button onClick={() => setShowAdmin(true)} style={{ background: `${BRAND.coral}22`, border: `1px solid ${BRAND.coral}55`, color: BRAND.coral, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", padding: "0.4rem 0.8rem", borderRadius: 20, cursor: "pointer", letterSpacing: "0.06em" }}>⚙ Admin</button>
+          )}
+          <button onClick={onLogout} style={{ background: "none", border: `1px solid ${BRAND.cream}22`, color: `${BRAND.cream}55`, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", padding: "0.4rem 0.8rem", borderRadius: 20, cursor: "pointer", letterSpacing: "0.06em" }}>Log out</button>
+        </div>
       </div>
 
       {/* Hero */}
@@ -1597,7 +1779,7 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
 
         {/* Book challenge */}
         <div style={{ marginBottom: "1.2rem", width: "100%", maxWidth: 860 }}>
-          <BookChallenge userId={user.id} userAccent={user.accent} />
+          <BookChallenge userId={user.id} userAccent={user.accent} friends={friends} />
         </div>
 
         {/* Nav cards — 2-column grid on desktop, single column on mobile */}
@@ -1628,15 +1810,19 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
         </div>
 
         {/* Friend reading + shared bookshelf — side by side on desktop */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem", marginTop: "1.2rem", width: "100%", maxWidth: 860 }}>
-          <FriendReading friend={friend} />
-          <SharedBookshelf />
-        </div>
+        {friends.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem", marginTop: "1.2rem", width: "100%", maxWidth: 860 }}>
+            <FriendReading friends={friends} />
+            <SharedBookshelf viewerId={user.id} friends={friends} />
+          </div>
+        )}
 
-        {/* Shared chat */}
-        <div style={{ marginTop: "1rem", width: "100%", maxWidth: 860 }}>
-          <SharedChat activeUser={user} />
-        </div>
+        {/* Shared chat — only shown when there are connected friends */}
+        {friends.length > 0 && (
+          <div style={{ marginTop: "1rem", width: "100%", maxWidth: 860 }}>
+            <SharedChat activeUser={user} />
+          </div>
+        )}
       </div>
     </div>
   );
