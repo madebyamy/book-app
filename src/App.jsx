@@ -1500,15 +1500,31 @@ function AddBookModal({ drawers, onAdd, onClose }) {
               </button>
             </div>
           </div>
-          {/* Cover preview */}
-          {fetchedPreview?.cover && (
-            <div style={{ display: "flex", alignItems: "center", gap: 14, background: BRAND.cream, border: `1px solid ${BRAND.line}`, borderRadius: 4, padding: "12px 14px" }}>
-              <img src={fetchedPreview.cover} alt="" style={{ width: 48, height: 70, objectFit: "cover", borderRadius: 2, boxShadow: "0 2px 6px rgba(0,0,0,.15)", flexShrink: 0 }} onError={(e) => e.target.style.display = "none"} />
-              <div>
-                <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 15, color: BRAND.ink, lineHeight: 1.2 }}>{fetchedPreview.title}</div>
-                <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13, color: BRAND.muted, marginTop: 3 }}>{fetchedPreview.author}</div>
-                <div style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.terracotta, marginTop: 4 }}>✓ Info pulled from Google Books</div>
+          {/* Card preview after lookup */}
+          {fetchedPreview && (
+            <div style={{ background: BRAND.cream, border: `1px solid ${BRAND.line}`, borderRadius: 4, overflow: "hidden" }}>
+              {/* Preview header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", borderBottom: summary || pages ? `1px solid ${BRAND.line}` : "none" }}>
+                {fetchedPreview.cover && (
+                  <img src={fetchedPreview.cover} alt="" style={{ width: 44, height: 64, objectFit: "cover", borderRadius: 2, boxShadow: "0 2px 6px rgba(0,0,0,.15)", flexShrink: 0 }} onError={(e) => e.target.style.display = "none"} />
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 15, color: BRAND.ink, lineHeight: 1.2 }}>{fetchedPreview.title}</div>
+                  <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13, color: BRAND.muted, marginTop: 3 }}>{fetchedPreview.author}</div>
+                  <div style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.terracotta, marginTop: 4 }}>✓ Info pulled from Google Books</div>
+                </div>
               </div>
+              {/* Summary + pages populated into the card */}
+              {(summary || pages) && (
+                <div style={{ padding: "10px 14px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+                  {summary && (
+                    <p style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.55, color: BRAND.ink, margin: 0, display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{summary}</p>
+                  )}
+                  {pages && (
+                    <div style={{ fontFamily: FONT.type, fontSize: 11, color: BRAND.muted }}>{pages} pages</div>
+                  )}
+                </div>
+              )}
             </div>
           )}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
