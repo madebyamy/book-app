@@ -71,14 +71,47 @@ const LYNNELL_BOOKS = [];
 
 const CHRISTINA_BOOKS = [];
 
-// Brand palette
+// Brand palette — Marginalia warm library aesthetic
 const BRAND = {
-  dark: "#2C1A0E",
-  darkCard: "#3D2512",
-  cream: "#F5EFE6",
-  tan: "#D1A88C",
-  terracotta: "#B98D6A",
+  // Page surfaces
+  cream: "#F2EFEB",
+  paper: "#FBF8F3",
+  // Text
+  ink: "#262020",
+  muted: "#6B5D54",
+  // Accent
   coral: "#F25C5C",
+  coralDeep: "#D94A4A",
+  terracotta: "#BF755A",
+  tan: "#D9A282",
+  // Dark sections (footer, shelves, espresso bars)
+  espresso: "#2A201B",
+  espresso2: "#3A2A22",
+  // Borders
+  line: "#E4D9CC",
+  line2: "#D6C7B6",
+  // Card catalogue wood & brass
+  oakHi: "#B07F49",
+  oak: "#925E32",
+  oakLo: "#6E4422",
+  oakDeep: "#4A2C16",
+  brassHi: "#E8CF93",
+  brass: "#C2A35E",
+  brassLo: "#8F7233",
+  card: "#F6EEDD",
+  cardEdge: "#E2D4BC",
+  rule: "#C9B79A",
+  // Legacy aliases (used by book themes & widgets)
+  dark: "#2A201B",
+  darkCard: "#3A2A22",
+};
+
+// Typography tokens
+const FONT = {
+  display: "'Cormorant Garamond', Georgia, serif",
+  read: "'Spectral', Georgia, serif",
+  body: "'Jost', system-ui, -apple-system, sans-serif",
+  type: "'Special Elite', 'Courier New', ui-monospace, monospace",
 };
 
 // ---------------------------------------------------------------------------
@@ -945,27 +978,33 @@ function CatalogCard({ userId, book, onSelect }) {
   const callNumber = `${book.author.split(" ").pop().slice(0, 3).toUpperCase()}-${book.year || "NEW"}`;
 
   return (
-    <button onClick={() => onSelect(book.id)} style={{ position: "relative", display: "flex", gap: "1.1rem", textAlign: "left", cursor: "pointer", width: "100%", background: "#F4EFE4", color: "#1A1610", border: "1px solid #D8CDB4", borderRadius: 2, padding: "1.3rem 1.5rem 1.3rem 1.7rem", boxShadow: "0 3px 0 rgba(0,0,0,0.18), 0 8px 14px rgba(0,0,0,0.28)", transition: "transform .18s ease, box-shadow .18s ease" }}
-      onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 5px 0 rgba(0,0,0,0.2), 0 14px 20px rgba(0,0,0,0.32)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 3px 0 rgba(0,0,0,0.18), 0 8px 14px rgba(0,0,0,0.28)"; }}>
-      <span style={{ position: "absolute", top: "1.3rem", left: "0.55rem", width: 9, height: 9, borderRadius: "50%", background: "#0F1A2B", boxShadow: "inset 0 1px 2px rgba(0,0,0,0.5)" }} />
-      <span style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 5, background: book.accent }} />
+    <button onClick={() => onSelect(book.id)} style={{ position: "relative", display: "flex", gap: 16, textAlign: "left", cursor: "pointer", width: "100%", background: BRAND.card, color: BRAND.ink, border: `1px solid ${BRAND.cardEdge}`, borderTop: "none", borderRadius: "0 0 3px 3px", padding: "16px 18px", boxShadow: "0 4px 12px rgba(20,30,50,.10)", transition: "transform .22s,box-shadow .22s" }}
+      onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-6px)"; e.currentTarget.style.boxShadow = "0 16px 40px rgba(20,30,50,.16)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(20,30,50,.10)"; }}>
+      {/* Tab */}
+      <span style={{ position: "absolute", top: -26, left: 16, width: 110, height: 26, background: BRAND.card, border: `1px solid ${BRAND.cardEdge}`, borderBottom: "none", borderRadius: "5px 5px 0 0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontFamily: FONT.type, fontSize: 10, color: BRAND.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 94 }}>{book.title}</span>
+      </span>
+      <span style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 4, background: book.accent, borderRadius: "0 0 0 3px" }} />
       <div style={{ position: "relative", flexShrink: 0 }}>
-        {book.cover ? <img src={book.cover} alt={book.title} style={{ width: 56, height: 82, objectFit: "cover", display: "block", boxShadow: "0 2px 6px rgba(0,0,0,0.35)" }} onError={(e) => { e.target.style.display = "none"; }} />
-          : <div style={{ width: 56, height: 82, background: book.accent, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.35)", padding: "0.3rem" }}><span style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "0.65rem", color: "#1A1612", textAlign: "center", lineHeight: 1.2 }}>{book.title}</span></div>}
+        {book.cover
+          ? <img src={book.cover} alt={book.title} style={{ width: 54, height: 78, objectFit: "cover", display: "block", borderRadius: 2, boxShadow: "0 2px 6px rgba(20,30,50,.2)" }} onError={(e) => { e.target.style.display = "none"; }} />
+          : <div style={{ width: 54, height: 78, background: book.accent, borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "center", padding: 4 }}><span style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 11, color: "#fff", textAlign: "center", lineHeight: 1.2 }}>{book.title}</span></div>}
         <StatusBadge status={readStatus} accent={book.accent} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.6rem", marginBottom: "0.45rem" }}>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.08em", color: book.accent, fontWeight: 600 }}>{callNumber}</span>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.05em", color: "rgba(26,22,16,0.45)", whiteSpace: "nowrap" }}>{date ? formatCatalogDate(date) : "—"}</span>
+        <div style={{ fontFamily: FONT.type, fontSize: 9.5, letterSpacing: "0.04em", color: BRAND.terracotta, borderBottom: `1px solid ${BRAND.rule}`, paddingBottom: 7, marginBottom: 10 }}>{callNumber}</div>
+        <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 20, lineHeight: 1.1, color: BRAND.ink, marginBottom: 4 }}>{book.title}</div>
+        {book.subtitle && <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13, color: BRAND.muted, marginBottom: 6 }}>{book.subtitle}</div>}
+        <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13.5, color: BRAND.muted, marginBottom: 12 }}>{book.author}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <div style={{ height: 1, background: BRAND.rule, opacity: 0.7 }} />
+          <div style={{ height: 1, background: BRAND.rule, opacity: 0.45 }} />
+          <div style={{ height: 1, background: BRAND.rule, opacity: 0.25 }} />
         </div>
-        <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: "1.18rem", lineHeight: 1.2, marginBottom: "0.25rem" }}>{book.title}</div>
-        {book.subtitle && <div style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: "0.82rem", color: "rgba(26,22,16,0.55)", marginBottom: "0.55rem" }}>{book.subtitle}</div>}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: "rgba(26,22,16,0.6)" }}>{book.author}</span>
-          <span style={{ flex: 1, borderBottom: "1px dotted rgba(26,22,16,0.3)", height: 1 }} />
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: "rgba(26,22,16,0.6)" }}>{book.year}</span>
+        <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontFamily: FONT.type, fontSize: 9.5, color: BRAND.muted }}>{book.year}{book.pages ? ` · ${book.pages} pp` : ""}</span>
+          <span style={{ fontFamily: FONT.body, fontSize: 11.5, color: BRAND.coral }}>{date ? formatCatalogDate(date) : ""} Read card →</span>
         </div>
       </div>
     </button>
@@ -991,24 +1030,24 @@ function BookSearchInput({ onSelect, userAccent, inputStyle: extraStyle = {} }) 
     }, 500);
   };
 
-  const baseInput = { background: "#0F1A2B", border: "1px solid rgba(244,239,228,0.28)", color: "#F4EFE4", fontFamily: "'Fraunces', serif", fontSize: "0.9rem", padding: "0.55rem 0.8rem", borderRadius: 3, width: "100%", ...extraStyle };
+  const baseInput = { background: BRAND.paper, border: `1px solid ${BRAND.line2}`, color: BRAND.ink, fontFamily: FONT.body, fontSize: 14, padding: "10px 13px", borderRadius: 2, width: "100%", outline: "none", ...extraStyle };
 
   return (
     <div style={{ position: "relative" }}>
       <input autoFocus value={query} onChange={handleChange} placeholder="Search by book title…" style={baseInput} />
       {(searching || results.length > 0) && (
-        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "#0F1A2B", border: "1px solid rgba(244,239,228,0.28)", borderRadius: 4, zIndex: 50, overflow: "hidden" }}>
-          {searching && <div style={{ padding: "0.6rem 0.9rem", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: "rgba(244,239,228,0.44)" }}>Searching…</div>}
+        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: BRAND.paper, border: `1px solid ${BRAND.line2}`, borderRadius: 3, zIndex: 50, overflow: "hidden", boxShadow: "0 4px 12px rgba(20,30,50,.12)" }}>
+          {searching && <div style={{ padding: "10px 14px", fontFamily: FONT.body, fontSize: 13, color: BRAND.muted }}>Searching…</div>}
           {results.map((r, i) => (
             <button key={i} type="button" onClick={() => { onSelect(r); setQuery(""); setResults([]); }}
-              style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.7rem", padding: "0.6rem 0.9rem", background: "none", border: "none", borderBottom: "1px solid rgba(244,239,228,0.08)", cursor: "pointer", textAlign: "left" }}
-              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(244,239,228,0.06)"}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "none", border: "none", borderBottom: `1px solid ${BRAND.line}`, cursor: "pointer", textAlign: "left", transition: "background .12s" }}
+              onMouseEnter={(e) => e.currentTarget.style.background = BRAND.cream}
               onMouseLeave={(e) => e.currentTarget.style.background = "none"}
             >
               {r.cover && <img src={r.cover} alt="" style={{ width: 28, height: 40, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} onError={(e) => e.target.style.display = "none"} />}
               <div>
-                <div style={{ fontFamily: "'Fraunces', serif", fontSize: "0.88rem", color: "#F4EFE4", lineHeight: 1.2 }}>{r.title}</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.74rem", color: "rgba(244,239,228,0.5)" }}>{r.author}{r.pages ? ` · ${r.pages} pages` : ""}{r.year ? ` · ${r.year}` : ""}</div>
+                <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 15, color: BRAND.ink, lineHeight: 1.2 }}>{r.title}</div>
+                <div style={{ fontFamily: FONT.body, fontSize: 12.5, color: BRAND.muted }}>{r.author}{r.pages ? ` · ${r.pages} pp` : ""}{r.year ? ` · ${r.year}` : ""}</div>
               </div>
             </button>
           ))}
@@ -1052,37 +1091,46 @@ function AddBookToMyBooks({ userId, userAccent, onAdded }) {
     onAdded();
   };
 
-  const iStyle = { background: "#0F1A2B", border: "1px solid rgba(244,239,228,0.28)", color: "#F4EFE4", fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", padding: "0.55rem 0.8rem", borderRadius: 3, width: "100%" };
+  const iStyle = { background: BRAND.paper, border: `1px solid ${BRAND.line2}`, color: BRAND.ink, fontFamily: FONT.body, fontSize: 14, padding: "10px 13px", borderRadius: 2, width: "100%", outline: "none" };
 
   if (!open) return (
-    <button onClick={() => setOpen(true)} style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.6rem", cursor: "pointer", width: "100%", background: "transparent", color: "rgba(244,239,228,0.55)", border: "1px dashed rgba(244,239,228,0.32)", borderRadius: 2, padding: "1.1rem 1.5rem", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.78rem", letterSpacing: "0.06em", textTransform: "uppercase" }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(244,239,228,0.6)"; e.currentTarget.style.color = "#F4EFE4"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(244,239,228,0.32)"; e.currentTarget.style.color = "rgba(244,239,228,0.55)"; }}>
-      <span style={{ fontSize: "1.1rem" }}>+</span><span>Add a book</span>
+    <button onClick={() => setOpen(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", width: "100%", background: "transparent", color: BRAND.muted, border: `1px dashed ${BRAND.line2}`, borderRadius: 2, padding: "18px 24px", fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase", transition: "border-color .15s,color .15s" }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = BRAND.terracotta; e.currentTarget.style.color = BRAND.terracotta; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = BRAND.line2; e.currentTarget.style.color = BRAND.muted; }}>
+      <span style={{ fontSize: 18 }}>+</span><span>Add a book to your catalogue</span>
     </button>
   );
 
   return (
-    <form onSubmit={handleSubmit} style={{ background: "#162338", border: "1px solid rgba(244,239,228,0.2)", borderRadius: 4, padding: "1.2rem", display: "flex", flexDirection: "column", gap: "0.7rem" }}>
+    <form onSubmit={handleSubmit} style={{ background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 4, padding: "clamp(18px,3vw,28px)", display: "flex", flexDirection: "column", gap: 10, boxShadow: "0 1px 2px rgba(20,30,50,.06)" }}>
+      <div style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: BRAND.terracotta, marginBottom: 4 }}>Add a book</div>
       {!selected ? (
         <BookSearchInput onSelect={handleSelect} userAccent={userAccent} />
       ) : (
         <>
-          {cover && <img src={cover} alt={title} style={{ width: 48, height: 68, objectFit: "cover", borderRadius: 3, marginBottom: "0.2rem" }} onError={(e) => e.target.style.display = "none"} />}
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" required style={iStyle} />
-          <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Author" required style={iStyle} />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-            <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" style={iStyle} />
-            <input value={pages} onChange={(e) => setPages(e.target.value)} placeholder="Pages" type="number" style={iStyle} />
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+            {cover && <img src={cover} alt={title} style={{ width: 48, height: 68, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} onError={(e) => e.target.style.display = "none"} />}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" required style={iStyle} />
+              <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Author" required style={iStyle} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" style={iStyle} />
+                <input value={pages} onChange={(e) => setPages(e.target.value)} placeholder="Pages" type="number" style={iStyle} />
+              </div>
+              <input value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="Tagline (optional)" style={iStyle} />
+            </div>
           </div>
-          <input value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="Tagline (optional — one-sentence hook)" style={iStyle} />
-          <button type="button" onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: "rgba(244,239,228,0.4)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", cursor: "pointer", textAlign: "left", padding: 0 }}>← Search again</button>
+          <button type="button" onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: BRAND.muted, fontFamily: FONT.body, fontSize: 12, cursor: "pointer", textAlign: "left", padding: 0, textDecoration: "underline" }}>← Search again</button>
         </>
       )}
       {selected && (
-        <div style={{ display: "flex", gap: "0.6rem" }}>
-          <button type="submit" style={{ flex: 1, background: userAccent, border: "none", color: "#F4EFE4", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.04em", padding: "0.55rem", borderRadius: 3, cursor: "pointer", fontWeight: 700 }}>Add Book</button>
-          <button type="button" onClick={() => { setOpen(false); setSelected(null); }} style={{ background: "none", border: "1px solid rgba(244,239,228,0.28)", color: "rgba(244,239,228,0.6)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", padding: "0.55rem 0.9rem", borderRadius: 3, cursor: "pointer" }}>Cancel</button>
+        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+          <button type="submit" style={{ flex: 1, background: BRAND.coral, border: "none", color: "#fff", fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.04em", textTransform: "uppercase", padding: "12px", borderRadius: 2, cursor: "pointer", fontWeight: 500 }}
+            onMouseEnter={(e) => e.currentTarget.style.background = BRAND.coralDeep}
+            onMouseLeave={(e) => e.currentTarget.style.background = BRAND.coral}>
+            File this card →
+          </button>
+          <button type="button" onClick={() => { setOpen(false); setSelected(null); }} style={{ background: "none", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, fontFamily: FONT.body, fontSize: 13, padding: "12px 16px", borderRadius: 2, cursor: "pointer" }}>Cancel</button>
         </div>
       )}
     </form>
@@ -1104,27 +1152,38 @@ function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack, onLogo
   const allBooks = [...staticBooks.filter((b) => !customIds.has(b.id)), ...customBooks];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0F1A2B", padding: "0 0 5rem" }}>
-      <div style={{ background: "linear-gradient(180deg, #2A2118, #1C160F)", borderBottom: "3px solid #0B0805", padding: "2.6rem 1.8rem 2.2rem", textAlign: "center", position: "relative" }}>
-        <button onClick={onBack} style={{ position: "absolute", top: "1.4rem", left: "1.4rem", background: "none", border: "1px solid rgba(244,239,228,0.3)", color: "rgba(244,239,228,0.7)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", padding: "0.4rem 0.8rem", borderRadius: 3, cursor: "pointer" }}>← Back</button>
-        <button onClick={onLogout} style={{ position: "absolute", top: "1.4rem", right: "1.4rem", background: "none", border: "1px solid rgba(244,239,228,0.2)", color: "rgba(244,239,228,0.5)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", padding: "0.4rem 0.8rem", borderRadius: 3, cursor: "pointer" }}>Log out</button>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", letterSpacing: "0.22em", textTransform: "uppercase", color: userAccent, marginBottom: "0.7rem" }}>{USERS[userId].name}'s Card Catalog</div>
-        <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.1rem, 5.5vw, 3.2rem)", lineHeight: 1.05, margin: "0 0 0.5rem", color: "#F4EFE4" }}>{USERS[userId].name}'s Book Notes</h1>
-        <p style={{ color: "rgba(244,239,228,0.55)", fontSize: "0.92rem", margin: "0 auto", maxWidth: "46ch", lineHeight: 1.5 }}>Full summaries — key ideas, highlighted stories, {USERS[userId].name}'s quotes, and reading trackers.</p>
-        <div style={{ width: 64, height: 6, background: `linear-gradient(180deg, ${userAccent}, #4a3a20)`, borderRadius: 3, margin: "1.6rem auto 0", boxShadow: "0 2px 4px rgba(0,0,0,0.5)" }} />
+    <div style={{ minHeight: "100vh", background: BRAND.cream, color: BRAND.ink, fontFamily: FONT.body }}>
+      {/* Header */}
+      <div style={{ background: BRAND.espresso, borderBottom: `3px solid ${BRAND.oakDeep}`, padding: "clamp(28px,4vw,44px) 24px clamp(24px,3vw,36px)", position: "relative" }}>
+        <div style={{ maxWidth: 860, margin: "0 auto", position: "relative" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <button onClick={onBack} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.04em", background: "none", border: `1px solid rgba(242,239,235,.3)`, color: "rgba(242,239,235,.7)", padding: "8px 14px", borderRadius: 2, cursor: "pointer" }}>← Back</button>
+            <button onClick={onLogout} style={{ fontFamily: FONT.body, fontSize: 13, color: "rgba(242,239,235,.45)", background: "none", border: "none", cursor: "pointer" }}>Sign out</button>
+          </div>
+          <div style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.tan, marginBottom: 12 }}>
+            The card catalogue
+          </div>
+          <h1 style={{ fontFamily: FONT.display, fontWeight: 500, fontSize: "clamp(34px,5vw,60px)", lineHeight: 1.03, letterSpacing: "-0.01em", color: BRAND.cream, margin: "0 0 14px" }}>
+            {USERS[userId].name}'s Book Notes
+          </h1>
+          <p style={{ fontFamily: FONT.read, fontSize: "clamp(15px,1.3vw,17px)", lineHeight: 1.6, color: "rgba(242,239,235,.62)", margin: 0, maxWidth: "40em" }}>
+            Full summaries — key ideas, highlighted stories, quotes, and reading trackers.
+          </p>
+        </div>
       </div>
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "2.6rem 1.8rem 0" }}>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(244,239,228,0.4)", marginBottom: "1.1rem", borderBottom: "1px solid rgba(244,239,228,0.14)", paddingBottom: "0.6rem" }}>
+
+      <div style={{ maxWidth: 860, margin: "0 auto", padding: "clamp(28px,4vw,48px) 24px clamp(48px,6vw,80px)" }}>
+        <div style={{ fontFamily: FONT.type, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: BRAND.muted, marginBottom: 20, borderBottom: `1px solid ${BRAND.line}`, paddingBottom: 10 }}>
           {allBooks.length} {allBooks.length === 1 ? "entry" : "entries"} on file
         </div>
         {!loaded ? (
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.8rem", color: "rgba(244,239,228,0.4)", padding: "1rem 0" }}>Loading…</div>
+          <div style={{ fontFamily: FONT.body, fontSize: 14, color: BRAND.muted, padding: "1.5rem 0" }}>Loading…</div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {allBooks.map((book) => (<CatalogCard key={book.id} userId={userId} book={book} onSelect={onSelect} />))}
           </div>
         )}
-        <div style={{ marginTop: "1.3rem" }}>
+        <div style={{ marginTop: 20 }}>
           <AddBookToMyBooks userId={userId} userAccent={userAccent} onAdded={() => setVersion((v) => v + 1)} />
         </div>
       </div>
@@ -1834,22 +1893,15 @@ function SharedBookshelf({ viewerId, friends, tooltipText }) {
   if (!loaded) return null;
 
   return (
-    <div style={{
-      width: "100%", maxWidth: 400,
-      background: `${BRAND.darkCard}cc`, backdropFilter: "blur(10px)",
-      border: `1px solid ${BRAND.cream}14`,
-      borderLeft: `3px solid ${BRAND.tan}`,
-      borderRadius: 10, padding: "1.2rem 1.4rem",
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.9rem" }}>
-        <span style={{ fontSize: "1rem" }}>✨</span>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.tan, display: "flex", alignItems: "center", gap: "0.3rem" }}>
+    <div style={{ width: "100%", background: "rgba(255,255,255,.04)", border: "1px solid rgba(217,162,130,.18)", borderLeft: `3px solid ${BRAND.tan}`, borderRadius: 4, padding: "clamp(16px,2vw,22px)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+        <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: BRAND.tan, display: "flex", alignItems: "center", gap: 6 }}>
           Books we've both read <TooltipIcon text={tooltipText} color={BRAND.tan} />
         </div>
       </div>
 
       {sharedBooks.length === 0 ? (
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: `${BRAND.cream}44`, margin: 0, fontStyle: "italic" }}>
+        <p style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 15, color: "rgba(242,239,235,.55)", margin: 0 }}>
           No shared reads yet — mark a book as "read" in both libraries to see it here.
         </p>
       ) : (
@@ -1864,8 +1916,8 @@ function SharedBookshelf({ viewerId, friends, tooltipText }) {
                 </div>
               )}
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: "0.95rem", color: BRAND.cream, lineHeight: 1.2, marginBottom: "0.15rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{book.title}</div>
-                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: `${BRAND.cream}55`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{book.author}</div>
+                <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 17, color: BRAND.cream, lineHeight: 1.15, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{book.title}</div>
+                <div style={{ fontFamily: FONT.body, fontWeight: 300, fontSize: 13, color: BRAND.tan, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{book.author}</div>
                 <div style={{ display: "flex", gap: "0.35rem", marginTop: "0.3rem" }}>
                   {(book.readers || []).map((u) => (
                     <span key={u.id} style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", letterSpacing: "0.06em", textTransform: "uppercase", background: `${u.accent}33`, color: u.accent, padding: "0.15rem 0.45rem", borderRadius: 20 }}>{u.name} ✓</span>
@@ -1912,36 +1964,26 @@ function FriendReadingCard({ friend, tooltipText }) {
   if (!loaded) return null;
 
   return (
-    <div style={{
-      width: "100%",
-      background: `${BRAND.darkCard}cc`, backdropFilter: "blur(10px)",
-      border: `1px solid ${BRAND.cream}14`, borderLeft: `3px solid ${friend.accent}`,
-      borderRadius: 10, padding: "1.2rem 1.4rem",
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.9rem" }}>
-        <span style={{ fontSize: "1rem" }}>👀</span>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: friend.accent, display: "flex", alignItems: "center", gap: "0.3rem" }}>
+    <div style={{ width: "100%", background: "rgba(255,255,255,.04)", border: `1px solid rgba(217,162,130,.18)`, borderLeft: `3px solid ${friend.accent}`, borderRadius: 4, padding: "clamp(16px,2vw,22px)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+        <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: friend.accent, display: "flex", alignItems: "center", gap: 6 }}>
           {friend.name} is reading <TooltipIcon text={tooltipText} color={friend.accent} />
         </div>
       </div>
       {currentlyReading.length === 0 ? (
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: `${BRAND.cream}44`, margin: 0, fontStyle: "italic" }}>
+        <p style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 15, color: "rgba(242,239,235,.55)", margin: 0 }}>
           {friend.name} hasn't started anything yet.
         </p>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {currentlyReading.map((book) => (
-            <div key={book.id} style={{ display: "flex", gap: "0.8rem", alignItems: "center" }}>
-              {book.cover ? (
-                <img src={book.cover} alt={book.title} style={{ width: 36, height: 52, objectFit: "cover", borderRadius: 2, flexShrink: 0, boxShadow: "0 2px 6px rgba(0,0,0,0.4)" }} onError={(e) => { e.target.style.display = "none"; }} />
-              ) : (
-                <div style={{ width: 36, height: 52, background: friend.accent, borderRadius: 2, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: "0.9rem" }}>📖</span>
-                </div>
-              )}
+            <div key={book.id} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              {book.cover
+                ? <img src={book.cover} alt={book.title} style={{ width: 36, height: 52, objectFit: "cover", borderRadius: 2, flexShrink: 0, boxShadow: "0 2px 6px rgba(0,0,0,0.3)" }} onError={(e) => { e.target.style.display = "none"; }} />
+                : <div style={{ width: 36, height: 52, background: friend.accent, borderRadius: 2, flexShrink: 0, boxShadow: "inset -5px 0 0 rgba(0,0,0,.14)" }} />}
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: "0.95rem", color: BRAND.cream, lineHeight: 1.2, marginBottom: "0.15rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{book.title}</div>
-                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: `${BRAND.cream}55`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{book.author}</div>
+                <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 17, color: BRAND.cream, lineHeight: 1.15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{book.title}</div>
+                <div style={{ fontFamily: FONT.body, fontWeight: 300, fontSize: 13, color: BRAND.tan, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{book.author}</div>
               </div>
             </div>
           ))}
@@ -2210,96 +2252,103 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dy
   const friends = connections ? getConnectedUsers(user.id, connections) : [];
 
   return (
-    <div style={{
-      minHeight: "100vh", background: BRAND.dark,
-      display: "flex", flexDirection: "column",
-      position: "relative", overflow: "hidden",
-    }}>
-      {/* Background image */}
-      <div style={{
-        position: "absolute", inset: 0,
-        backgroundImage: "url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=1400&q=80')",
-        backgroundSize: "cover", backgroundPosition: "center top",
-        opacity: 0.14,
-      }} />
-      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, ${BRAND.dark}11 0%, ${BRAND.dark}44 50%, ${BRAND.dark}99 100%)` }} />
-
+    <div style={{ minHeight: "100vh", background: BRAND.cream, color: BRAND.ink, fontFamily: FONT.body, overflowX: "hidden" }}>
       {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} dynamicUsers={dynamicUsers} dynamicPasswords={dynamicPasswords} onUserCreated={onUserCreated} tooltips={tooltips} onTooltipsChanged={onTooltipsChanged} />}
 
-      {/* Top bar */}
-      <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.2rem 1.4rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <div style={{ width: 28, height: 28, borderRadius: "50%", background: `linear-gradient(135deg, ${BRAND.terracotta}, ${BRAND.coral})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem" }}>🧠</div>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", letterSpacing: "0.14em", textTransform: "uppercase", color: BRAND.tan }}>Book Brain</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-          {isAdmin && (
-            <button onClick={() => setShowAdmin(true)} style={{ background: `${BRAND.coral}22`, border: `1px solid ${BRAND.coral}55`, color: BRAND.coral, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", padding: "0.4rem 0.8rem", borderRadius: 20, cursor: "pointer", letterSpacing: "0.06em" }}>⚙ Admin</button>
-          )}
-          <button onClick={onLogout} style={{ background: "none", border: `1px solid ${BRAND.cream}22`, color: `${BRAND.cream}55`, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", padding: "0.4rem 0.8rem", borderRadius: 20, cursor: "pointer", letterSpacing: "0.06em" }}>Log out</button>
-        </div>
-      </div>
+      {/* Sticky nav */}
+      <header style={{ position: "sticky", top: 0, zIndex: 40, background: "rgba(242,239,235,.9)", backdropFilter: "saturate(180%) blur(12px)", WebkitBackdropFilter: "saturate(180%) blur(12px)", borderBottom: `1px solid ${BRAND.line}` }}>
+        <nav style={{ maxWidth: 1220, margin: "0 auto", padding: "13px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ width: 34, height: 34, borderRadius: 3, background: BRAND.coral, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.display, fontWeight: 600, fontSize: 20, color: BRAND.cream }}>B</span>
+            <span style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 22, color: BRAND.ink }}>Book Brain</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {isAdmin && (
+              <button onClick={() => setShowAdmin(true)} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.04em", textTransform: "uppercase", background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "8px 14px", borderRadius: 2, cursor: "pointer" }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = BRAND.coral; e.currentTarget.style.borderColor = BRAND.coral; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = BRAND.muted; e.currentTarget.style.borderColor = BRAND.line2; }}>
+                ⚙ Admin
+              </button>
+            )}
+            <button onClick={onLogout} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.04em", color: BRAND.muted, background: "none", border: "none", cursor: "pointer" }}
+              onMouseEnter={(e) => e.currentTarget.style.color = BRAND.coral}
+              onMouseLeave={(e) => e.currentTarget.style.color = BRAND.muted}>
+              Sign out
+            </button>
+          </div>
+        </nav>
+      </header>
 
       {/* Hero */}
-      <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1.4rem 3rem", width: "100%", maxWidth: 920, margin: "0 auto" }}>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.22em", textTransform: "uppercase", color: user.accent, marginBottom: "0.5rem", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.3rem" }}>Book Mind <TooltipIcon text={tooltips?.home} color={user.accent} /></div>
-        <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.4rem, 9vw, 3.6rem)", lineHeight: 1.02, margin: "0 0 0.4rem", color: BRAND.cream, textAlign: "center" }}>{user.name}'s</h1>
-        <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.4rem, 9vw, 3.6rem)", lineHeight: 1.02, margin: "0 0 2rem", color: user.accent, textAlign: "center" }}>Library</h1>
-
-        {/* Decorative divider */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", marginBottom: "2.4rem", width: "100%", maxWidth: 340 }}>
-          <div style={{ flex: 1, height: 1, background: `linear-gradient(to right, transparent, ${BRAND.tan}55)` }} />
-          <span style={{ fontSize: "1rem" }}>📖</span>
-          <div style={{ flex: 1, height: 1, background: `linear-gradient(to left, transparent, ${BRAND.tan}55)` }} />
+      <section style={{ maxWidth: 1220, margin: "0 auto", padding: "clamp(44px,7vw,80px) 24px clamp(32px,5vw,56px)" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 10, fontFamily: FONT.body, fontSize: 12.5, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.terracotta, marginBottom: 18 }}>
+          <span style={{ width: 26, height: 1, background: BRAND.terracotta, display: "inline-block" }} />
+          Your reading life <TooltipIcon text={tooltips?.home} color={BRAND.terracotta} />
         </div>
+        <h1 style={{ fontFamily: FONT.display, fontWeight: 500, fontSize: "clamp(40px,6vw,76px)", lineHeight: 1.03, letterSpacing: "-0.01em", color: BRAND.ink, margin: "0 0 20px" }}>
+          Good to see you,{" "}
+          <span style={{ fontStyle: "italic", color: BRAND.coral }}>{user.name}.</span>
+        </h1>
+        <p style={{ fontFamily: FONT.read, fontSize: "clamp(16px,1.3vw,18px)", lineHeight: 1.6, color: BRAND.muted, margin: 0, maxWidth: "38em" }}>Your library is waiting. Pick up where you left off.</p>
+      </section>
 
-        {/* Book challenge */}
-        <div style={{ marginBottom: "1.2rem", width: "100%", maxWidth: 860 }}>
-          <BookChallenge userId={user.id} userAccent={user.accent} friends={friends} tooltipText={tooltips?.challenge} />
-        </div>
+      {/* Reading challenge */}
+      <section style={{ maxWidth: 1220, margin: "0 auto", padding: "0 24px clamp(24px,3vw,36px)" }}>
+        <BookChallenge userId={user.id} userAccent={user.accent} friends={friends} tooltipText={tooltips?.challenge} />
+      </section>
 
-        {/* Nav cards — 2-column grid on desktop, single column on mobile */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem", width: "100%", maxWidth: 860 }}>
-          <button onClick={onOpenMyBooks}
-            style={{ background: `${BRAND.darkCard}dd`, backdropFilter: "blur(10px)", border: `1px solid ${BRAND.cream}14`, borderLeft: `3px solid ${user.accent}`, borderRadius: 10, padding: "1.4rem 1.6rem", textAlign: "left", cursor: "pointer", color: BRAND.cream, transition: "transform .18s ease, background .18s ease" }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.background = `${BRAND.darkCard}ff`; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.background = `${BRAND.darkCard}dd`; }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", marginBottom: "0.5rem" }}>
-              <span style={{ fontSize: "1.3rem" }}>🗂️</span>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: user.accent, display: "flex", alignItems: "center", gap: "0.3rem" }}>{user.name}'s Card Catalog <TooltipIcon text={tooltips?.myBooks} color={user.accent} /></div>
+      {/* Nav cards */}
+      <section style={{ maxWidth: 1220, margin: "0 auto", padding: "0 24px clamp(32px,4vw,48px)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: 16 }}>
+          <button onClick={onOpenMyBooks} style={{ background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderLeft: `3px solid ${user.accent}`, borderRadius: 4, padding: "clamp(20px,3vw,28px)", textAlign: "left", cursor: "pointer", color: BRAND.ink, boxShadow: "0 1px 2px rgba(20,30,50,.06)", transition: "box-shadow .2s,transform .2s,border-color .2s" }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(20,30,50,.10)"; e.currentTarget.style.borderColor = BRAND.tan; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 1px 2px rgba(20,30,50,.06)"; e.currentTarget.style.borderColor = BRAND.line; }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: 20 }}>🗂️</span>
+              <span style={{ fontFamily: FONT.body, fontSize: 11.5, letterSpacing: "0.2em", textTransform: "uppercase", color: BRAND.terracotta, display: "flex", alignItems: "center", gap: 6 }}>
+                Card Catalogue <TooltipIcon text={tooltips?.myBooks} color={BRAND.terracotta} />
+              </span>
             </div>
-            <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.35rem", marginBottom: "0.3rem" }}>{user.name}'s Book Notes</div>
-            <p style={{ margin: 0, fontSize: "0.84rem", color: `${BRAND.cream}66`, lineHeight: 1.5 }}>Full summaries, key ideas, quotes, and reading trackers.</p>
+            <h2 style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: "clamp(22px,2.5vw,28px)", margin: "0 0 8px", color: BRAND.ink }}>{user.name}'s Book Notes</h2>
+            <p style={{ fontFamily: FONT.body, fontWeight: 300, fontSize: 14.5, lineHeight: 1.65, color: BRAND.muted, margin: 0 }}>Full summaries, key ideas, quotes, and reading trackers — all in one place.</p>
           </button>
 
-          <button onClick={onOpenShelf}
-            style={{ background: `${BRAND.darkCard}dd`, backdropFilter: "blur(10px)", border: `1px solid ${BRAND.cream}14`, borderLeft: `3px solid ${BRAND.tan}`, borderRadius: 10, padding: "1.4rem 1.6rem", textAlign: "left", cursor: "pointer", color: BRAND.cream, transition: "transform .18s ease, background .18s ease" }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.background = `${BRAND.darkCard}ff`; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.background = `${BRAND.darkCard}dd`; }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", marginBottom: "0.5rem" }}>
-              <span style={{ fontSize: "1.3rem" }}>📚</span>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.tan, display: "flex", alignItems: "center", gap: "0.3rem" }}>{user.name}'s Reading List <TooltipIcon text={tooltips?.shelf} color={BRAND.tan} /></div>
+          <button onClick={onOpenShelf} style={{ background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderLeft: `3px solid ${BRAND.terracotta}`, borderRadius: 4, padding: "clamp(20px,3vw,28px)", textAlign: "left", cursor: "pointer", color: BRAND.ink, boxShadow: "0 1px 2px rgba(20,30,50,.06)", transition: "box-shadow .2s,transform .2s,border-color .2s" }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(20,30,50,.10)"; e.currentTarget.style.borderColor = BRAND.tan; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 1px 2px rgba(20,30,50,.06)"; e.currentTarget.style.borderColor = BRAND.line; }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: 20 }}>📚</span>
+              <span style={{ fontFamily: FONT.body, fontSize: 11.5, letterSpacing: "0.2em", textTransform: "uppercase", color: BRAND.terracotta, display: "flex", alignItems: "center", gap: 6 }}>
+                Reading List <TooltipIcon text={tooltips?.shelf} color={BRAND.terracotta} />
+              </span>
             </div>
-            <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.35rem", marginBottom: "0.3rem" }}>{user.name}'s Bookshelf</div>
-            <p style={{ margin: 0, fontSize: "0.84rem", color: `${BRAND.cream}66`, lineHeight: 1.5 }}>Books on deck — covers, page counts, read time estimates.</p>
+            <h2 style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: "clamp(22px,2.5vw,28px)", margin: "0 0 8px", color: BRAND.ink }}>{user.name}'s Bookshelf</h2>
+            <p style={{ fontFamily: FONT.body, fontWeight: 300, fontSize: 14.5, lineHeight: 1.65, color: BRAND.muted, margin: 0 }}>Books on deck — covers, page counts, and read-time estimates.</p>
           </button>
         </div>
+      </section>
 
-        {/* Friend reading + shared bookshelf — side by side on desktop */}
-        {friends.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem", marginTop: "1.2rem", width: "100%", maxWidth: 860 }}>
-            <FriendReading friends={friends} tooltipText={tooltips?.friendReading} />
-            <SharedBookshelf viewerId={user.id} friends={friends} tooltipText={tooltips?.sharedBooks} />
-          </div>
-        )}
-
-        {/* Shared chat — only shown when there are connected friends */}
-        {friends.length > 0 && (
-          <div style={{ marginTop: "1rem", width: "100%", maxWidth: 860 }}>
+      {/* Social widgets — espresso section */}
+      {friends.length > 0 && (
+        <section style={{ background: BRAND.espresso, padding: "clamp(40px,6vw,72px) 0" }}>
+          <div style={{ maxWidth: 1220, margin: "0 auto", padding: "0 24px" }}>
+            <div style={{ fontFamily: FONT.body, fontSize: 12.5, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.tan, marginBottom: 28 }}>Your reading room</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: 16, marginBottom: 16 }}>
+              <FriendReading friends={friends} tooltipText={tooltips?.friendReading} />
+              <SharedBookshelf viewerId={user.id} friends={friends} tooltipText={tooltips?.sharedBooks} />
+            </div>
             <SharedChat activeUser={user} friends={friends} tooltipText={tooltips?.chat} />
           </div>
-        )}
-      </div>
+        </section>
+      )}
+
+      {/* Footer */}
+      <footer style={{ background: BRAND.espresso2, padding: "28px 24px", borderTop: `1px solid rgba(217,162,130,.14)` }}>
+        <div style={{ maxWidth: 1220, margin: "0 auto", display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <span style={{ fontFamily: FONT.display, fontStyle: "italic", fontSize: 18, color: BRAND.tan }}>Turn the page.</span>
+          <span style={{ fontFamily: FONT.body, fontSize: 12, color: "rgba(242,239,235,.4)", letterSpacing: "0.08em" }}>© 2026 Book Brain · mybookbrain.com</span>
+        </div>
+      </footer>
     </div>
   );
 }
@@ -2325,111 +2374,170 @@ function LoginScreen({ onLogin, allPasswords }) {
     e.preventDefault();
     const userId = username.trim().toLowerCase();
     const user = USERS[userId];
-    if (!user) {
-      setError("Name not recognised — try again.");
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
-      return;
-    }
+    if (!user) { setError("Name not recognised — try again."); setShake(true); setTimeout(() => setShake(false), 500); return; }
     const passwords = allPasswords || PASSWORDS;
-    if (password === passwords[userId]) {
-      sessionStorage.setItem(SESSION_KEY, userId);
-      onLogin(userId);
-    } else {
-      setError("Wrong password — try again.");
-      setPassword("");
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
-    }
+    if (password === passwords[userId]) { sessionStorage.setItem(SESSION_KEY, userId); onLogin(userId); }
+    else { setError("Wrong password — try again."); setPassword(""); setShake(true); setTimeout(() => setShake(false), 500); }
   };
 
-  const inputStyle = (hasError) => ({
-    background: `${BRAND.darkCard}cc`, backdropFilter: "blur(8px)",
-    border: `1.5px solid ${hasError ? BRAND.coral : `${BRAND.cream}22`}`,
-    borderRadius: 8, padding: "0.9rem 1rem", color: BRAND.cream,
-    fontFamily: "'Inter', sans-serif", fontSize: "1rem", outline: "none",
-    width: "100%", boxSizing: "border-box",
-    transition: "border-color .15s ease",
-  });
+  const iStyle = {
+    width: "100%", fontFamily: FONT.body, fontSize: "15px", padding: "13px 16px",
+    border: `1px solid ${BRAND.line2}`, borderRadius: 2, background: BRAND.paper,
+    color: BRAND.ink, outline: "none", transition: "border-color .15s",
+  };
+
+  const features = [
+    { icon: "📖", title: "Every book, shelved", body: "Search a title — it lands on the right shelf with the cover you remember." },
+    { icon: "🔖", title: "Mark your progress", body: "A gentle page tracker that remembers where you left off." },
+    { icon: "✏️", title: "Notes in the margins", body: "Keep a quote, tuck a thought into the page. Your marginalia, forever." },
+    { icon: "🔥", title: "A club by the fire", body: "Share notes and reading lists with the people you love to read with." },
+  ];
 
   return (
-    <div style={{
-      minHeight: "100vh", background: BRAND.dark,
-      display: "flex", flexDirection: "column",
-      alignItems: "center", justifyContent: "center",
-      padding: "2rem 1.2rem", position: "relative", overflow: "hidden",
-    }}>
-      <div style={{
-        position: "absolute", inset: 0,
-        backgroundImage: "url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=1400&q=80')",
-        backgroundSize: "cover", backgroundPosition: "center", opacity: 1,
-      }} />
-      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, ${BRAND.dark}22 0%, ${BRAND.dark}55 60%, ${BRAND.dark}aa 100%)` }} />
+    <div style={{ minHeight: "100vh", background: BRAND.cream, color: BRAND.ink, fontFamily: FONT.body, overflowX: "hidden" }}>
 
-      <style>{`
-        @keyframes shake {
-          0%,100% { transform: translateX(0); }
-          20% { transform: translateX(-8px); }
-          40% { transform: translateX(8px); }
-          60% { transform: translateX(-6px); }
-          80% { transform: translateX(6px); }
-        }
-        .shake { animation: shake 0.45s ease; }
-        .login-input:focus { border-color: ${BRAND.tan} !important; }
-        .submit-btn:hover { opacity: 0.88; }
-      `}</style>
+      {/* Announcement ticker */}
+      <div style={{ background: BRAND.espresso, color: BRAND.tan, fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", overflow: "hidden", whiteSpace: "nowrap", borderBottom: `1px solid rgba(217,162,130,.16)` }}>
+        <div style={{ display: "flex", width: "max-content", animation: "mg-marquee 36s linear infinite" }}>
+          {[0,1].map(k => (
+            <span key={k} style={{ display: "flex", gap: 40, padding: "9px 20px 9px 0" }}>
+              <span>Your library, beautifully kept</span><span style={{ color: BRAND.coral }}>·</span>
+              <span>Track every page you've ever read</span><span style={{ color: BRAND.coral }}>·</span>
+              <span>Share shelves with friends</span><span style={{ color: BRAND.coral }}>·</span>
+              <span>Turn the page</span><span style={{ color: BRAND.coral }}>·</span>
+            </span>
+          ))}
+        </div>
+      </div>
 
-      <div style={{ position: "relative", width: "100%", maxWidth: 380, display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <div style={{
-          width: 52, height: 52, borderRadius: "50%",
-          background: `linear-gradient(135deg, ${BRAND.terracotta}, ${BRAND.coral})`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          marginBottom: "1.2rem", boxShadow: `0 4px 20px ${BRAND.coral}44`,
-        }}>
-          <span style={{ fontSize: "1.6rem", lineHeight: 1 }}>🧠</span>
+      {/* Nav */}
+      <header style={{ position: "sticky", top: 0, zIndex: 40, background: "rgba(242,239,235,.88)", backdropFilter: "saturate(180%) blur(12px)", WebkitBackdropFilter: "saturate(180%) blur(12px)", borderBottom: `1px solid ${BRAND.line}` }}>
+        <nav style={{ maxWidth: 1220, margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 11, textDecoration: "none", flex: "none" }}>
+            <span style={{ width: 38, height: 38, borderRadius: 3, background: BRAND.coral, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.display, fontWeight: 600, fontSize: 22, color: BRAND.cream, boxShadow: "0 1px 3px rgba(20,30,50,.14)" }}>B</span>
+            <span style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 24, letterSpacing: "0.01em", color: BRAND.ink }}>Book Brain</span>
+          </div>
+          <a href="#signin" style={{ fontFamily: FONT.body, fontSize: 13.5, letterSpacing: "0.04em", textTransform: "uppercase", background: BRAND.coral, color: "#fff", textDecoration: "none", padding: "11px 20px", borderRadius: 2, whiteSpace: "nowrap", boxShadow: "0 1px 3px rgba(20,30,50,.14)" }}>Sign in</a>
+        </nav>
+      </header>
+
+      {/* Hero — 2-col on desktop, stacked on mobile */}
+      <section style={{ maxWidth: 1220, margin: "0 auto", padding: "clamp(48px,8vw,96px) 24px clamp(40px,6vw,72px)", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,460px),1fr))", gap: "clamp(32px,5vw,72px)", alignItems: "center" }}>
+        <div>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 10, fontFamily: FONT.body, fontSize: 12.5, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.terracotta, marginBottom: 20 }}>
+            <span style={{ width: 26, height: 1, background: BRAND.terracotta, display: "inline-block" }} />
+            A home for everything you read
+          </div>
+          <h1 style={{ fontFamily: FONT.display, fontWeight: 500, fontSize: "clamp(42px,6vw,80px)", lineHeight: 1.03, letterSpacing: "-0.01em", color: BRAND.ink, margin: "0 0 22px" }}>
+            Build the library<br />you've always{" "}
+            <span style={{ fontStyle: "italic", color: BRAND.coral }}>meant to keep.</span>
+          </h1>
+          <p style={{ fontFamily: FONT.read, fontSize: "clamp(16px,1.4vw,19px)", lineHeight: 1.6, color: BRAND.muted, maxWidth: "32em", margin: "0 0 36px" }}>
+            Book Brain is a warm, quiet place to catalogue your books, track every page, and share your reading life with the people you love.
+          </p>
+          <div style={{ display: "flex", gap: "clamp(20px,4vw,48px)", flexWrap: "wrap" }}>
+            {[["38k+","Shelves built"],["2.1M","Pages tracked"],["4.9★","Reader rating"]].map(([n,l]) => (
+              <div key={l}>
+                <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 32, color: BRAND.ink, lineHeight: 1 }}>{n}</div>
+                <div style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: BRAND.muted, marginTop: 4 }}>{l}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.tan, marginBottom: "0.5rem", textAlign: "center" }}>Welcome to</div>
-        <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2rem, 8vw, 3rem)", lineHeight: 1.05, margin: "0 0 0.35rem", color: BRAND.cream, textAlign: "center" }}>Book Brain</h1>
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", color: `${BRAND.cream}66`, margin: "0 0 2.4rem", textAlign: "center", letterSpacing: "0.04em" }}>mybookbrain.com</p>
+        {/* Login form panel */}
+        <div id="signin" style={{ background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 4, padding: "clamp(28px,4vw,44px)", boxShadow: "0 4px 12px rgba(20,30,50,.10)" }}>
+          <div style={{ fontFamily: FONT.body, fontSize: 12.5, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.terracotta, marginBottom: 16 }}>Sign in to your shelf</div>
+          <h2 style={{ fontFamily: FONT.display, fontWeight: 500, fontSize: "clamp(26px,3vw,36px)", lineHeight: 1.05, color: BRAND.ink, margin: "0 0 24px" }}>Welcome back.</h2>
 
-        <form onSubmit={handleSubmit} className={shake ? "shake" : ""} style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          <input
-            autoFocus
-            type="text"
-            value={username}
-            onChange={(e) => { setUsername(e.target.value); setError(null); }}
-            placeholder="Your first name"
-            className="login-input"
-            style={inputStyle(!!error)}
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => { setPassword(e.target.value); setError(null); }}
-            placeholder="Password"
-            className="login-input"
-            style={inputStyle(!!error)}
-          />
-          {error && (
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: BRAND.coral, textAlign: "center" }}>{error}</div>
-          )}
-          <button
-            type="submit"
-            className="submit-btn"
-            style={{
-              background: `linear-gradient(135deg, ${BRAND.terracotta}, ${BRAND.coral})`,
-              border: "none", borderRadius: 8, padding: "0.95rem",
-              color: BRAND.cream, fontFamily: "'Fraunces', serif",
-              fontSize: "1.05rem", fontWeight: 700, cursor: "pointer",
-              boxShadow: `0 4px 16px ${BRAND.coral}44`,
-              transition: "opacity .15s ease", marginTop: "0.2rem",
-            }}
-          >
-            Sign in →
-          </button>
-        </form>
+          <form onSubmit={handleSubmit} className={shake ? "shake" : ""} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div>
+              <label style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: BRAND.muted, display: "block", marginBottom: 6 }}>Your name</label>
+              <input autoFocus type="text" value={username} onChange={(e) => { setUsername(e.target.value); setError(null); }} placeholder="e.g. Amy" style={iStyle} />
+            </div>
+            <div>
+              <label style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: BRAND.muted, display: "block", marginBottom: 6 }}>Password</label>
+              <input type="password" value={password} onChange={(e) => { setPassword(e.target.value); setError(null); }} placeholder="••••••" style={iStyle} />
+            </div>
+            {error && <div style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.coral }}>{error}</div>}
+            <button type="submit" style={{ fontFamily: FONT.body, fontSize: 13.5, letterSpacing: "0.04em", textTransform: "uppercase", background: BRAND.coral, color: "#fff", border: "none", cursor: "pointer", padding: "14px 24px", borderRadius: 2, boxShadow: "0 4px 12px rgba(20,30,50,.10)", transition: "background .15s", marginTop: 4 }}
+              onMouseEnter={(e) => e.currentTarget.style.background = BRAND.coralDeep}
+              onMouseLeave={(e) => e.currentTarget.style.background = BRAND.coral}>
+              Open your library →
+            </button>
+          </form>
+
+          <p style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 14, color: BRAND.muted, margin: "20px 0 0", lineHeight: 1.5 }}>
+            "It finally feels like my books all live in one warm room."
+          </p>
+        </div>
+      </section>
+
+      {/* Marquee band */}
+      <div style={{ background: BRAND.ink, overflow: "hidden", whiteSpace: "nowrap", padding: "16px 0", borderTop: `1px solid ${BRAND.espresso2}`, borderBottom: `1px solid ${BRAND.espresso2}` }}>
+        <div style={{ display: "flex", width: "max-content", animation: "mg-marquee 30s linear infinite" }}>
+          {[0,1].map(k => (
+            <span key={k} style={{ display: "flex", alignItems: "center", gap: 28, paddingRight: 28, fontFamily: FONT.display, fontStyle: "italic", fontWeight: 500, fontSize: "clamp(24px,3vw,42px)", color: BRAND.cream }}>
+              <span>Catalogue your shelves</span><span style={{ color: BRAND.coral, fontStyle: "normal" }}>✦</span>
+              <span style={{ color: BRAND.tan }}>Track every page</span><span style={{ color: BRAND.coral, fontStyle: "normal" }}>✦</span>
+              <span>Write in the margins</span><span style={{ color: BRAND.coral, fontStyle: "normal" }}>✦</span>
+              <span style={{ color: BRAND.tan }}>Share with friends</span><span style={{ color: BRAND.coral, fontStyle: "normal" }}>✦</span>
+            </span>
+          ))}
+        </div>
       </div>
+
+      {/* Feature cards */}
+      <section style={{ maxWidth: 1220, margin: "0 auto", padding: "clamp(56px,8vw,100px) 24px" }}>
+        <div style={{ maxWidth: 560, marginBottom: "clamp(36px,5vw,60px)" }}>
+          <div style={{ fontFamily: FONT.body, fontSize: 12.5, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.terracotta, marginBottom: 14 }}>Everything in its place</div>
+          <h2 style={{ fontFamily: FONT.display, fontWeight: 500, fontSize: "clamp(30px,4vw,52px)", lineHeight: 1.06, color: BRAND.ink, margin: 0 }}>A little reverence for the books you keep.</h2>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,240px),1fr))", gap: 20 }}>
+          {features.map((f) => (
+            <div key={f.title} style={{ background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 4, padding: "clamp(20px,3vw,28px)", boxShadow: "0 1px 2px rgba(20,30,50,.06)", transition: "box-shadow .2s,border-color .2s" }}
+              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(20,30,50,.10)"; e.currentTarget.style.borderColor = BRAND.tan; }}
+              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 1px 2px rgba(20,30,50,.06)"; e.currentTarget.style.borderColor = BRAND.line; }}>
+              <div style={{ width: 44, height: 44, borderRadius: 3, background: "rgba(242,92,92,.1)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, fontSize: 20 }}>{f.icon}</div>
+              <h3 style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 22, color: BRAND.ink, margin: "0 0 8px", lineHeight: 1.15 }}>{f.title}</h3>
+              <p style={{ fontFamily: FONT.body, fontSize: 14.5, lineHeight: 1.65, color: BRAND.muted, margin: 0, fontWeight: 300 }}>{f.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Pull quote */}
+      <section style={{ background: BRAND.terracotta, color: "#fff", padding: "clamp(56px,8vw,100px) 24px", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", right: -40, top: "50%", transform: "translateY(-50%)", fontFamily: FONT.display, fontSize: "clamp(200px,30vw,400px)", lineHeight: 1, color: "rgba(255,255,255,.08)", fontWeight: 600, pointerEvents: "none" }}>"</div>
+        <div style={{ maxWidth: 860, margin: "0 auto", position: "relative" }}>
+          <div style={{ fontFamily: FONT.body, fontSize: 12.5, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(255,255,255,.7)", marginBottom: 24 }}>From a member</div>
+          <blockquote style={{ fontFamily: FONT.display, fontWeight: 500, fontStyle: "italic", fontSize: "clamp(26px,4vw,48px)", lineHeight: 1.18, margin: 0, color: "#fff" }}>
+            It finally feels like my books all live in one warm room — even the ones I lent out and the ones I'm still pretending I'll finish.
+          </blockquote>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 28 }}>
+            <span style={{ width: 42, height: 42, borderRadius: "50%", background: BRAND.cream, color: BRAND.terracotta, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.display, fontWeight: 600, fontSize: 20 }}>E</span>
+            <div>
+              <div style={{ fontFamily: FONT.body, fontSize: 15, color: "#fff" }}>Esme Larkin</div>
+              <div style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,.7)" }}>1,204 books · Member since 2023</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer style={{ background: BRAND.espresso, color: BRAND.cream, padding: "clamp(44px,6vw,72px) 24px 28px" }}>
+        <div style={{ maxWidth: 1220, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+            <span style={{ width: 34, height: 34, borderRadius: 3, background: BRAND.coral, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.display, fontWeight: 600, fontSize: 20, color: BRAND.cream }}>B</span>
+            <span style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 22, color: BRAND.cream }}>Book Brain</span>
+          </div>
+          <p style={{ fontFamily: FONT.read, fontSize: 15, lineHeight: 1.6, color: "rgba(242,239,235,.62)", maxWidth: "30em", margin: "0 0 14px" }}>A warm, quiet home for everything you read — your shelves, your margins, your reading life.</p>
+          <div style={{ fontFamily: FONT.display, fontStyle: "italic", fontSize: 19, color: BRAND.tan }}>Turn the page.</div>
+          <div style={{ marginTop: 36, paddingTop: 20, borderTop: `1px solid rgba(217,162,130,.18)`, fontFamily: FONT.body, fontSize: 12.5, color: "rgba(242,239,235,.5)" }}>
+            © 2026 Book Brain · mybookbrain.com
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
