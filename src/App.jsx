@@ -1421,27 +1421,35 @@ function AddBookModal({ drawers, onAdd, onClose }) {
   const [error, setError] = useState("");
   const [fetching, setFetching] = useState(false);
   const [fetchedPreview, setFetchedPreview] = useState(null);
+  const [fetchError, setFetchError] = useState("");
 
   const fetchBookInfo = async () => {
     if (!title.trim()) return;
     setFetching(true);
+    setFetchError("");
+    setFetchedPreview(null);
     try {
-      const q = encodeURIComponent(`intitle:${title.trim()}${author.trim() ? `+inauthor:${author.trim()}` : ""}`);
-      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&langRestrict=en`);
+      // Plain keyword search finds more results than strict field qualifiers
+      const q = encodeURIComponent(`${title.trim()} ${author.trim()}`);
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=10`);
+      if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
-      // Pick the first result that has a description; fall back to first result
       const items = data.items || [];
-      const item = (items.find((i) => i.volumeInfo?.description) || items[0])?.volumeInfo;
-      if (item) {
-        if (!summary && item.description) setSummary(item.description.replace(/<[^>]+>/g, "").slice(0, 600));
-        if (!pages && item.pageCount) setPages(String(item.pageCount));
-        if (!author.trim() && item.authors?.[0]) setAuthor(item.authors[0]);
-        if (!year && item.publishedDate) setYear(item.publishedDate.slice(0, 4));
-        const thumb = item.imageLinks?.thumbnail || item.imageLinks?.smallThumbnail;
-        if (thumb) setCover(thumb.replace("http://", "https://"));
-        setFetchedPreview({ title: item.title, author: item.authors?.[0], cover: thumb?.replace("http://", "https://") });
-      }
-    } catch {}
+      // Prefer items with a description, then most pages (to avoid abridged editions)
+      const withDesc = items.filter((i) => i.volumeInfo?.description);
+      const item = (withDesc[0] || items[0])?.volumeInfo;
+      if (!item) { setFetchError("No results found — try adjusting the title or author."); setFetching(false); return; }
+      const desc = item.description ? item.description.replace(/<[^>]+>/g, "").trim().slice(0, 600) : "";
+      if (desc) setSummary(desc);
+      if (item.pageCount) setPages(String(item.pageCount));
+      if (!author.trim() && item.authors?.[0]) setAuthor(item.authors[0]);
+      if (item.publishedDate) setYear(item.publishedDate.slice(0, 4));
+      const thumb = item.imageLinks?.thumbnail || item.imageLinks?.smallThumbnail;
+      if (thumb) setCover(thumb.replace("http://", "https://"));
+      setFetchedPreview({ title: item.title, author: item.authors?.[0], cover: thumb?.replace("http://", "https://"), desc, pages: item.pageCount });
+    } catch (err) {
+      setFetchError("Could not reach Google Books. Check your connection and try again.");
+    }
     setFetching(false);
   };
 
@@ -1457,11 +1465,12 @@ function AddBookModal({ drawers, onAdd, onClose }) {
     if (!finalSummary || !finalPages || !finalCover) {
       setFetching(true);
       try {
-        const q = encodeURIComponent(`intitle:${title.trim()}+inauthor:${author.trim()}`);
-        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&langRestrict=en`);
+        const q = encodeURIComponent(`${title.trim()} ${author.trim()}`);
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=10`);
         const data = await res.json();
         const items = data.items || [];
-        const item = (items.find((i) => i.volumeInfo?.description) || items[0])?.volumeInfo;
+        const withDesc = items.filter((i) => i.volumeInfo?.description);
+        const item = (withDesc[0] || items[0])?.volumeInfo;
         if (item) {
           if (!finalSummary && item.description) finalSummary = item.description.replace(/<[^>]+>/g, "").slice(0, 600);
           if (!finalPages && item.pageCount) finalPages = item.pageCount;
@@ -1500,11 +1509,14 @@ function AddBookModal({ drawers, onAdd, onClose }) {
               </button>
             </div>
           </div>
+          {/* Fetch error */}
+          {fetchError && (
+            <div style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.coral, background: "rgba(242,92,92,.08)", border: "1px solid rgba(242,92,92,.25)", borderRadius: 4, padding: "10px 14px" }}>{fetchError}</div>
+          )}
           {/* Card preview after lookup */}
           {fetchedPreview && (
             <div style={{ background: BRAND.cream, border: `1px solid ${BRAND.line}`, borderRadius: 4, overflow: "hidden" }}>
-              {/* Preview header */}
-              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", borderBottom: summary || pages ? `1px solid ${BRAND.line}` : "none" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", borderBottom: (fetchedPreview.desc || fetchedPreview.pages) ? `1px solid ${BRAND.line}` : "none" }}>
                 {fetchedPreview.cover && (
                   <img src={fetchedPreview.cover} alt="" style={{ width: 44, height: 64, objectFit: "cover", borderRadius: 2, boxShadow: "0 2px 6px rgba(0,0,0,.15)", flexShrink: 0 }} onError={(e) => e.target.style.display = "none"} />
                 )}
@@ -1514,14 +1526,13 @@ function AddBookModal({ drawers, onAdd, onClose }) {
                   <div style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.terracotta, marginTop: 4 }}>✓ Info pulled from Google Books</div>
                 </div>
               </div>
-              {/* Summary + pages populated into the card */}
-              {(summary || pages) && (
+              {(fetchedPreview.desc || fetchedPreview.pages) && (
                 <div style={{ padding: "10px 14px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
-                  {summary && (
-                    <p style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.55, color: BRAND.ink, margin: 0, display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{summary}</p>
+                  {fetchedPreview.desc && (
+                    <p style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.55, color: BRAND.ink, margin: 0, display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{fetchedPreview.desc}</p>
                   )}
-                  {pages && (
-                    <div style={{ fontFamily: FONT.type, fontSize: 11, color: BRAND.muted }}>{pages} pages</div>
+                  {fetchedPreview.pages && (
+                    <div style={{ fontFamily: FONT.type, fontSize: 11, color: BRAND.muted }}>{fetchedPreview.pages} pages</div>
                   )}
                 </div>
               )}
