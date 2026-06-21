@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { storage } from "./storage.js";
+import { storage, subscribeToChatUpdates } from "./storage.js";
 
 // ---------------------------------------------------------------------------
 // STATIC BOOKS — Amy's pre-loaded books. Lynnell starts with an empty shelf.
@@ -935,6 +935,128 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
 }
 
 // ---------------------------------------------------------------------------
+// SHARED CHAT — Amy and Lynnell messaging each other
+// ---------------------------------------------------------------------------
+const SHARED_CHAT_KEY = "shared:chat";
+
+function SharedChat({ activeUser }) {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const scrollRef = React.useRef(null);
+
+  useEffect(() => {
+    // Initial load
+    storage.get(SHARED_CHAT_KEY).then((res) => {
+      setMessages(res ? JSON.parse(res.value) : []);
+      setLoaded(true);
+    });
+
+    // Subscribe to real-time updates (polls every 4s when Supabase is active)
+    const unsub = subscribeToChatUpdates(SHARED_CHAT_KEY, (msgs) => setMessages(msgs));
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages]);
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text) return;
+    const newMsg = { userId: activeUser.id, text, ts: Date.now() };
+    const updated = [...messages, newMsg];
+    setMessages(updated);
+    setInput("");
+    await storage.set(SHARED_CHAT_KEY, JSON.stringify(updated));
+  };
+
+  const formatTime = (ts) => {
+    const d = new Date(ts);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  return (
+    <div style={{
+      width: "100%",
+      background: `${BRAND.darkCard}cc`, backdropFilter: "blur(10px)",
+      border: `1px solid ${BRAND.cream}14`, borderRadius: 10, overflow: "hidden",
+    }}>
+      {/* Header */}
+      <div style={{ padding: "0.9rem 1.2rem", borderBottom: `1px solid ${BRAND.cream}14`, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <span style={{ fontSize: "1rem" }}>💬</span>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.tan }}>
+          Amy & Lynnell's Chat
+        </div>
+        <div style={{ marginLeft: "auto", display: "flex", gap: "0.4rem" }}>
+          {Object.values(USERS).map((u) => (
+            <span key={u.id} style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", letterSpacing: "0.06em", textTransform: "uppercase", background: `${u.accent}33`, color: u.accent, padding: "0.15rem 0.5rem", borderRadius: 20 }}>{u.name}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div ref={scrollRef} style={{ height: 260, overflowY: "auto", padding: "1rem 1.2rem", display: "flex", flexDirection: "column", gap: "0.65rem" }}>
+        {!loaded ? (
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", color: `${BRAND.cream}44` }}>Loading…</div>
+        ) : messages.length === 0 ? (
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: `${BRAND.cream}33`, fontStyle: "italic", textAlign: "center", marginTop: "2rem" }}>
+            No messages yet — say hello!
+          </div>
+        ) : (
+          messages.map((m, i) => {
+            const sender = USERS[m.userId];
+            const isMe = m.userId === activeUser.id;
+            return (
+              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start" }}>
+                {/* Name + time */}
+                <div style={{ display: "flex", gap: "0.4rem", alignItems: "baseline", marginBottom: "0.2rem" }}>
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: sender?.accent }}>{isMe ? "You" : sender?.name}</span>
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", color: `${BRAND.cream}33` }}>{formatTime(m.ts)}</span>
+                </div>
+                {/* Bubble */}
+                <div style={{
+                  maxWidth: "78%", padding: "0.6rem 0.9rem", borderRadius: isMe ? "12px 12px 2px 12px" : "12px 12px 12px 2px",
+                  background: isMe ? `${activeUser.accent}33` : `${BRAND.cream}0f`,
+                  border: `1px solid ${isMe ? activeUser.accent + "55" : BRAND.cream + "18"}`,
+                  fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", lineHeight: 1.5,
+                  color: BRAND.cream, wordBreak: "break-word",
+                }}>
+                  {m.text}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Input */}
+      <form onSubmit={handleSend} style={{ display: "flex", gap: "0.6rem", padding: "0.8rem 1rem", borderTop: `1px solid ${BRAND.cream}14` }}>
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder={`Message as ${activeUser.name}…`}
+          style={{
+            flex: 1, background: `${BRAND.dark}cc`, border: `1px solid ${BRAND.cream}22`,
+            borderRadius: 20, padding: "0.6rem 1rem", color: BRAND.cream,
+            fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", outline: "none",
+          }}
+        />
+        <button type="submit" disabled={!input.trim()} style={{
+          background: `linear-gradient(135deg, ${activeUser.accent}, ${BRAND.terracotta})`,
+          border: "none", borderRadius: 20, padding: "0.6rem 1.1rem",
+          color: BRAND.cream, fontFamily: "'JetBrains Mono', monospace",
+          fontSize: "0.7rem", letterSpacing: "0.06em", textTransform: "uppercase",
+          fontWeight: 700, cursor: "pointer", opacity: input.trim() ? 1 : 0.4,
+          transition: "opacity .15s ease",
+        }}>Send</button>
+      </form>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // SHARED BOOKSHELF — books both users have marked "read"
 // ---------------------------------------------------------------------------
 function SharedBookshelf() {
@@ -1194,6 +1316,11 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem", marginTop: "1.2rem", width: "100%", maxWidth: 860 }}>
           <FriendReading friend={friend} />
           <SharedBookshelf />
+        </div>
+
+        {/* Shared chat */}
+        <div style={{ marginTop: "1rem", width: "100%", maxWidth: 860 }}>
+          <SharedChat activeUser={user} />
         </div>
       </div>
     </div>
