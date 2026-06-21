@@ -1429,26 +1429,38 @@ function AddBookModal({ drawers, onAdd, onClose }) {
     setFetchError("");
     setFetchedPreview(null);
     try {
-      // Plain keyword search finds more results than strict field qualifiers
-      const q = encodeURIComponent(`${title.trim()} ${author.trim()}`);
-      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=10`);
-      if (!res.ok) throw new Error(`API error ${res.status}`);
+      // Open Library — no API key, CORS-friendly
+      const searchUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(title.trim())}&author=${encodeURIComponent(author.trim())}&limit=5&fields=key,title,author_name,number_of_pages_median,cover_i,first_publish_year`;
+      const res = await fetch(searchUrl);
+      if (!res.ok) throw new Error(`Search failed: ${res.status}`);
       const data = await res.json();
-      const items = data.items || [];
-      // Prefer items with a description, then most pages (to avoid abridged editions)
-      const withDesc = items.filter((i) => i.volumeInfo?.description);
-      const item = (withDesc[0] || items[0])?.volumeInfo;
-      if (!item) { setFetchError("No results found — try adjusting the title or author."); setFetching(false); return; }
-      const desc = item.description ? item.description.replace(/<[^>]+>/g, "").trim().slice(0, 600) : "";
+      const doc = data.docs?.[0];
+      if (!doc) { setFetchError("No results found — try adjusting the title or author spelling."); setFetching(false); return; }
+
+      const foundCover = doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : null;
+      const foundPages = doc.number_of_pages_median || null;
+      const foundYear = doc.first_publish_year ? String(doc.first_publish_year) : null;
+      const foundAuthor = doc.author_name?.[0] || null;
+
+      // Fetch description from the work record
+      let desc = "";
+      if (doc.key) {
+        try {
+          const workRes = await fetch(`https://openlibrary.org${doc.key}.json`);
+          const work = await workRes.json();
+          const raw = typeof work.description === "string" ? work.description : work.description?.value || "";
+          desc = raw.replace(/\[.*?\]/g, "").trim().slice(0, 600);
+        } catch {}
+      }
+
       if (desc) setSummary(desc);
-      if (item.pageCount) setPages(String(item.pageCount));
-      if (!author.trim() && item.authors?.[0]) setAuthor(item.authors[0]);
-      if (item.publishedDate) setYear(item.publishedDate.slice(0, 4));
-      const thumb = item.imageLinks?.thumbnail || item.imageLinks?.smallThumbnail;
-      if (thumb) setCover(thumb.replace("http://", "https://"));
-      setFetchedPreview({ title: item.title, author: item.authors?.[0], cover: thumb?.replace("http://", "https://"), desc, pages: item.pageCount });
+      if (foundPages) setPages(String(foundPages));
+      if (!author.trim() && foundAuthor) setAuthor(foundAuthor);
+      if (foundYear) setYear(foundYear);
+      if (foundCover) setCover(foundCover);
+      setFetchedPreview({ title: doc.title, author: foundAuthor, cover: foundCover, desc, pages: foundPages });
     } catch (err) {
-      setFetchError("Could not reach Google Books. Check your connection and try again.");
+      setFetchError("Could not reach Open Library. Check your connection and try again.");
     }
     setFetching(false);
   };
@@ -1465,17 +1477,22 @@ function AddBookModal({ drawers, onAdd, onClose }) {
     if (!finalSummary || !finalPages || !finalCover) {
       setFetching(true);
       try {
-        const q = encodeURIComponent(`${title.trim()} ${author.trim()}`);
-        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=10`);
+        const searchUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(title.trim())}&author=${encodeURIComponent(author.trim())}&limit=3&fields=key,author_name,number_of_pages_median,cover_i,first_publish_year`;
+        const res = await fetch(searchUrl);
         const data = await res.json();
-        const items = data.items || [];
-        const withDesc = items.filter((i) => i.volumeInfo?.description);
-        const item = (withDesc[0] || items[0])?.volumeInfo;
-        if (item) {
-          if (!finalSummary && item.description) finalSummary = item.description.replace(/<[^>]+>/g, "").slice(0, 600);
-          if (!finalPages && item.pageCount) finalPages = item.pageCount;
-          if (!finalYear && item.publishedDate) finalYear = item.publishedDate.slice(0, 4);
-          if (!finalCover) { const t = item.imageLinks?.thumbnail || item.imageLinks?.smallThumbnail; if (t) finalCover = t.replace("http://", "https://"); }
+        const doc = data.docs?.[0];
+        if (doc) {
+          if (!finalCover && doc.cover_i) finalCover = `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`;
+          if (!finalPages && doc.number_of_pages_median) finalPages = doc.number_of_pages_median;
+          if (!finalYear && doc.first_publish_year) finalYear = String(doc.first_publish_year);
+          if (!finalSummary && doc.key) {
+            try {
+              const workRes = await fetch(`https://openlibrary.org${doc.key}.json`);
+              const work = await workRes.json();
+              const raw = typeof work.description === "string" ? work.description : work.description?.value || "";
+              if (raw) finalSummary = raw.replace(/\[.*?\]/g, "").trim().slice(0, 600);
+            } catch {}
+          }
         }
       } catch {}
       setFetching(false);
