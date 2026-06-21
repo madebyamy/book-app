@@ -935,6 +935,109 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
 }
 
 // ---------------------------------------------------------------------------
+// SHARED BOOKSHELF — books both users have marked "read"
+// ---------------------------------------------------------------------------
+function SharedBookshelf() {
+  const [sharedBooks, setSharedBooks] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const userIds = Object.keys(USERS);
+
+      // For each user, collect all books with their statuses
+      const allUserBooks = await Promise.all(userIds.map(async (uid) => {
+        const [customBooks, shelfBooks] = await Promise.all([
+          loadCustomBooks(uid),
+          loadShelfBooks(uid),
+        ]);
+        const allBooks = [...USERS[uid].books, ...customBooks, ...shelfBooks];
+        const withStatus = await Promise.all(
+          allBooks.map(async (b) => ({ ...b, status: await loadStatus(uid, b.id) }))
+        );
+        // Deduplicate by id, keep only "read"
+        const seen = new Set();
+        return withStatus.filter((b) => {
+          if (b.status !== "read" || seen.has(b.id)) return false;
+          seen.add(b.id);
+          return true;
+        });
+      }));
+
+      if (!active) return;
+
+      // Match across users by normalized title
+      const normalize = (str) => (str || "").toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+      const [amyRead, lynnellRead] = allUserBooks;
+      const lynnellTitles = new Set(lynnellRead.map((b) => normalize(b.title)));
+
+      const shared = amyRead
+        .filter((b) => lynnellTitles.has(normalize(b.title)))
+        .map((b) => ({
+          id: b.id,
+          title: b.title,
+          author: b.author,
+          cover: b.cover || null,
+          accent: b.accent || BRAND.terracotta,
+        }));
+
+      setSharedBooks(shared);
+      setLoaded(true);
+    })();
+    return () => { active = false; };
+  }, []);
+
+  if (!loaded) return null;
+
+  return (
+    <div style={{
+      width: "100%", maxWidth: 400,
+      background: `${BRAND.darkCard}cc`, backdropFilter: "blur(10px)",
+      border: `1px solid ${BRAND.cream}14`,
+      borderLeft: `3px solid ${BRAND.tan}`,
+      borderRadius: 10, padding: "1.2rem 1.4rem",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.9rem" }}>
+        <span style={{ fontSize: "1rem" }}>✨</span>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.tan }}>
+          Books we've both read
+        </div>
+      </div>
+
+      {sharedBooks.length === 0 ? (
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: `${BRAND.cream}44`, margin: 0, fontStyle: "italic" }}>
+          No shared reads yet — mark a book as "read" in both libraries to see it here.
+        </p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+          {sharedBooks.map((book) => (
+            <div key={book.id} style={{ display: "flex", gap: "0.9rem", alignItems: "center" }}>
+              {book.cover ? (
+                <img src={book.cover} alt={book.title} style={{ width: 36, height: 52, objectFit: "cover", borderRadius: 2, flexShrink: 0, boxShadow: "0 2px 6px rgba(0,0,0,0.4)" }} onError={(e) => { e.target.style.display = "none"; }} />
+              ) : (
+                <div style={{ width: 36, height: 52, background: book.accent, borderRadius: 2, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontSize: "0.9rem" }}>📗</span>
+                </div>
+              )}
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: "0.95rem", color: BRAND.cream, lineHeight: 1.2, marginBottom: "0.15rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{book.title}</div>
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: `${BRAND.cream}55`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{book.author}</div>
+                <div style={{ display: "flex", gap: "0.35rem", marginTop: "0.3rem" }}>
+                  {Object.values(USERS).map((u) => (
+                    <span key={u.id} style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", letterSpacing: "0.06em", textTransform: "uppercase", background: `${u.accent}33`, color: u.accent, padding: "0.15rem 0.45rem", borderRadius: 20 }}>{u.name} ✓</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // FRIEND READING — shows what the other user is currently reading
 // ---------------------------------------------------------------------------
 function FriendReading({ friend }) {
@@ -1090,6 +1193,11 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
         {/* Friend's currently reading */}
         <div style={{ marginTop: "1.2rem", width: "100%", maxWidth: 400 }}>
           <FriendReading friend={friend} />
+        </div>
+
+        {/* Shared bookshelf */}
+        <div style={{ marginTop: "1rem", width: "100%", maxWidth: 400 }}>
+          <SharedBookshelf />
         </div>
       </div>
     </div>
