@@ -1494,8 +1494,8 @@ function AddBookModal({ drawers, onAdd, onClose }) {
             <label style={labelStyle}>Author *</label>
             <div style={{ display: "flex", gap: 8 }}>
               <input value={author} onChange={(e) => { setAuthor(e.target.value); setFetchedPreview(null); }} placeholder="e.g. Matt Haig" style={{ ...inputStyle, flex: 1 }} />
-              <button type="button" onClick={fetchBookInfo} disabled={!title.trim() || fetching}
-                style={{ flexShrink: 0, fontFamily: FONT.body, fontSize: 12, letterSpacing: ".04em", background: BRAND.espresso, border: "none", color: BRAND.cream, padding: "10px 14px", borderRadius: 3, cursor: title.trim() && !fetching ? "pointer" : "not-allowed", opacity: title.trim() && !fetching ? 1 : 0.5, whiteSpace: "nowrap" }}>
+              <button type="button" onClick={fetchBookInfo} disabled={!title.trim() || !author.trim() || fetching}
+                style={{ flexShrink: 0, fontFamily: FONT.body, fontSize: 12, letterSpacing: ".04em", background: BRAND.espresso, border: "none", color: BRAND.cream, padding: "10px 14px", borderRadius: 3, cursor: title.trim() && author.trim() && !fetching ? "pointer" : "not-allowed", opacity: title.trim() && author.trim() && !fetching ? 1 : 0.5, whiteSpace: "nowrap" }}>
                 {fetching ? "Looking up…" : "🔍 Look up"}
               </button>
             </div>
