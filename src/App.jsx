@@ -1429,24 +1429,59 @@ function AddBookModal({ drawers, onAdd, onClose }) {
     setFetchError("");
     setFetchedPreview(null);
     try {
-      // Open Library — no API key, CORS-friendly
-      const searchUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(title.trim())}&author=${encodeURIComponent(author.trim())}&limit=5&fields=key,title,author_name,number_of_pages_median,cover_i,first_publish_year`;
-      const res = await fetch(searchUrl);
-      if (!res.ok) throw new Error(`Search failed: ${res.status}`);
-      const data = await res.json();
-      const doc = data.docs?.[0];
-      if (!doc) { setFetchError("No results found — try adjusting the title or author spelling."); setFetching(false); return; }
+      const t = encodeURIComponent(title.trim());
+      const a = encodeURIComponent(author.trim());
 
-      const foundCover = doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : null;
-      const foundPages = doc.number_of_pages_median || null;
-      const foundYear = doc.first_publish_year ? String(doc.first_publish_year) : null;
-      const foundAuthor = doc.author_name?.[0] || null;
+      // Run Open Library search and Google Books in parallel
+      const [olRes, gbRes] = await Promise.allSettled([
+        fetch(`https://openlibrary.org/search.json?title=${t}&author=${a}&limit=5&fields=key,title,author_name,number_of_pages_median,cover_i,first_publish_year`),
+        fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(`${title.trim()} ${author.trim()}`)}&maxResults=5`),
+      ]);
 
-      // Fetch description from the work record
+      // Parse Open Library
+      let olDoc = null;
+      if (olRes.status === "fulfilled" && olRes.value.ok) {
+        const d = await olRes.value.json();
+        olDoc = d.docs?.[0] || null;
+      }
+
+      // Parse Google Books
+      let gbItem = null;
+      if (gbRes.status === "fulfilled" && gbRes.value.ok) {
+        const d = await gbRes.value.json();
+        const items = d.items || [];
+        const withDesc = items.filter((i) => i.volumeInfo?.description);
+        gbItem = (withDesc[0] || items[0])?.volumeInfo || null;
+      }
+
+      if (!olDoc && !gbItem) {
+        setFetchError("No results found — try adjusting the title or author spelling.");
+        setFetching(false);
+        return;
+      }
+
+      // Cover: prefer Google Books (higher quality), fall back to Open Library
+      let foundCover = null;
+      if (gbItem) {
+        const thumb = gbItem.imageLinks?.thumbnail || gbItem.imageLinks?.smallThumbnail;
+        if (thumb) foundCover = thumb.replace("http://", "https://");
+      }
+      if (!foundCover && olDoc?.cover_i) foundCover = `https://covers.openlibrary.org/b/id/${olDoc.cover_i}-L.jpg`;
+
+      // Pages: prefer Google Books (more accurate editions)
+      const foundPages = gbItem?.pageCount || olDoc?.number_of_pages_median || null;
+      const foundYear = gbItem?.publishedDate?.slice(0, 4) || (olDoc?.first_publish_year ? String(olDoc.first_publish_year) : null);
+      const foundAuthor = gbItem?.authors?.[0] || olDoc?.author_name?.[0] || null;
+      const foundTitle = gbItem?.title || olDoc?.title || title.trim();
+
+      // Description: prefer Google Books, fall back to Open Library work record
       let desc = "";
-      if (doc.key) {
+      if (gbItem?.description) {
+        desc = gbItem.description.replace(/<[^>]+>/g, "").trim().slice(0, 600);
+      }
+      if (!desc && olDoc?.key) {
         try {
-          const workRes = await fetch(`https://openlibrary.org${doc.key}.json`);
+          const workRes = await fetch(`https://openlibrary.org${olDoc.key}.json`);
           const work = await workRes.json();
           const raw = typeof work.description === "string" ? work.description : work.description?.value || "";
           desc = raw.replace(/\[.*?\]/g, "").trim().slice(0, 600);
@@ -1458,9 +1493,9 @@ function AddBookModal({ drawers, onAdd, onClose }) {
       if (!author.trim() && foundAuthor) setAuthor(foundAuthor);
       if (foundYear) setYear(foundYear);
       if (foundCover) setCover(foundCover);
-      setFetchedPreview({ title: doc.title, author: foundAuthor, cover: foundCover, desc, pages: foundPages });
+      setFetchedPreview({ title: foundTitle, author: foundAuthor, cover: foundCover, desc, pages: foundPages });
     } catch (err) {
-      setFetchError("Could not reach Open Library. Check your connection and try again.");
+      setFetchError("Lookup failed. Check your connection and try again.");
     }
     setFetching(false);
   };
