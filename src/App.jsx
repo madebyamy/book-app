@@ -793,7 +793,7 @@ function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack, onLogo
         <button onClick={onBack} style={{ position: "absolute", top: "1.4rem", left: "1.4rem", background: "none", border: "1px solid rgba(244,239,228,0.3)", color: "rgba(244,239,228,0.7)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", padding: "0.4rem 0.8rem", borderRadius: 3, cursor: "pointer" }}>← Back</button>
         <button onClick={onLogout} style={{ position: "absolute", top: "1.4rem", right: "1.4rem", background: "none", border: "1px solid rgba(244,239,228,0.2)", color: "rgba(244,239,228,0.5)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", padding: "0.4rem 0.8rem", borderRadius: 3, cursor: "pointer" }}>Log out</button>
         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", letterSpacing: "0.22em", textTransform: "uppercase", color: userAccent, marginBottom: "0.7rem" }}>{USERS[userId].name}'s Card Catalog</div>
-        <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.1rem, 5.5vw, 3.2rem)", lineHeight: 1.05, margin: "0 0 0.5rem", color: "#F4EFE4" }}>{USERS[userId].name}'s Books</h1>
+        <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.1rem, 5.5vw, 3.2rem)", lineHeight: 1.05, margin: "0 0 0.5rem", color: "#F4EFE4" }}>{USERS[userId].name}'s Book Notes</h1>
         <p style={{ color: "rgba(244,239,228,0.55)", fontSize: "0.92rem", margin: "0 auto", maxWidth: "46ch", lineHeight: 1.5 }}>Full summaries — key ideas, highlighted stories, {USERS[userId].name}'s quotes, and reading trackers.</p>
         <div style={{ width: 64, height: 6, background: `linear-gradient(180deg, ${userAccent}, #4a3a20)`, borderRadius: 3, margin: "1.6rem auto 0", boxShadow: "0 2px 4px rgba(0,0,0,0.5)" }} />
       </div>
@@ -1913,7 +1913,7 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dy
               <span style={{ fontSize: "1.3rem" }}>🗂️</span>
               <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: user.accent }}>{user.name}'s Card Catalog</div>
             </div>
-            <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.35rem", marginBottom: "0.3rem" }}>{user.name}'s Books</div>
+            <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.35rem", marginBottom: "0.3rem" }}>{user.name}'s Book Notes</div>
             <p style={{ margin: 0, fontSize: "0.84rem", color: `${BRAND.cream}66`, lineHeight: 1.5 }}>Full summaries, key ideas, quotes, and reading trackers.</p>
           </button>
 
