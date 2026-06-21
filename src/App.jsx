@@ -1071,6 +1071,96 @@ async function saveChallengeGoal(userId, year, goal) {
   try { await storage.set(challengeGoalKey(userId, year), String(goal)); } catch {}
 }
 
+function FriendChallenge({ friendId, year }) {
+  const friend = USERS[friendId];
+  const [goal, setGoal] = useState(null);
+  const [booksRead, setBooksRead] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const [savedGoal, customBooks, shelfBooks] = await Promise.all([
+        loadChallengeGoal(friendId, year),
+        loadCustomBooks(friendId),
+        loadShelfBooks(friendId),
+      ]);
+      if (!active) return;
+      setGoal(savedGoal);
+
+      const allBooks = [...friend.books, ...customBooks, ...shelfBooks];
+      const seen = new Set();
+      const unique = allBooks.filter((b) => { if (seen.has(b.id)) return false; seen.add(b.id); return true; });
+
+      const withData = await Promise.all(unique.map(async (b) => {
+        const [status, progress, dateAdded] = await Promise.all([
+          loadStatus(friendId, b.id),
+          loadProgress(friendId, b.id),
+          loadDateAdded(friendId, b.id),
+        ]);
+        const finishDate = progress?.dateFinished || null;
+        const relevantDate = finishDate || dateAdded;
+        const bookYear = relevantDate ? parseInt(relevantDate.slice(0, 4), 10) : null;
+        return { ...b, status, bookYear, finishDate };
+      }));
+
+      if (!active) return;
+      setBooksRead(withData.filter((b) => b.status === "read" && b.bookYear === year));
+      setLoaded(true);
+    })();
+    return () => { active = false; };
+  }, [friendId, year]);
+
+  const count = booksRead.length;
+  const pct = goal ? Math.min(100, Math.round((count / goal) * 100)) : 0;
+
+  return (
+    <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: `1px solid ${BRAND.cream}14` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.8rem" }}>
+        <span style={{ fontSize: "0.9rem" }}>👀</span>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: friend.accent }}>
+          {friend.name}'s {year} Challenge
+        </div>
+        {goal && (
+          <div style={{ marginLeft: "auto", fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.1rem", color: BRAND.cream }}>
+            {count} <span style={{ color: `${BRAND.cream}44`, fontWeight: 500, fontSize: "0.9rem" }}>/ {goal}</span>
+          </div>
+        )}
+      </div>
+
+      {!loaded ? (
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: `${BRAND.cream}33` }}>Loading…</div>
+      ) : !goal ? (
+        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", color: `${BRAND.cream}33`, fontStyle: "italic" }}>{friend.name} hasn't set a goal for {year} yet.</div>
+      ) : (
+        <>
+          <div style={{ position: "relative", height: 8, borderRadius: 6, background: `${BRAND.cream}14`, overflow: "hidden", marginBottom: "0.35rem" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${pct}%`, background: `linear-gradient(90deg, ${friend.accent}, ${BRAND.tan})`, borderRadius: 6, transition: "width .6s ease" }} />
+          </div>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: `${BRAND.cream}44`, marginBottom: "0.8rem" }}>
+            {pct >= 100 ? `🎉 ${friend.name} hit their goal!` : `${pct}% — ${Math.max(0, goal - count)} book${goal - count === 1 ? "" : "s"} to go`}
+          </div>
+          {booksRead.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+              {booksRead.map((book) => (
+                <div key={book.id} title={`${book.title} — ${book.author}`}>
+                  {book.cover ? (
+                    <img src={book.cover} alt={book.title} style={{ width: 36, height: 52, objectFit: "cover", borderRadius: 3, boxShadow: "0 2px 6px rgba(0,0,0,0.4)", display: "block" }} onError={(e) => { e.target.style.display = "none"; }} />
+                  ) : (
+                    <div style={{ width: 36, height: 52, background: book.accent || friend.accent, borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.4)" }}>
+                      <span style={{ fontSize: "0.85rem" }}>📗</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function BookChallenge({ userId, userAccent }) {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
@@ -1079,6 +1169,8 @@ function BookChallenge({ userId, userAccent }) {
   const [editingGoal, setEditingGoal] = useState(false);
   const [booksRead, setBooksRead] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [showFriend, setShowFriend] = useState(false);
+  const friend = Object.values(USERS).find((u) => u.id !== userId);
 
   // Load goal and qualifying books whenever year changes
   useEffect(() => {
@@ -1233,7 +1325,6 @@ function BookChallenge({ userId, userAccent }) {
                     <span style={{ fontSize: "1rem" }}>📗</span>
                   </div>
                 )}
-                {/* Finish date badge */}
                 {book.finishDate && (
                   <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.45rem", color: `${BRAND.cream}99`, whiteSpace: "nowrap" }}>
                     {book.finishDate.slice(5).replace("-", "/")}
@@ -1243,6 +1334,23 @@ function BookChallenge({ userId, userAccent }) {
             ))}
           </div>
         )}
+
+        {/* Toggle friend's progress */}
+        <button
+          onClick={() => setShowFriend((s) => !s)}
+          style={{
+            marginTop: "1.1rem", display: "flex", alignItems: "center", gap: "0.4rem",
+            background: "none", border: `1px solid ${friend.accent}44`, borderRadius: 20,
+            padding: "0.3rem 0.8rem", color: friend.accent, cursor: "pointer",
+            fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem",
+            letterSpacing: "0.08em", textTransform: "uppercase", transition: "all .15s ease",
+          }}
+        >
+          <span>{showFriend ? "▲" : "▼"}</span>
+          {showFriend ? `Hide ${friend.name}'s progress` : `See ${friend.name}'s ${year} progress`}
+        </button>
+
+        {showFriend && <FriendChallenge friendId={friend.id} year={year} />}
       </div>
     </div>
   );
