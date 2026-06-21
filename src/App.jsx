@@ -881,9 +881,16 @@ function BookEditorPanel({ userId, book, theme, onSaved }) {
   );
 }
 
+const MARGINALIA_THEME = {
+  bg: BRAND.cream, card: BRAND.paper, ink: BRAND.ink,
+  inkSoft: BRAND.muted, inkFaint: "rgba(38,32,32,0.4)", border: BRAND.line,
+  display: FONT.display, body: FONT.body, mono: FONT.type,
+  displayWeight: 600, headerBg: BRAND.espresso, headerInk: BRAND.cream,
+};
+
 function BookDashboard({ userId, book: initialBook, onBack, onLogout }) {
   const [book, setBook] = useState(initialBook);
-  const theme = book.theme;
+  const theme = { ...(book.theme ? DEFAULT_THEME : MARGINALIA_THEME), ...(book.theme || {}) };
   const hasAcademic = !!(book.nodes && book.nodes.length && book.caseFile && book.keyLines && book.thread);
   const [openNode, setOpenNode] = useState(null);
 
@@ -1339,14 +1346,60 @@ function AddBookModal({ drawers, onAdd, onClose }) {
   const [author, setAuthor] = useState("");
   const [pages, setPages] = useState("");
   const [summary, setSummary] = useState("");
+  const [cover, setCover] = useState(null);
+  const [year, setYear] = useState("");
   const [drawerId, setDrawerId] = useState(drawers[0]?.id || "want");
   const [error, setError] = useState("");
+  const [fetching, setFetching] = useState(false);
+  const [fetchedPreview, setFetchedPreview] = useState(null);
 
-  const handleSubmit = (e) => {
+  const fetchBookInfo = async () => {
+    if (!title.trim()) return;
+    setFetching(true);
+    try {
+      const q = encodeURIComponent(`intitle:${title.trim()}${author.trim() ? `+inauthor:${author.trim()}` : ""}`);
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&langRestrict=en`);
+      const data = await res.json();
+      const item = data.items?.[0]?.volumeInfo;
+      if (item) {
+        if (!summary && item.description) setSummary(item.description.replace(/<[^>]+>/g, "").slice(0, 600));
+        if (!pages && item.pageCount) setPages(String(item.pageCount));
+        if (!author.trim() && item.authors?.[0]) setAuthor(item.authors[0]);
+        if (!year && item.publishedDate) setYear(item.publishedDate.slice(0, 4));
+        const thumb = item.imageLinks?.thumbnail || item.imageLinks?.smallThumbnail;
+        if (thumb) setCover(thumb.replace("http://", "https://"));
+        setFetchedPreview({ title: item.title, author: item.authors?.[0], cover: thumb?.replace("http://", "https://") });
+      }
+    } catch {}
+    setFetching(false);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim()) { setError("Title is required."); return; }
     if (!author.trim()) { setError("Author is required."); return; }
-    onAdd({ title: title.trim(), author: author.trim(), pages: pages ? parseInt(pages, 10) : null, summary: summary.trim() || null, drawerId });
+    // Auto-fetch if both summary and pages are still empty
+    let finalSummary = summary.trim() || null;
+    let finalPages = pages ? parseInt(pages, 10) : null;
+    let finalCover = cover;
+    let finalYear = year;
+    if (!finalSummary || !finalPages || !finalCover) {
+      setFetching(true);
+      try {
+        const q = encodeURIComponent(`intitle:${title.trim()}+inauthor:${author.trim()}`);
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&langRestrict=en`);
+        const data = await res.json();
+        const item = data.items?.[0]?.volumeInfo;
+        if (item) {
+          if (!finalSummary && item.description) finalSummary = item.description.replace(/<[^>]+>/g, "").slice(0, 600);
+          if (!finalPages && item.pageCount) finalPages = item.pageCount;
+          if (!finalYear && item.publishedDate) finalYear = item.publishedDate.slice(0, 4);
+          if (!finalCover) { const t = item.imageLinks?.thumbnail || item.imageLinks?.smallThumbnail; if (t) finalCover = t.replace("http://", "https://"); }
+        }
+      } catch {}
+      setFetching(false);
+    }
+    onAdd({ title: title.trim(), author: author.trim(), pages: finalPages, summary: finalSummary, cover: finalCover, year: finalYear, drawerId });
   };
 
   const inputStyle = { width: "100%", fontFamily: FONT.body, fontSize: 14, color: BRAND.ink, background: BRAND.cream, border: `1px solid ${BRAND.line2}`, borderRadius: 3, padding: "10px 12px", outline: "none", boxSizing: "border-box" };
@@ -1363,12 +1416,29 @@ function AddBookModal({ drawers, onAdd, onClose }) {
         <form onSubmit={handleSubmit} style={{ padding: "24px 26px 26px", display: "flex", flexDirection: "column", gap: 18 }}>
           <div>
             <label style={labelStyle}>Book title *</label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. The Midnight Library" style={inputStyle} autoFocus />
+            <input value={title} onChange={(e) => { setTitle(e.target.value); setFetchedPreview(null); }} placeholder="e.g. The Midnight Library" style={inputStyle} autoFocus />
           </div>
           <div>
             <label style={labelStyle}>Author *</label>
-            <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="e.g. Matt Haig" style={inputStyle} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <input value={author} onChange={(e) => { setAuthor(e.target.value); setFetchedPreview(null); }} placeholder="e.g. Matt Haig" style={{ ...inputStyle, flex: 1 }} />
+              <button type="button" onClick={fetchBookInfo} disabled={!title.trim() || fetching}
+                style={{ flexShrink: 0, fontFamily: FONT.body, fontSize: 12, letterSpacing: ".04em", background: BRAND.espresso, border: "none", color: BRAND.cream, padding: "10px 14px", borderRadius: 3, cursor: title.trim() && !fetching ? "pointer" : "not-allowed", opacity: title.trim() && !fetching ? 1 : 0.5, whiteSpace: "nowrap" }}>
+                {fetching ? "Looking up…" : "🔍 Look up"}
+              </button>
+            </div>
           </div>
+          {/* Cover preview */}
+          {fetchedPreview?.cover && (
+            <div style={{ display: "flex", alignItems: "center", gap: 14, background: BRAND.cream, border: `1px solid ${BRAND.line}`, borderRadius: 4, padding: "12px 14px" }}>
+              <img src={fetchedPreview.cover} alt="" style={{ width: 48, height: 70, objectFit: "cover", borderRadius: 2, boxShadow: "0 2px 6px rgba(0,0,0,.15)", flexShrink: 0 }} onError={(e) => e.target.style.display = "none"} />
+              <div>
+                <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 15, color: BRAND.ink, lineHeight: 1.2 }}>{fetchedPreview.title}</div>
+                <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13, color: BRAND.muted, marginTop: 3 }}>{fetchedPreview.author}</div>
+                <div style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.terracotta, marginTop: 4 }}>✓ Info pulled from Google Books</div>
+              </div>
+            </div>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <div>
               <label style={labelStyle}>Pages</label>
@@ -1568,9 +1638,9 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
     if (openDrawer === id) setOpenDrawer(null);
   };
 
-  const handleAddBook = async ({ title, author, pages, summary, drawerId }) => {
+  const handleAddBook = async ({ title, author, pages, summary, cover, year, drawerId }) => {
     const id = `shelf-${userId}-${Date.now().toString(36)}`;
-    const newBook = { id, title, author, pages: pages || null, summary: summary || null, cover: null, year: null, accent: userAccent };
+    const newBook = { id, title, author, pages: pages || null, summary: summary || null, cover: cover || null, year: year || null, accent: userAccent };
     const existing = await loadShelfBooks(userId);
     await saveShelfBooks(userId, [...existing, newBook]);
     setAllBooks((prev) => [...prev, newBook]);
@@ -1586,7 +1656,7 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
     const existing = await loadCustomBooks(userId);
     const alreadyThere = existing.some((b) => b.id === book.id || b.title.toLowerCase() === book.title.toLowerCase());
     if (!alreadyThere) {
-      const customBook = { id: book.id, title: book.title, author: book.author, pages: book.pages || null, year: book.year || null, cover: book.cover || null, accent: book.accent || userAccent, tagline: book.summary || null, summary: book.summary || null, nodes: [] };
+      const customBook = { id: book.id, title: book.title, author: book.author, pages: book.pages || null, year: book.year || null, cover: book.cover || null, accent: book.accent || userAccent, tagline: book.summary || book.tagline || null, summary: book.summary || book.tagline || null, nodes: [], theme: null };
       await saveCustomBooks(userId, [...existing, customBook]);
     }
     setSentToMarginalia((prev) => new Set([...prev, book.id]));
