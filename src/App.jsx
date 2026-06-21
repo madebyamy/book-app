@@ -1490,7 +1490,8 @@ function AddBookModal({ drawers, onAdd, onClose }) {
 
       if (desc) setSummary(desc);
       if (foundPages) setPages(String(foundPages));
-      if (!author.trim() && foundAuthor) setAuthor(foundAuthor);
+      if (foundAuthor) setAuthor(foundAuthor);
+      if (foundTitle) setTitle(foundTitle);
       if (foundYear) setYear(foundYear);
       if (foundCover) setCover(foundCover);
       setFetchedPreview({ title: foundTitle, author: foundAuthor, cover: foundCover, desc, pages: foundPages });
