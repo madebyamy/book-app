@@ -1302,9 +1302,10 @@ function IndexCard({ book, delay, onOpen }) {
   const [hovered, setHovered] = useState(false);
   const tabTitle = book.title.length > 14 ? book.title.slice(0, 13) + "…" : book.title;
   const callNo = book.call || `${book.year || "????"} · ${(book.author || "").split(" ").pop().slice(0, 3).toUpperCase()}`;
+  const summary = book.summary || book.tagline || null;
   return (
     <button onClick={onOpen} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      style={{ flexShrink: 0, width: 208, cursor: "pointer", border: "none", padding: 0, background: "transparent", textAlign: "left", animation: `cc-pop .4s cubic-bezier(.16,1,.3,1) ${delay}ms both` }}>
+      style={{ flexShrink: 0, width: 220, cursor: "pointer", border: "none", padding: 0, background: "transparent", textAlign: "left", animation: `cc-pop .4s cubic-bezier(.16,1,.3,1) ${delay}ms both` }}>
       <div style={{ position: "relative", transition: "transform .26s cubic-bezier(.16,1,.3,1),box-shadow .26s cubic-bezier(.16,1,.3,1)", transform: hovered ? "translateY(-8px)" : "none", boxShadow: hovered ? "0 16px 40px rgba(20,30,50,.16)" : "0 4px 12px rgba(20,30,50,.10)" }}>
         {/* Tab */}
         <div style={{ marginLeft: 18, width: 118, height: 26, background: "#F6EEDD", border: "1px solid #E2D4BC", borderBottom: "none", borderRadius: "5px 5px 0 0", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 8px", overflow: "hidden" }}>
@@ -1313,12 +1314,18 @@ function IndexCard({ book, delay, onOpen }) {
         {/* Card body */}
         <div style={{ background: "#F6EEDD", border: "1px solid #E2D4BC", borderTop: "none", borderRadius: "0 0 3px 3px", padding: "14px 16px 12px" }}>
           <div style={{ fontFamily: FONT.type, fontSize: 10, letterSpacing: ".04em", color: BRAND.terracotta, borderBottom: "1px solid #C9B79A", paddingBottom: 8, marginBottom: 10 }}>{callNo}</div>
-          <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 19, lineHeight: 1.1, color: BRAND.ink, marginBottom: 5 }}>{book.title}</div>
-          <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13, color: BRAND.muted, marginBottom: 12 }}>{book.author}</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
-            {[0.7, 0.5, 0.3].map((op, i) => <div key={i} style={{ height: 1, background: "#C9B79A", opacity: op }} />)}
-          </div>
-          <div style={{ textAlign: "right" }}>
+          <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 18, lineHeight: 1.1, color: BRAND.ink, marginBottom: 4 }}>{book.title}</div>
+          <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 12.5, color: BRAND.muted, marginBottom: 9 }}>{book.author}</div>
+          {/* Summary line (traditional card catalogue description) */}
+          {summary ? (
+            <div style={{ fontFamily: FONT.read, fontSize: 11.5, lineHeight: 1.5, color: "#5a4a38", marginBottom: 9, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{summary}</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 9 }}>
+              {[0.7, 0.5, 0.3].map((op, i) => <div key={i} style={{ height: 1, background: "#C9B79A", opacity: op }} />)}
+            </div>
+          )}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontFamily: FONT.type, fontSize: 9.5, color: "#8a7a68" }}>{book.pages ? `${book.pages} pp` : ""}</span>
             <span style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.coral }}>Read card →</span>
           </div>
         </div>
@@ -1327,7 +1334,69 @@ function IndexCard({ book, delay, onOpen }) {
   );
 }
 
-function BookModal({ book, drawers, currentDrawer, onMove, onClose }) {
+function AddBookModal({ drawers, onAdd, onClose }) {
+  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [pages, setPages] = useState("");
+  const [summary, setSummary] = useState("");
+  const [drawerId, setDrawerId] = useState(drawers[0]?.id || "want");
+  const [error, setError] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!title.trim()) { setError("Title is required."); return; }
+    if (!author.trim()) { setError("Author is required."); return; }
+    onAdd({ title: title.trim(), author: author.trim(), pages: pages ? parseInt(pages, 10) : null, summary: summary.trim() || null, drawerId });
+  };
+
+  const inputStyle = { width: "100%", fontFamily: FONT.body, fontSize: 14, color: BRAND.ink, background: BRAND.cream, border: `1px solid ${BRAND.line2}`, borderRadius: 3, padding: "10px 12px", outline: "none", boxSizing: "border-box" };
+  const labelStyle = { fontFamily: FONT.body, fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase", color: BRAND.muted, display: "block", marginBottom: 6 };
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(38,32,32,.68)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 6, width: "min(500px,100%)", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 50px rgba(20,30,50,.22)", animation: "cc-pop .24s cubic-bezier(.16,1,.3,1)" }}>
+        {/* Header */}
+        <div style={{ background: BRAND.espresso, padding: "22px 26px 18px", borderRadius: "6px 6px 0 0" }}>
+          <div style={{ fontFamily: FONT.body, fontSize: 10.5, letterSpacing: ".24em", textTransform: "uppercase", color: BRAND.tan, marginBottom: 6 }}>Card Catalogue</div>
+          <h2 style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 26, color: BRAND.cream, margin: 0, lineHeight: 1.1 }}>Add a new book</h2>
+        </div>
+        <form onSubmit={handleSubmit} style={{ padding: "24px 26px 26px", display: "flex", flexDirection: "column", gap: 18 }}>
+          <div>
+            <label style={labelStyle}>Book title *</label>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. The Midnight Library" style={inputStyle} autoFocus />
+          </div>
+          <div>
+            <label style={labelStyle}>Author *</label>
+            <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="e.g. Matt Haig" style={inputStyle} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div>
+              <label style={labelStyle}>Pages</label>
+              <input type="number" min="1" value={pages} onChange={(e) => setPages(e.target.value)} placeholder="e.g. 304" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>File in drawer</label>
+              <select value={drawerId} onChange={(e) => setDrawerId(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
+                {drawers.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Short summary <span style={{ textTransform: "none", letterSpacing: 0, opacity: .6 }}>(optional)</span></label>
+            <textarea value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="A brief description of the book — appears on the index card." rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.55 }} />
+          </div>
+          {error && <div style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.coral }}>{error}</div>}
+          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "12px", borderRadius: 3, cursor: "pointer" }}>Cancel</button>
+            <button type="submit" style={{ flex: 2, fontFamily: FONT.body, fontSize: 13, letterSpacing: ".06em", textTransform: "uppercase", background: BRAND.coral, border: "none", color: "#fff", padding: "12px", borderRadius: 3, cursor: "pointer", fontWeight: 500 }}>Add book to catalogue</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function BookModal({ book, drawers, currentDrawer, onMove, onClose, onSendToMarginalia, sentToMarginalia }) {
   const spine = spineColor(book);
   const callNo = book.call || `${book.year || "????"} · ${(book.author || "").split(" ").pop().slice(0, 3).toUpperCase()}`;
   const readHours = estimateReadTime(book.pages);
@@ -1379,6 +1448,24 @@ function BookModal({ book, drawers, currentDrawer, onMove, onClose }) {
               Filed in the "{drawers.find((d) => d.id === currentDrawer)?.name}" drawer.
             </div>
           )}
+          {/* Send to Marginalia */}
+          <div style={{ marginTop: 28, paddingTop: 20, borderTop: `1px solid ${BRAND.line}` }}>
+            <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: BRAND.muted, marginBottom: 11 }}>Marginalia</div>
+            {sentToMarginalia ? (
+              <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 14, color: BRAND.terracotta }}>
+                ✓ Added to your Marginalia page.
+              </div>
+            ) : (
+              <>
+                <p style={{ fontFamily: FONT.read, fontSize: 13.5, lineHeight: 1.55, color: BRAND.muted, margin: "0 0 12px" }}>
+                  Send this book to your Marginalia page to track notes, highlights, and reading progress.
+                </p>
+                <button onClick={onSendToMarginalia} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: BRAND.espresso, border: "none", color: BRAND.cream, padding: "11px 20px", borderRadius: 3, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 15 }}>📖</span> Send to Marginalia
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -1398,6 +1485,7 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
   const [hoveredDrawer, setHoveredDrawer] = useState(null);
   const [showAddBook, setShowAddBook] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [sentToMarginalia, setSentToMarginalia] = useState(new Set());
 
   // Load all books + statuses
   useEffect(() => {
@@ -1480,14 +1568,28 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
     if (openDrawer === id) setOpenDrawer(null);
   };
 
-  const handleAddBook = async (result) => {
+  const handleAddBook = async ({ title, author, pages, summary, drawerId }) => {
     const id = `shelf-${userId}-${Date.now().toString(36)}`;
-    const newBook = { id, title: result.title, author: result.author, cover: result.cover || null, pages: result.pages || null, year: result.year || null, accent: userAccent };
+    const newBook = { id, title, author, pages: pages || null, summary: summary || null, cover: null, year: null, accent: userAccent };
     const existing = await loadShelfBooks(userId);
     await saveShelfBooks(userId, [...existing, newBook]);
     setAllBooks((prev) => [...prev, newBook]);
-    setAssign((prev) => { const n = { ...prev, [id]: "want" }; persist(n, drawers); return n; });
+    const next = { ...assign, [id]: drawerId || "want" };
+    setAssign(next);
+    persist(next, drawers);
+    await saveStatus(userId, id, DRAWER_TO_STATUS[drawerId] || "to-read");
     setShowAddBook(false);
+    setOpenDrawer(drawerId || "want");
+  };
+
+  const handleSendToMarginalia = async (book) => {
+    const existing = await loadCustomBooks(userId);
+    const alreadyThere = existing.some((b) => b.id === book.id || b.title.toLowerCase() === book.title.toLowerCase());
+    if (!alreadyThere) {
+      const customBook = { id: book.id, title: book.title, author: book.author, pages: book.pages || null, year: book.year || null, cover: book.cover || null, accent: book.accent || userAccent, tagline: book.summary || null, summary: book.summary || null, nodes: [] };
+      await saveCustomBooks(userId, [...existing, customBook]);
+    }
+    setSentToMarginalia((prev) => new Set([...prev, book.id]));
   };
 
   const booksInDrawer = (id) => allBooks.filter((b) => assign[b.id] === id);
@@ -1502,7 +1604,7 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
             <button onClick={onBack} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: "none", border: "1px solid rgba(242,239,235,.3)", color: "rgba(242,239,235,.7)", padding: "8px 14px", borderRadius: 2, cursor: "pointer" }}>← Back</button>
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setShowAddBook((v) => !v)} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", textTransform: "uppercase", background: showAddBook ? BRAND.coral : "transparent", border: `1px solid ${showAddBook ? BRAND.coral : "rgba(242,239,235,.3)"}`, color: showAddBook ? "#fff" : "rgba(242,239,235,.7)", padding: "8px 16px", borderRadius: 2, cursor: "pointer" }}>+ Add book</button>
+              <button onClick={() => setShowAddBook(true)} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", textTransform: "uppercase", background: BRAND.coral, border: `1px solid ${BRAND.coral}`, color: "#fff", padding: "8px 16px", borderRadius: 2, cursor: "pointer" }}>+ Add book</button>
               <button onClick={onLogout} style={{ fontFamily: FONT.body, fontSize: 13, color: "rgba(242,239,235,.45)", background: "none", border: "none", cursor: "pointer" }}>Sign out</button>
             </div>
           </div>
@@ -1514,15 +1616,8 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
         </div>
       </div>
 
-      {/* Add book search panel */}
-      {showAddBook && (
-        <div style={{ background: BRAND.paper, borderBottom: `1px solid ${BRAND.line}`, padding: "20px 28px" }}>
-          <div style={{ maxWidth: 1040, margin: "0 auto" }}>
-            <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".2em", textTransform: "uppercase", color: BRAND.terracotta, marginBottom: 10 }}>Search to add a book</div>
-            <BookSearchInput onSelect={handleAddBook} userAccent={userAccent} />
-          </div>
-        </div>
-      )}
+      {/* Add book modal */}
+      {showAddBook && <AddBookModal drawers={drawers} onAdd={handleAddBook} onClose={() => setShowAddBook(false)} />}
 
       {/* Cabinet */}
       <section style={{ maxWidth: 1040, margin: "0 auto", padding: "clamp(16px,2.5vw,28px) 28px clamp(48px,7vw,80px)" }}>
@@ -1653,6 +1748,8 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
           currentDrawer={assign[selectedBook.id]}
           onMove={(drawerId) => moveBook(selectedBook, drawerId)}
           onClose={() => setSelectedBook(null)}
+          onSendToMarginalia={() => handleSendToMarginalia(selectedBook)}
+          sentToMarginalia={sentToMarginalia.has(selectedBook.id)}
         />
       )}
     </div>
