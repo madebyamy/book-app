@@ -1466,7 +1466,7 @@ function AddBookModal({ drawers, onAdd, onClose }) {
         const thumb = gbItem.imageLinks?.thumbnail || gbItem.imageLinks?.smallThumbnail;
         if (thumb) foundCover = thumb.replace("http://", "https://");
       }
-      if (!foundCover && olDoc?.cover_i) foundCover = `https://covers.openlibrary.org/b/id/${olDoc.cover_i}-L.jpg`;
+      if (!foundCover && olDoc?.cover_i) foundCover = `https://covers.openlibrary.org/b/id/${olDoc.cover_i}-M.jpg`;
 
       // Pages: prefer Google Books (more accurate editions)
       const foundPages = gbItem?.pageCount || olDoc?.number_of_pages_median || null;
@@ -1622,14 +1622,16 @@ function BookModal({ book, drawers, currentDrawer, onMove, onClose, onSendToMarg
   const spine = spineColor(book);
   const callNo = book.call || `${book.year || "????"} · ${(book.author || "").split(" ").pop().slice(0, 3).toUpperCase()}`;
   const readHours = estimateReadTime(book.pages);
+  const [coverFailed, setCoverFailed] = useState(false);
+  const showCover = book.cover && !coverFailed;
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(38,32,32,.62)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "cc-fade .2s cubic-bezier(.16,1,.3,1)" }}>
       <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(820px,100%)", maxHeight: "88vh", overflowY: "auto", display: "grid", gridTemplateColumns: "min(280px,40%) 1fr", background: BRAND.paper, borderRadius: 6, border: `1px solid ${BRAND.line}`, boxShadow: "0 16px 40px rgba(20,30,50,.16)", animation: "cc-pop .26s cubic-bezier(.16,1,.3,1)" }}>
         <button onClick={onClose} style={{ position: "absolute", top: 14, right: 14, zIndex: 2, width: 34, height: 34, borderRadius: "50%", border: `1px solid ${BRAND.line2}`, background: BRAND.paper, color: BRAND.ink, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
         {/* Left — espresso cover */}
         <div style={{ background: BRAND.espresso, padding: "34px 28px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18 }}>
-          {book.cover ? (
-            <img src={book.cover} alt={book.title} style={{ width: 140, height: 204, objectFit: "cover", borderRadius: "3px 5px 5px 3px", boxShadow: "inset -10px 0 0 rgba(0,0,0,.18),0 8px 28px rgba(0,0,0,.45)" }} onError={(e) => e.target.style.display = "none"} />
+          {showCover ? (
+            <img src={book.cover} alt={book.title} style={{ width: 140, height: 204, objectFit: "cover", borderRadius: "3px 5px 5px 3px", boxShadow: "inset -10px 0 0 rgba(0,0,0,.18),0 8px 28px rgba(0,0,0,.45)" }} onError={() => setCoverFailed(true)} />
           ) : (
             <div style={{ position: "relative", width: 148, height: 216, borderRadius: "3px 5px 5px 3px", background: spine, boxShadow: "inset -12px 0 0 rgba(0,0,0,.18),0 16px 40px rgba(20,30,50,.16)", display: "flex", flexDirection: "column", justifyContent: "center", padding: "20px 18px 20px 26px" }}>
               <span style={{ position: "absolute", left: 13, top: 14, bottom: 14, width: 1.5, background: "rgba(255,255,255,.28)", display: "block" }} />
@@ -1958,10 +1960,16 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
                       <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 22, color: "#FBF6E8", lineHeight: 1.05 }}>{openDrawerName}</div>
                     </div>
                   </div>
-                  <button onClick={() => setOpenDrawer(null)}
-                    style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase", background: "rgba(0,0,0,.28)", color: "#FBF6E8", border: "1px solid rgba(251,246,232,.32)", cursor: "pointer", padding: "9px 16px", borderRadius: 2 }}>
-                    Close drawer ✕
-                  </button>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => setShowAddBook(true)}
+                      style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase", background: BRAND.coral, color: "#fff", border: "none", cursor: "pointer", padding: "9px 16px", borderRadius: 2 }}>
+                      + Add Book
+                    </button>
+                    <button onClick={() => setOpenDrawer(null)}
+                      style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase", background: "rgba(0,0,0,.28)", color: "#FBF6E8", border: "1px solid rgba(251,246,232,.32)", cursor: "pointer", padding: "9px 16px", borderRadius: 2 }}>
+                      Close ✕
+                    </button>
+                  </div>
                 </div>
                 {/* Felt rail */}
                 <div style={{ background: "repeating-linear-gradient(90deg,#3a2618,#3a2618 2px,#412b1b 2px,#412b1b 22px)", padding: "30px 26px 34px" }}>
