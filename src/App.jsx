@@ -1057,6 +1057,198 @@ function SharedChat({ activeUser }) {
 }
 
 // ---------------------------------------------------------------------------
+// BOOK CHALLENGE — per user, per year reading goal
+// ---------------------------------------------------------------------------
+function challengeGoalKey(userId, year) { return `${userId}:challenge:${year}:goal`; }
+
+async function loadChallengeGoal(userId, year) {
+  try {
+    const res = await storage.get(challengeGoalKey(userId, year));
+    return res ? parseInt(res.value, 10) : null;
+  } catch { return null; }
+}
+async function saveChallengeGoal(userId, year, goal) {
+  try { await storage.set(challengeGoalKey(userId, year), String(goal)); } catch {}
+}
+
+function BookChallenge({ userId, userAccent }) {
+  const currentYear = new Date().getFullYear();
+  const [year, setYear] = useState(currentYear);
+  const [goal, setGoal] = useState(null);
+  const [goalDraft, setGoalDraft] = useState("");
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [booksRead, setBooksRead] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+
+  // Load goal and qualifying books whenever year changes
+  useEffect(() => {
+    let active = true;
+    setLoaded(false);
+    (async () => {
+      const [savedGoal, customBooks, shelfBooks] = await Promise.all([
+        loadChallengeGoal(userId, year),
+        loadCustomBooks(userId),
+        loadShelfBooks(userId),
+      ]);
+      if (!active) return;
+
+      setGoal(savedGoal);
+      setGoalDraft(savedGoal ? String(savedGoal) : "");
+
+      // Gather all books from all sources
+      const staticBooks = USERS[userId].books;
+      const allBooks = [...staticBooks, ...customBooks, ...shelfBooks];
+
+      // Deduplicate by id
+      const seen = new Set();
+      const unique = allBooks.filter((b) => { if (seen.has(b.id)) return false; seen.add(b.id); return true; });
+
+      // For each book, check status + date
+      const withData = await Promise.all(unique.map(async (b) => {
+        const [status, progress, dateAdded] = await Promise.all([
+          loadStatus(userId, b.id),
+          loadProgress(userId, b.id),
+          loadDateAdded(userId, b.id),
+        ]);
+        // Determine the relevant year for this book
+        const finishDate = progress?.dateFinished || null;
+        const relevantDate = finishDate || dateAdded;
+        const bookYear = relevantDate ? parseInt(relevantDate.slice(0, 4), 10) : null;
+        return { ...b, status, bookYear, finishDate };
+      }));
+
+      if (!active) return;
+
+      const qualifying = withData.filter((b) => b.status === "read" && b.bookYear === year);
+      setBooksRead(qualifying);
+      setLoaded(true);
+    })();
+    return () => { active = false; };
+  }, [userId, year]);
+
+  const handleSaveGoal = async () => {
+    const parsed = parseInt(goalDraft, 10);
+    if (!parsed || parsed < 1) return;
+    setGoal(parsed);
+    setEditingGoal(false);
+    await saveChallengeGoal(userId, year, parsed);
+  };
+
+  const count = booksRead.length;
+  const pct = goal ? Math.min(100, Math.round((count / goal) * 100)) : 0;
+  const yearOptions = [currentYear, currentYear - 1, currentYear - 2];
+
+  return (
+    <div style={{
+      width: "100%",
+      background: `${BRAND.darkCard}cc`, backdropFilter: "blur(10px)",
+      border: `1px solid ${BRAND.cream}14`, borderRadius: 10, overflow: "hidden",
+    }}>
+      {/* Header */}
+      <div style={{ padding: "1rem 1.2rem", borderBottom: `1px solid ${BRAND.cream}14`, display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+        <span style={{ fontSize: "1rem" }}>🏆</span>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: userAccent }}>
+          {USERS[userId].name}'s Reading Challenge
+        </div>
+        {/* Year selector */}
+        <div style={{ marginLeft: "auto", display: "flex", gap: "0.35rem" }}>
+          {yearOptions.map((y) => (
+            <button key={y} onClick={() => setYear(y)} style={{
+              background: year === y ? `${userAccent}33` : "transparent",
+              border: `1px solid ${year === y ? userAccent : `${BRAND.cream}22`}`,
+              borderRadius: 20, padding: "0.2rem 0.6rem",
+              color: year === y ? userAccent : `${BRAND.cream}55`,
+              fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem",
+              cursor: "pointer", transition: "all .15s ease",
+            }}>{y}</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ padding: "1.2rem" }}>
+        {/* Goal setting */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", marginBottom: "1.1rem", flexWrap: "wrap" }}>
+          {goal && !editingGoal ? (
+            <>
+              <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.5rem", color: BRAND.cream, lineHeight: 1 }}>
+                {count} <span style={{ color: `${BRAND.cream}44`, fontWeight: 500 }}>/ {goal}</span>
+              </div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: `${BRAND.cream}66` }}>
+                books read in {year}
+              </div>
+              <button onClick={() => { setGoalDraft(String(goal)); setEditingGoal(true); }} style={{ marginLeft: "auto", background: "none", border: `1px solid ${BRAND.cream}22`, borderRadius: 20, padding: "0.25rem 0.65rem", color: `${BRAND.cream}44`, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer" }}>
+                Edit goal
+              </button>
+            </>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: `${BRAND.cream}77` }}>Read</span>
+              <input
+                autoFocus={editingGoal}
+                type="number"
+                min={1}
+                value={goalDraft}
+                onChange={(e) => setGoalDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSaveGoal(); if (e.key === "Escape") setEditingGoal(false); }}
+                placeholder="0"
+                style={{ width: 64, background: `${BRAND.dark}cc`, border: `1px solid ${userAccent}77`, borderRadius: 6, padding: "0.4rem 0.6rem", color: BRAND.cream, fontFamily: "'JetBrains Mono', monospace", fontSize: "1rem", textAlign: "center", outline: "none" }}
+              />
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: `${BRAND.cream}77` }}>books in {year}</span>
+              <button onClick={handleSaveGoal} style={{ background: userAccent, border: "none", borderRadius: 6, padding: "0.4rem 0.9rem", color: BRAND.cream, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 700, cursor: "pointer" }}>Set</button>
+            </div>
+          )}
+        </div>
+
+        {/* Progress bar */}
+        {goal && (
+          <div style={{ marginBottom: "1.2rem" }}>
+            <div style={{ position: "relative", height: 10, borderRadius: 6, background: `${BRAND.cream}14`, overflow: "hidden", marginBottom: "0.4rem" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${pct}%`, background: `linear-gradient(90deg, ${userAccent}, ${BRAND.tan})`, borderRadius: 6, transition: "width .6s ease" }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", color: `${BRAND.cream}44` }}>
+              <span>0</span>
+              <span style={{ color: pct >= 100 ? userAccent : `${BRAND.cream}66`, fontWeight: 700 }}>
+                {pct >= 100 ? "🎉 Goal reached!" : `${pct}% — ${Math.max(0, goal - count)} book${goal - count === 1 ? "" : "s"} to go`}
+              </span>
+              <span>{goal}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Book covers */}
+        {!loaded ? (
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", color: `${BRAND.cream}33` }}>Loading…</div>
+        ) : booksRead.length === 0 ? (
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: `${BRAND.cream}33`, fontStyle: "italic" }}>
+            {goal ? `No books finished in ${year} yet — mark a book as "read" with a finish date to see it here.` : `Set a goal above to start your ${year} reading challenge.`}
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
+            {booksRead.map((book) => (
+              <div key={book.id} title={`${book.title} — ${book.author}`} style={{ position: "relative" }}>
+                {book.cover ? (
+                  <img src={book.cover} alt={book.title} style={{ width: 44, height: 64, objectFit: "cover", borderRadius: 3, boxShadow: "0 2px 8px rgba(0,0,0,0.4)", display: "block" }} onError={(e) => { e.target.style.display = "none"; }} />
+                ) : (
+                  <div style={{ width: 44, height: 64, background: book.accent || userAccent, borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>
+                    <span style={{ fontSize: "1rem" }}>📗</span>
+                  </div>
+                )}
+                {/* Finish date badge */}
+                {book.finishDate && (
+                  <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.45rem", color: `${BRAND.cream}99`, whiteSpace: "nowrap" }}>
+                    {book.finishDate.slice(5).replace("-", "/")}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // SHARED BOOKSHELF — books both users have marked "read"
 // ---------------------------------------------------------------------------
 function SharedBookshelf() {
@@ -1316,6 +1508,11 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem", marginTop: "1.2rem", width: "100%", maxWidth: 860 }}>
           <FriendReading friend={friend} />
           <SharedBookshelf />
+        </div>
+
+        {/* Book challenge */}
+        <div style={{ marginTop: "1rem", width: "100%", maxWidth: 860 }}>
+          <BookChallenge userId={user.id} userAccent={user.accent} />
         </div>
 
         {/* Shared chat */}
