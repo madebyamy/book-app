@@ -1151,7 +1151,7 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
       </div>
 
       {/* Hero */}
-      <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1.4rem 3rem" }}>
+      <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1.4rem 3rem", width: "100%", maxWidth: 920, margin: "0 auto" }}>
         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.22em", textTransform: "uppercase", color: user.accent, marginBottom: "0.5rem", textAlign: "center" }}>Book Mind</div>
         <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.4rem, 9vw, 3.6rem)", lineHeight: 1.02, margin: "0 0 0.4rem", color: BRAND.cream, textAlign: "center" }}>{user.name}'s</h1>
         <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.4rem, 9vw, 3.6rem)", lineHeight: 1.02, margin: "0 0 2rem", color: user.accent, textAlign: "center" }}>Library</h1>
@@ -1163,8 +1163,8 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
           <div style={{ flex: 1, height: 1, background: `linear-gradient(to left, transparent, ${BRAND.tan}55)` }} />
         </div>
 
-        {/* Nav cards */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%", maxWidth: 400 }}>
+        {/* Nav cards — 2-column grid on desktop, single column on mobile */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem", width: "100%", maxWidth: 860 }}>
           <button onClick={onOpenMyBooks}
             style={{ background: `${BRAND.darkCard}dd`, backdropFilter: "blur(10px)", border: `1px solid ${BRAND.cream}14`, borderLeft: `3px solid ${user.accent}`, borderRadius: 10, padding: "1.4rem 1.6rem", textAlign: "left", cursor: "pointer", color: BRAND.cream, transition: "transform .18s ease, background .18s ease" }}
             onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.background = `${BRAND.darkCard}ff`; }}
@@ -1190,13 +1190,9 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
           </button>
         </div>
 
-        {/* Friend's currently reading */}
-        <div style={{ marginTop: "1.2rem", width: "100%", maxWidth: 400 }}>
+        {/* Friend reading + shared bookshelf — side by side on desktop */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem", marginTop: "1.2rem", width: "100%", maxWidth: 860 }}>
           <FriendReading friend={friend} />
-        </div>
-
-        {/* Shared bookshelf */}
-        <div style={{ marginTop: "1rem", width: "100%", maxWidth: 400 }}>
           <SharedBookshelf />
         </div>
       </div>
