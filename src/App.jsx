@@ -238,6 +238,74 @@ const DEFAULT_THEME = {
 };
 
 // ---------------------------------------------------------------------------
+// BOOK SEARCH — Open Library API (free, no key required)
+// ---------------------------------------------------------------------------
+async function searchBooks(query) {
+  if (!query || query.trim().length < 2) return [];
+  try {
+    const url = `https://openlibrary.org/search.json?title=${encodeURIComponent(query.trim())}&limit=6&fields=title,author_name,number_of_pages_median,cover_i,first_publish_year`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return (data.docs || []).map((d) => ({
+      title: d.title || "",
+      author: d.author_name?.[0] || "",
+      pages: d.number_of_pages_median || null,
+      year: d.first_publish_year ? String(d.first_publish_year) : "",
+      cover: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg` : "",
+    }));
+  } catch { return []; }
+}
+
+// ---------------------------------------------------------------------------
+// TOOLTIPS — admin-editable help text shown via ⓘ icon on each section
+// ---------------------------------------------------------------------------
+const TOOLTIPS_KEY = "admin:tooltips";
+const TOOLTIP_SECTIONS = [
+  { key: "home",          label: "Home Page" },
+  { key: "myBooks",       label: "Book Notes section" },
+  { key: "shelf",         label: "Bookshelf section" },
+  { key: "challenge",     label: "Reading Challenge" },
+  { key: "friendReading", label: "Friend Reading widget" },
+  { key: "sharedBooks",   label: "Shared Bookshelf widget" },
+  { key: "chat",          label: "Chat widget" },
+];
+
+async function loadTooltips() {
+  try {
+    const res = await storage.get(TOOLTIPS_KEY);
+    return res ? JSON.parse(res.value) : {};
+  } catch { return {}; }
+}
+
+async function saveTooltips(tooltips) {
+  try { await storage.set(TOOLTIPS_KEY, JSON.stringify(tooltips)); } catch {}
+}
+
+function TooltipIcon({ text, color }) {
+  const [show, setShow] = useState(false);
+  if (!text) return null;
+  return (
+    <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+      <button
+        onClick={(e) => { e.stopPropagation(); setShow((s) => !s); }}
+        style={{ background: "none", border: "none", cursor: "pointer", color: color || BRAND.tan, fontSize: "0.8rem", lineHeight: 1, padding: "0 0.3rem", opacity: 0.7 }}
+        title="Help"
+      >ⓘ</button>
+      {show && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)",
+          background: BRAND.darkCard, border: `1px solid ${BRAND.cream}22`, borderRadius: 8,
+          padding: "0.8rem 1rem", zIndex: 100, width: 220, boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+        }}>
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: BRAND.cream, margin: "0 0 0.5rem", lineHeight: 1.5 }}>{text}</p>
+          <button onClick={() => setShow(false)} style={{ background: "none", border: "none", color: `${BRAND.cream}55`, cursor: "pointer", fontSize: "0.7rem", padding: 0 }}>Close</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // SHARED UI COMPONENTS
 // ---------------------------------------------------------------------------
 
@@ -731,45 +799,117 @@ function CatalogCard({ userId, book, onSelect }) {
   );
 }
 
+function BookSearchInput({ onSelect, userAccent, inputStyle: extraStyle = {} }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const timerRef = React.useRef(null);
+
+  const handleChange = (e) => {
+    const val = e.target.value;
+    setQuery(val);
+    clearTimeout(timerRef.current);
+    if (val.trim().length < 2) { setResults([]); return; }
+    setSearching(true);
+    timerRef.current = setTimeout(async () => {
+      const found = await searchBooks(val);
+      setResults(found);
+      setSearching(false);
+    }, 500);
+  };
+
+  const baseInput = { background: "#0F1A2B", border: "1px solid rgba(244,239,228,0.28)", color: "#F4EFE4", fontFamily: "'Fraunces', serif", fontSize: "0.9rem", padding: "0.55rem 0.8rem", borderRadius: 3, width: "100%", ...extraStyle };
+
+  return (
+    <div style={{ position: "relative" }}>
+      <input autoFocus value={query} onChange={handleChange} placeholder="Search by book title…" style={baseInput} />
+      {(searching || results.length > 0) && (
+        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "#0F1A2B", border: "1px solid rgba(244,239,228,0.28)", borderRadius: 4, zIndex: 50, overflow: "hidden" }}>
+          {searching && <div style={{ padding: "0.6rem 0.9rem", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: "rgba(244,239,228,0.44)" }}>Searching…</div>}
+          {results.map((r, i) => (
+            <button key={i} type="button" onClick={() => { onSelect(r); setQuery(""); setResults([]); }}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.7rem", padding: "0.6rem 0.9rem", background: "none", border: "none", borderBottom: "1px solid rgba(244,239,228,0.08)", cursor: "pointer", textAlign: "left" }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(244,239,228,0.06)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+            >
+              {r.cover && <img src={r.cover} alt="" style={{ width: 28, height: 40, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} onError={(e) => e.target.style.display = "none"} />}
+              <div>
+                <div style={{ fontFamily: "'Fraunces', serif", fontSize: "0.88rem", color: "#F4EFE4", lineHeight: 1.2 }}>{r.title}</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.74rem", color: "rgba(244,239,228,0.5)" }}>{r.author}{r.pages ? ` · ${r.pages} pages` : ""}{r.year ? ` · ${r.year}` : ""}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AddBookToMyBooks({ userId, userAccent, onAdded }) {
   const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState(null);
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [year, setYear] = useState("");
+  const [pages, setPages] = useState("");
+  const [cover, setCover] = useState("");
+
+  const handleSelect = (r) => {
+    setSelected(r);
+    setTitle(r.title); setAuthor(r.author);
+    setYear(r.year || ""); setPages(r.pages ? String(r.pages) : "");
+    setCover(r.cover || "");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim() || !author.trim()) return;
     const id = `custom-${userId}-${Date.now().toString(36)}`;
     const newBook = {
-      id, title: title.trim(), subtitle: "", author: author.trim(), year: year.trim() || new Date().getFullYear().toString(),
+      id, title: title.trim(), subtitle: "", author: author.trim(),
+      year: year.trim() || new Date().getFullYear().toString(),
+      pages: pages ? parseInt(pages, 10) : null,
       format: "simple", accent: userAccent, theme: { ...DEFAULT_THEME, headerBg: userAccent, headerInk: "#F4EFE4" },
-      cover: "", tagline: "", nodes: [], caseFile: null, keyLines: [], thread: "",
+      cover: cover.trim(), tagline: "", nodes: [], caseFile: null, keyLines: [], thread: "",
     };
     const existing = await loadCustomBooks(userId);
     await saveCustomBooks(userId, [...existing, newBook]);
-    setTitle(""); setAuthor(""); setYear(""); setOpen(false);
+    setTitle(""); setAuthor(""); setYear(""); setPages(""); setCover(""); setSelected(null); setOpen(false);
     onAdded();
   };
 
+  const iStyle = { background: "#0F1A2B", border: "1px solid rgba(244,239,228,0.28)", color: "#F4EFE4", fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", padding: "0.55rem 0.8rem", borderRadius: 3, width: "100%" };
+
   if (!open) return (
-    <button onClick={() => setOpen(true)} style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.6rem", cursor: "pointer", width: "100%", background: "transparent", color: "rgba(244,239,228,0.55)", border: "1px dashed rgba(244,239,228,0.32)", borderRadius: 2, padding: "1.1rem 1.5rem", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.78rem", letterSpacing: "0.06em", textTransform: "uppercase", transition: "border-color .15s ease, color .15s ease" }}
+    <button onClick={() => setOpen(true)} style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.6rem", cursor: "pointer", width: "100%", background: "transparent", color: "rgba(244,239,228,0.55)", border: "1px dashed rgba(244,239,228,0.32)", borderRadius: 2, padding: "1.1rem 1.5rem", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.78rem", letterSpacing: "0.06em", textTransform: "uppercase" }}
       onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(244,239,228,0.6)"; e.currentTarget.style.color = "#F4EFE4"; }}
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(244,239,228,0.32)"; e.currentTarget.style.color = "rgba(244,239,228,0.55)"; }}>
-      <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>+</span>
-      <span>Add a book</span>
+      <span style={{ fontSize: "1.1rem" }}>+</span><span>Add a book</span>
     </button>
   );
 
   return (
     <form onSubmit={handleSubmit} style={{ background: "#162338", border: "1px solid rgba(244,239,228,0.2)", borderRadius: 4, padding: "1.2rem", display: "flex", flexDirection: "column", gap: "0.7rem" }}>
-      <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Book title" required style={{ background: "#0F1A2B", border: "1px solid rgba(244,239,228,0.28)", color: "#F4EFE4", fontFamily: "'Fraunces', serif", fontSize: "0.9rem", padding: "0.55rem 0.8rem", borderRadius: 3 }} />
-      <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Author" required style={{ background: "#0F1A2B", border: "1px solid rgba(244,239,228,0.28)", color: "#F4EFE4", fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", padding: "0.55rem 0.8rem", borderRadius: 3 }} />
-      <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year (optional)" style={{ background: "#0F1A2B", border: "1px solid rgba(244,239,228,0.28)", color: "#F4EFE4", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.82rem", padding: "0.55rem 0.8rem", borderRadius: 3 }} />
-      <div style={{ display: "flex", gap: "0.6rem" }}>
-        <button type="submit" style={{ flex: 1, background: userAccent, border: "none", color: "#F4EFE4", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.04em", padding: "0.55rem", borderRadius: 3, cursor: "pointer", fontWeight: 700 }}>Add Book</button>
-        <button type="button" onClick={() => setOpen(false)} style={{ background: "none", border: "1px solid rgba(244,239,228,0.28)", color: "rgba(244,239,228,0.6)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", padding: "0.55rem 0.9rem", borderRadius: 3, cursor: "pointer" }}>Cancel</button>
-      </div>
+      {!selected ? (
+        <BookSearchInput onSelect={handleSelect} userAccent={userAccent} />
+      ) : (
+        <>
+          {cover && <img src={cover} alt={title} style={{ width: 48, height: 68, objectFit: "cover", borderRadius: 3, marginBottom: "0.2rem" }} onError={(e) => e.target.style.display = "none"} />}
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" required style={iStyle} />
+          <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Author" required style={iStyle} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+            <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" style={iStyle} />
+            <input value={pages} onChange={(e) => setPages(e.target.value)} placeholder="Pages" type="number" style={iStyle} />
+          </div>
+          <button type="button" onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: "rgba(244,239,228,0.4)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", cursor: "pointer", textAlign: "left", padding: 0 }}>← Search again</button>
+        </>
+      )}
+      {selected && (
+        <div style={{ display: "flex", gap: "0.6rem" }}>
+          <button type="submit" style={{ flex: 1, background: userAccent, border: "none", color: "#F4EFE4", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.04em", padding: "0.55rem", borderRadius: 3, cursor: "pointer", fontWeight: 700 }}>Add Book</button>
+          <button type="button" onClick={() => { setOpen(false); setSelected(null); }} style={{ background: "none", border: "1px solid rgba(244,239,228,0.28)", color: "rgba(244,239,228,0.6)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", padding: "0.55rem 0.9rem", borderRadius: 3, cursor: "pointer" }}>Cancel</button>
+        </div>
+      )}
     </form>
   );
 }
@@ -842,6 +982,7 @@ function ShelfSpine({ shelfBook, status, onClick }) {
       <div style={{ marginTop: "0.6rem", textAlign: "center", width: "100%" }}>
         <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: "0.78rem", color: "#F4EFE4", lineHeight: 1.2, marginBottom: "0.15rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shelfBook.title}</div>
         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", color: "rgba(244,239,228,0.45)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shelfBook.author}</div>
+        {shelfBook.pages && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", color: "rgba(244,239,228,0.3)", marginTop: "0.1rem" }}>{shelfBook.pages}p</div>}
       </div>
       <div style={{ position: "absolute", bottom: -8, left: "10%", right: "10%", height: 6, background: "radial-gradient(ellipse at center, rgba(0,0,0,0.35), transparent 70%)" }} />
     </button>
@@ -896,14 +1037,14 @@ function ShelfPopup({ shelfBook, status, userAccent, onClose, onStatusChange }) 
 
 function AddShelfBookCard({ userAccent, onAdd }) {
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [author, setAuthor] = useState("");
+  const [selected, setSelected] = useState(null);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!title.trim() || !author.trim()) return;
-    onAdd({ title: title.trim(), author: author.trim() });
-    setTitle(""); setAuthor(""); setOpen(false);
+  const handleSelect = (r) => setSelected(r);
+
+  const handleConfirm = () => {
+    if (!selected) return;
+    onAdd({ title: selected.title, author: selected.author, pages: selected.pages, cover: selected.cover, year: selected.year });
+    setSelected(null); setOpen(false);
   };
 
   if (!open) return (
@@ -914,14 +1055,27 @@ function AddShelfBookCard({ userAccent, onAdd }) {
   );
 
   return (
-    <form onSubmit={handleSubmit} style={{ width: 220, flexShrink: 0, background: "#162338", border: "1px solid rgba(244,239,228,0.2)", borderRadius: 4, padding: "1rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-      <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" style={{ background: "#0F1A2B", border: "1px solid rgba(244,239,228,0.28)", color: "#F4EFE4", fontFamily: "'Fraunces', serif", fontSize: "0.85rem", padding: "0.5rem 0.7rem", borderRadius: 3 }} />
-      <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Author" style={{ background: "#0F1A2B", border: "1px solid rgba(244,239,228,0.28)", color: "#F4EFE4", fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", padding: "0.5rem 0.7rem", borderRadius: 3 }} />
+    <div style={{ width: 260, flexShrink: 0, background: "#162338", border: "1px solid rgba(244,239,228,0.2)", borderRadius: 4, padding: "1rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+      {!selected ? (
+        <BookSearchInput onSelect={handleSelect} userAccent={userAccent} />
+      ) : (
+        <>
+          <div style={{ display: "flex", gap: "0.7rem", alignItems: "flex-start" }}>
+            {selected.cover && <img src={selected.cover} alt="" style={{ width: 36, height: 52, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} onError={(e) => e.target.style.display = "none"} />}
+            <div>
+              <div style={{ fontFamily: "'Fraunces', serif", fontSize: "0.88rem", color: "#F4EFE4", lineHeight: 1.2 }}>{selected.title}</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.74rem", color: "rgba(244,239,228,0.5)", marginTop: "0.2rem" }}>{selected.author}</div>
+              {selected.pages && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: "rgba(244,239,228,0.4)", marginTop: "0.15rem" }}>{selected.pages} pages</div>}
+            </div>
+          </div>
+          <button type="button" onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: "rgba(244,239,228,0.4)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", cursor: "pointer", textAlign: "left", padding: 0 }}>← Search again</button>
+        </>
+      )}
       <div style={{ display: "flex", gap: "0.5rem" }}>
-        <button type="submit" style={{ flex: 1, background: userAccent, border: "none", color: "#F4EFE4", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.04em", padding: "0.5rem", borderRadius: 3, cursor: "pointer", fontWeight: 700 }}>Add</button>
-        <button type="button" onClick={() => setOpen(false)} style={{ background: "none", border: "1px solid rgba(244,239,228,0.28)", color: "rgba(244,239,228,0.6)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", padding: "0.5rem 0.7rem", borderRadius: 3, cursor: "pointer" }}>Cancel</button>
+        {selected && <button type="button" onClick={handleConfirm} style={{ flex: 1, background: userAccent, border: "none", color: "#F4EFE4", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.04em", padding: "0.5rem", borderRadius: 3, cursor: "pointer", fontWeight: 700 }}>Add</button>}
+        <button type="button" onClick={() => { setOpen(false); setSelected(null); }} style={{ flex: selected ? 0 : 1, background: "none", border: "1px solid rgba(244,239,228,0.28)", color: "rgba(244,239,228,0.6)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", padding: "0.5rem 0.7rem", borderRadius: 3, cursor: "pointer" }}>Cancel</button>
       </div>
-    </form>
+    </div>
   );
 }
 
@@ -945,9 +1099,9 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
     return () => { active = false; };
   }, [userId]);
 
-  const handleAdd = async ({ title, author }) => {
+  const handleAdd = async ({ title, author, pages, cover, year }) => {
     const id = `shelf-${userId}-${Date.now().toString(36)}`;
-    const newBook = { id, title, author, cover: null, pages: null, summary: null, accent: userAccent };
+    const newBook = { id, title, author, cover: cover || null, pages: pages || null, year: year || null, summary: null, accent: userAccent };
     const updated = [...shelfBooks, newBook];
     setShelfBooks(updated);
     setStatuses((s) => ({ ...s, [id]: "to-read" }));
@@ -1013,123 +1167,126 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
 }
 
 // ---------------------------------------------------------------------------
-// SHARED CHAT — Amy and Lynnell messaging each other
+// SHARED CHAT
 // ---------------------------------------------------------------------------
 const SHARED_CHAT_KEY = "shared:chat";
+const CHAT_LAST_READ_KEY = (userId) => `chat:lastRead:${userId}`;
 
-function SharedChat({ activeUser }) {
+function SharedChat({ activeUser, friends, tooltipText }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [filter, setFilter] = useState(null); // null = all, userId = specific sender
+  const [collapsed, setCollapsed] = useState(false);
+  const [lastRead, setLastRead] = useState(() => {
+    try { return parseInt(localStorage.getItem(CHAT_LAST_READ_KEY(activeUser.id)) || "0", 10); } catch { return 0; }
+  });
   const scrollRef = React.useRef(null);
 
   useEffect(() => {
-    // Initial load
     storage.get(SHARED_CHAT_KEY).then((res) => {
-      setMessages(res ? JSON.parse(res.value) : []);
+      const msgs = res ? JSON.parse(res.value) : [];
+      setMessages(msgs);
       setLoaded(true);
     });
-
-    // Subscribe to real-time updates (polls every 4s when Supabase is active)
     const unsub = subscribeToChatUpdates(SHARED_CHAT_KEY, (msgs) => setMessages(msgs));
     return unsub;
   }, []);
 
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages]);
+    if (!collapsed && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, collapsed]);
+
+  const markRead = () => {
+    const now = Date.now();
+    setLastRead(now);
+    try { localStorage.setItem(CHAT_LAST_READ_KEY(activeUser.id), String(now)); } catch {}
+  };
 
   const handleSend = async (e) => {
     e.preventDefault();
     const text = input.trim();
     if (!text) return;
-    const newMsg = { userId: activeUser.id, text, ts: Date.now() };
+    const now = Date.now();
+    const newMsg = { userId: activeUser.id, text, ts: now };
     const updated = [...messages, newMsg];
     setMessages(updated);
     setInput("");
+    markRead();
     await storage.set(SHARED_CHAT_KEY, JSON.stringify(updated));
   };
 
-  const formatTime = (ts) => {
-    const d = new Date(ts);
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
+  const formatTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  const participants = [{ id: null, name: "All", accent: BRAND.tan }, ...(friends || [])];
+
+  // Unread = messages from others after lastRead
+  const unreadFrom = (uid) => messages.filter((m) => m.userId === uid && m.ts > lastRead).length;
+
+  const visibleMessages = filter ? messages.filter((m) => m.userId === filter || m.userId === activeUser.id) : messages;
 
   return (
-    <div style={{
-      width: "100%",
-      background: `${BRAND.darkCard}cc`, backdropFilter: "blur(10px)",
-      border: `1px solid ${BRAND.cream}14`, borderRadius: 10, overflow: "hidden",
-    }}>
+    <div style={{ width: "100%", background: `${BRAND.darkCard}cc`, backdropFilter: "blur(10px)", border: `1px solid ${BRAND.cream}14`, borderRadius: 10, overflow: "hidden" }}>
       {/* Header */}
-      <div style={{ padding: "0.9rem 1.2rem", borderBottom: `1px solid ${BRAND.cream}14`, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+      <div style={{ padding: "0.9rem 1.2rem", borderBottom: collapsed ? "none" : `1px solid ${BRAND.cream}14`, display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
         <span style={{ fontSize: "1rem" }}>💬</span>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.tan }}>
-          Book Brain Chat
-        </div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: "0.4rem" }}>
-          {Object.values(USERS).map((u) => (
-            <span key={u.id} style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", letterSpacing: "0.06em", textTransform: "uppercase", background: `${u.accent}33`, color: u.accent, padding: "0.15rem 0.5rem", borderRadius: 20 }}>{u.name}</span>
-          ))}
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div ref={scrollRef} style={{ height: 260, overflowY: "auto", padding: "1rem 1.2rem", display: "flex", flexDirection: "column", gap: "0.65rem" }}>
-        {!loaded ? (
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", color: `${BRAND.cream}44` }}>Loading…</div>
-        ) : messages.length === 0 ? (
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: `${BRAND.cream}33`, fontStyle: "italic", textAlign: "center", marginTop: "2rem" }}>
-            No messages yet — say hello!
-          </div>
-        ) : (
-          messages.map((m, i) => {
-            const sender = USERS[m.userId];
-            const isMe = m.userId === activeUser.id;
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.tan }}>Book Brain Chat</div>
+        <TooltipIcon text={tooltipText} color={BRAND.tan} />
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+          {/* Filter buttons */}
+          {participants.map((p) => {
+            const unread = p.id ? unreadFrom(p.id) : (friends || []).reduce((n, f) => n + unreadFrom(f.id), 0);
+            const active = filter === p.id;
             return (
-              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start" }}>
-                {/* Name + time */}
-                <div style={{ display: "flex", gap: "0.4rem", alignItems: "baseline", marginBottom: "0.2rem" }}>
-                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: sender?.accent }}>{isMe ? "You" : sender?.name}</span>
-                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", color: `${BRAND.cream}33` }}>{formatTime(m.ts)}</span>
-                </div>
-                {/* Bubble */}
-                <div style={{
-                  maxWidth: "78%", padding: "0.6rem 0.9rem", borderRadius: isMe ? "12px 12px 2px 12px" : "12px 12px 12px 2px",
-                  background: isMe ? `${activeUser.accent}33` : `${BRAND.cream}0f`,
-                  border: `1px solid ${isMe ? activeUser.accent + "55" : BRAND.cream + "18"}`,
-                  fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", lineHeight: 1.5,
-                  color: BRAND.cream, wordBreak: "break-word",
-                }}>
-                  {m.text}
-                </div>
-              </div>
+              <button key={p.id || "all"} onClick={() => { setFilter(p.id); if (!collapsed) markRead(); }}
+                style={{ position: "relative", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", letterSpacing: "0.06em", textTransform: "uppercase", background: active ? `${p.accent}44` : `${p.accent}22`, color: p.accent, padding: "0.2rem 0.55rem", borderRadius: 20, border: `1px solid ${active ? p.accent : "transparent"}`, cursor: "pointer" }}>
+                {p.name}
+                {unread > 0 && (
+                  <span style={{ position: "absolute", top: -5, right: -5, background: BRAND.coral, color: BRAND.cream, borderRadius: "50%", width: 14, height: 14, fontSize: "0.5rem", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>{unread > 9 ? "9+" : unread}</span>
+                )}
+              </button>
             );
-          })
-        )}
+          })}
+          {/* Collapse toggle */}
+          <button onClick={() => { setCollapsed((c) => !c); if (collapsed) markRead(); }}
+            style={{ background: "none", border: `1px solid ${BRAND.cream}22`, color: `${BRAND.cream}55`, borderRadius: 20, padding: "0.2rem 0.55rem", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem" }}>
+            {collapsed ? "▼ Open" : "▲ Close"}
+          </button>
+        </div>
       </div>
 
-      {/* Input */}
-      <form onSubmit={handleSend} style={{ display: "flex", gap: "0.6rem", padding: "0.8rem 1rem", borderTop: `1px solid ${BRAND.cream}14` }}>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={`Message as ${activeUser.name}…`}
-          style={{
-            flex: 1, background: `${BRAND.dark}cc`, border: `1px solid ${BRAND.cream}22`,
-            borderRadius: 20, padding: "0.6rem 1rem", color: BRAND.cream,
-            fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", outline: "none",
-          }}
-        />
-        <button type="submit" disabled={!input.trim()} style={{
-          background: `linear-gradient(135deg, ${activeUser.accent}, ${BRAND.terracotta})`,
-          border: "none", borderRadius: 20, padding: "0.6rem 1.1rem",
-          color: BRAND.cream, fontFamily: "'JetBrains Mono', monospace",
-          fontSize: "0.7rem", letterSpacing: "0.06em", textTransform: "uppercase",
-          fontWeight: 700, cursor: "pointer", opacity: input.trim() ? 1 : 0.4,
-          transition: "opacity .15s ease",
-        }}>Send</button>
-      </form>
+      {!collapsed && (
+        <>
+          <div ref={scrollRef} onClick={markRead} style={{ height: 260, overflowY: "auto", padding: "1rem 1.2rem", display: "flex", flexDirection: "column", gap: "0.65rem" }}>
+            {!loaded ? (
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", color: `${BRAND.cream}44` }}>Loading…</div>
+            ) : visibleMessages.length === 0 ? (
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: `${BRAND.cream}33`, fontStyle: "italic", textAlign: "center", marginTop: "2rem" }}>No messages yet — say hello!</div>
+            ) : (
+              visibleMessages.map((m, i) => {
+                const sender = USERS[m.userId];
+                const isMe = m.userId === activeUser.id;
+                return (
+                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start" }}>
+                    <div style={{ display: "flex", gap: "0.4rem", alignItems: "baseline", marginBottom: "0.2rem" }}>
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: sender?.accent }}>{isMe ? "You" : sender?.name}</span>
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", color: `${BRAND.cream}33` }}>{formatTime(m.ts)}</span>
+                    </div>
+                    <div style={{ maxWidth: "78%", padding: "0.6rem 0.9rem", borderRadius: isMe ? "12px 12px 2px 12px" : "12px 12px 12px 2px", background: isMe ? `${activeUser.accent}33` : `${BRAND.cream}0f`, border: `1px solid ${isMe ? activeUser.accent + "55" : BRAND.cream + "18"}`, fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", lineHeight: 1.5, color: BRAND.cream, wordBreak: "break-word" }}>
+                      {m.text}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          <form onSubmit={handleSend} style={{ display: "flex", gap: "0.6rem", padding: "0.8rem 1rem", borderTop: `1px solid ${BRAND.cream}14` }}>
+            <input value={input} onChange={(e) => setInput(e.target.value)} placeholder={`Message as ${activeUser.name}…`}
+              style={{ flex: 1, background: `${BRAND.dark}cc`, border: `1px solid ${BRAND.cream}22`, borderRadius: 20, padding: "0.6rem 1rem", color: BRAND.cream, fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", outline: "none" }} />
+            <button type="submit" disabled={!input.trim()} style={{ background: `linear-gradient(135deg, ${activeUser.accent}, ${BRAND.terracotta})`, border: "none", borderRadius: 20, padding: "0.6rem 1.1rem", color: BRAND.cream, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 700, cursor: "pointer", opacity: input.trim() ? 1 : 0.4, transition: "opacity .15s ease" }}>Send</button>
+          </form>
+        </>
+      )}
     </div>
   );
 }
@@ -1239,7 +1396,7 @@ function FriendChallenge({ friendId, year }) {
   );
 }
 
-function BookChallenge({ userId, userAccent, friends }) {
+function BookChallenge({ userId, userAccent, friends, tooltipText }) {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
   const [goal, setGoal] = useState(null);
@@ -1317,8 +1474,8 @@ function BookChallenge({ userId, userAccent, friends }) {
       {/* Header */}
       <div style={{ padding: "1rem 1.2rem", borderBottom: `1px solid ${BRAND.cream}14`, display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
         <span style={{ fontSize: "1rem" }}>🏆</span>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: userAccent }}>
-          {USERS[userId].name}'s Reading Challenge
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: userAccent, display: "flex", alignItems: "center", gap: "0.3rem" }}>
+          {USERS[userId].name}'s Reading Challenge <TooltipIcon text={tooltipText} color={userAccent} />
         </div>
         {/* Year selector */}
         <div style={{ marginLeft: "auto", display: "flex", gap: "0.35rem" }}>
@@ -1446,7 +1603,7 @@ function BookChallenge({ userId, userAccent, friends }) {
 // ---------------------------------------------------------------------------
 // SHARED BOOKSHELF — books the current user and their connected friends have read
 // ---------------------------------------------------------------------------
-function SharedBookshelf({ viewerId, friends }) {
+function SharedBookshelf({ viewerId, friends, tooltipText }) {
   const [sharedBooks, setSharedBooks] = useState([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -1510,8 +1667,8 @@ function SharedBookshelf({ viewerId, friends }) {
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.9rem" }}>
         <span style={{ fontSize: "1rem" }}>✨</span>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.tan }}>
-          Books we've both read
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.tan, display: "flex", alignItems: "center", gap: "0.3rem" }}>
+          Books we've both read <TooltipIcon text={tooltipText} color={BRAND.tan} />
         </div>
       </div>
 
@@ -1550,7 +1707,7 @@ function SharedBookshelf({ viewerId, friends }) {
 // ---------------------------------------------------------------------------
 // FRIEND READING — shows what each connected friend is currently reading
 // ---------------------------------------------------------------------------
-function FriendReadingCard({ friend }) {
+function FriendReadingCard({ friend, tooltipText }) {
   const [currentlyReading, setCurrentlyReading] = useState([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -1587,8 +1744,8 @@ function FriendReadingCard({ friend }) {
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.9rem" }}>
         <span style={{ fontSize: "1rem" }}>👀</span>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: friend.accent }}>
-          {friend.name} is reading
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: friend.accent, display: "flex", alignItems: "center", gap: "0.3rem" }}>
+          {friend.name} is reading <TooltipIcon text={tooltipText} color={friend.accent} />
         </div>
       </div>
       {currentlyReading.length === 0 ? (
@@ -1618,11 +1775,11 @@ function FriendReadingCard({ friend }) {
   );
 }
 
-function FriendReading({ friends }) {
+function FriendReading({ friends, tooltipText }) {
   if (!friends || friends.length === 0) return null;
   return (
     <>
-      {friends.map((f) => <FriendReadingCard key={f.id} friend={f} />)}
+      {friends.map((f) => <FriendReadingCard key={f.id} friend={f} tooltipText={tooltipText} />)}
     </>
   );
 }
@@ -1632,7 +1789,7 @@ function FriendReading({ friends }) {
 // ---------------------------------------------------------------------------
 const ACCENT_PRESETS = ["#F25C5C","#BF755A","#8C5634","#B98D6A","#D1A88C","#7C9E87","#6B8CAE","#A07CC5","#C5876B","#5E9E9E"];
 
-function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated }) {
+function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated, tooltips, onTooltipsChanged }) {
   const allUsers = Object.values(USERS);
   const [connections, setConnections] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -1835,6 +1992,28 @@ function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated }) 
             ))}
           </div>
         )}
+
+        {/* Divider */}
+        <div style={{ margin: "1.6rem 0", height: 1, background: `${BRAND.cream}14` }} />
+
+        {/* Tooltip Editor */}
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "0.8rem" }}>Section Tooltips</div>
+        <div style={{ fontSize: "0.78rem", color: `${BRAND.cream}55`, fontFamily: "'Inter', sans-serif", marginBottom: "0.8rem" }}>Add instructions that appear as a ⓘ icon on each section. Leave blank to hide.</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.7rem" }}>
+          {TOOLTIP_SECTIONS.map(({ key, label }) => (
+            <div key={key}>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.56rem", color: `${BRAND.cream}55`, marginBottom: "0.3rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
+              <textarea
+                value={(tooltips || {})[key] || ""}
+                onChange={(e) => onTooltipsChanged({ ...(tooltips || {}), [key]: e.target.value })}
+                onBlur={async () => { await saveTooltips(tooltips || {}); }}
+                placeholder={`Instructions for ${label}…`}
+                rows={2}
+                style={{ width: "100%", background: `${BRAND.dark}88`, border: `1px solid ${BRAND.cream}22`, borderRadius: 6, padding: "0.55rem 0.7rem", color: BRAND.cream, fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", resize: "vertical", outline: "none", boxSizing: "border-box" }}
+              />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -1843,7 +2022,7 @@ function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated }) 
 // ---------------------------------------------------------------------------
 // USER HOME
 // ---------------------------------------------------------------------------
-function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dynamicPasswords, onUserCreated }) {
+function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dynamicPasswords, onUserCreated, tooltips, onTooltipsChanged }) {
   const [connections, setConnections] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
   const isAdmin = user.id === ADMIN_USER_ID;
@@ -1869,7 +2048,7 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dy
       }} />
       <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, ${BRAND.dark}11 0%, ${BRAND.dark}44 50%, ${BRAND.dark}99 100%)` }} />
 
-      {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} dynamicUsers={dynamicUsers} dynamicPasswords={dynamicPasswords} onUserCreated={onUserCreated} />}
+      {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} dynamicUsers={dynamicUsers} dynamicPasswords={dynamicPasswords} onUserCreated={onUserCreated} tooltips={tooltips} onTooltipsChanged={onTooltipsChanged} />}
 
       {/* Top bar */}
       <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.2rem 1.4rem" }}>
@@ -1887,7 +2066,7 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dy
 
       {/* Hero */}
       <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1.4rem 3rem", width: "100%", maxWidth: 920, margin: "0 auto" }}>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.22em", textTransform: "uppercase", color: user.accent, marginBottom: "0.5rem", textAlign: "center" }}>Book Mind</div>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.22em", textTransform: "uppercase", color: user.accent, marginBottom: "0.5rem", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.3rem" }}>Book Mind <TooltipIcon text={tooltips?.home} color={user.accent} /></div>
         <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.4rem, 9vw, 3.6rem)", lineHeight: 1.02, margin: "0 0 0.4rem", color: BRAND.cream, textAlign: "center" }}>{user.name}'s</h1>
         <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.4rem, 9vw, 3.6rem)", lineHeight: 1.02, margin: "0 0 2rem", color: user.accent, textAlign: "center" }}>Library</h1>
 
@@ -1900,7 +2079,7 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dy
 
         {/* Book challenge */}
         <div style={{ marginBottom: "1.2rem", width: "100%", maxWidth: 860 }}>
-          <BookChallenge userId={user.id} userAccent={user.accent} friends={friends} />
+          <BookChallenge userId={user.id} userAccent={user.accent} friends={friends} tooltipText={tooltips?.challenge} />
         </div>
 
         {/* Nav cards — 2-column grid on desktop, single column on mobile */}
@@ -1911,7 +2090,7 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dy
             onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.background = `${BRAND.darkCard}dd`; }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", marginBottom: "0.5rem" }}>
               <span style={{ fontSize: "1.3rem" }}>🗂️</span>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: user.accent }}>{user.name}'s Card Catalog</div>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: user.accent, display: "flex", alignItems: "center", gap: "0.3rem" }}>{user.name}'s Card Catalog <TooltipIcon text={tooltips?.myBooks} color={user.accent} /></div>
             </div>
             <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.35rem", marginBottom: "0.3rem" }}>{user.name}'s Book Notes</div>
             <p style={{ margin: 0, fontSize: "0.84rem", color: `${BRAND.cream}66`, lineHeight: 1.5 }}>Full summaries, key ideas, quotes, and reading trackers.</p>
@@ -1923,7 +2102,7 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dy
             onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.background = `${BRAND.darkCard}dd`; }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", marginBottom: "0.5rem" }}>
               <span style={{ fontSize: "1.3rem" }}>📚</span>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.tan }}>{user.name}'s Reading List</div>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.tan, display: "flex", alignItems: "center", gap: "0.3rem" }}>{user.name}'s Reading List <TooltipIcon text={tooltips?.shelf} color={BRAND.tan} /></div>
             </div>
             <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.35rem", marginBottom: "0.3rem" }}>{user.name}'s Bookshelf</div>
             <p style={{ margin: 0, fontSize: "0.84rem", color: `${BRAND.cream}66`, lineHeight: 1.5 }}>Books on deck — covers, page counts, read time estimates.</p>
@@ -1933,15 +2112,15 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dy
         {/* Friend reading + shared bookshelf — side by side on desktop */}
         {friends.length > 0 && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem", marginTop: "1.2rem", width: "100%", maxWidth: 860 }}>
-            <FriendReading friends={friends} />
-            <SharedBookshelf viewerId={user.id} friends={friends} />
+            <FriendReading friends={friends} tooltipText={tooltips?.friendReading} />
+            <SharedBookshelf viewerId={user.id} friends={friends} tooltipText={tooltips?.sharedBooks} />
           </div>
         )}
 
         {/* Shared chat — only shown when there are connected friends */}
         {friends.length > 0 && (
           <div style={{ marginTop: "1rem", width: "100%", maxWidth: 860 }}>
-            <SharedChat activeUser={user} />
+            <SharedChat activeUser={user} friends={friends} tooltipText={tooltips?.chat} />
           </div>
         )}
       </div>
@@ -2091,12 +2270,17 @@ export default function App() {
   const [dynamicUsers, setDynamicUsers] = useState([]);
   const [dynamicPasswords, setDynamicPasswords] = useState({});
   const [usersLoaded, setUsersLoaded] = useState(false);
+  const [tooltips, setTooltips] = useState({});
 
-  // Load dynamic users once on mount — merges them into the USERS registry
+  // Load dynamic users and tooltips once on mount
   useEffect(() => {
-    loadDynamicUsers().then(({ dynamicUsers: du, dynamicPasswords: dp }) => {
+    Promise.all([
+      loadDynamicUsers(),
+      loadTooltips(),
+    ]).then(([{ dynamicUsers: du, dynamicPasswords: dp }, tt]) => {
       setDynamicUsers(du);
       setDynamicPasswords(dp);
+      setTooltips(tt);
       setUsersLoaded(true);
     });
   }, []);
@@ -2141,7 +2325,7 @@ export default function App() {
   } else if (screen === "shelf" && activeUser) {
     content = <Bookshelf userId={activeUser.id} userAccent={activeUser.accent} onBack={goUserHome} onLogout={handleLogout} />;
   } else if (activeUser) {
-    content = <UserHome user={activeUser} onOpenMyBooks={() => setScreen("myBooks")} onOpenShelf={() => setScreen("shelf")} onLogout={handleLogout} dynamicUsers={dynamicUsers} dynamicPasswords={dynamicPasswords} onUserCreated={handleUserCreated} />;
+    content = <UserHome user={activeUser} onOpenMyBooks={() => setScreen("myBooks")} onOpenShelf={() => setScreen("shelf")} onLogout={handleLogout} dynamicUsers={dynamicUsers} dynamicPasswords={dynamicPasswords} onUserCreated={handleUserCreated} tooltips={tooltips} onTooltipsChanged={setTooltips} />;
   }
 
   return (
