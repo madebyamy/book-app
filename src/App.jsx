@@ -531,7 +531,7 @@ function AcademicSections({ book, theme, openNode, setOpenNode }) {
   );
 }
 
-function BookDashboard({ userId, book, onBack }) {
+function BookDashboard({ userId, book, onBack, onLogout }) {
   const theme = book.theme;
   const hasAcademic = !!(book.nodes && book.nodes.length && book.caseFile && book.keyLines && book.thread);
   const [openNode, setOpenNode] = useState(null);
@@ -541,7 +541,10 @@ function BookDashboard({ userId, book, onBack }) {
       <div style={{ padding: "1.4rem 1.8rem", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: "1rem", background: theme.headerBg }}>
         <button onClick={onBack} style={{ background: "none", border: `1px solid ${theme.headerInk}55`, color: theme.headerInk, fontFamily: theme.mono, fontSize: "0.75rem", padding: "0.5rem 0.9rem", borderRadius: 3, cursor: "pointer" }}>← All books</button>
         <span style={{ fontFamily: theme.mono, fontSize: "0.72rem", color: `${theme.headerInk}99` }}>{book.author} · {book.year}</span>
-        <span style={{ marginLeft: "auto", color: theme.headerInk }}><DateAddedInverted userId={userId} book={book} /></span>
+        <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "1.2rem" }}>
+          <DateAddedInverted userId={userId} book={book} />
+          <button onClick={onLogout} style={{ background: "none", border: `1px solid ${theme.headerInk}33`, color: `${theme.headerInk}88`, fontFamily: theme.mono, fontSize: "0.65rem", padding: "0.3rem 0.65rem", borderRadius: 3, cursor: "pointer" }}>Log out</button>
+        </span>
       </div>
       <div style={{ padding: "3rem 1.8rem 5rem", maxWidth: 980, margin: "0 auto" }}>
         <div style={{ fontFamily: theme.mono, fontSize: "0.72rem", letterSpacing: "0.14em", textTransform: "uppercase", color: book.accent, marginBottom: "0.8rem" }}>Book summary</div>
@@ -683,7 +686,7 @@ function AddBookToMyBooks({ userId, userAccent, onAdded }) {
   );
 }
 
-function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack }) {
+function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack, onLogout }) {
   const [customBooks, setCustomBooks] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [version, setVersion] = useState(0);
@@ -700,6 +703,7 @@ function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack }) {
     <div style={{ minHeight: "100vh", background: "#0F1A2B", padding: "0 0 5rem" }}>
       <div style={{ background: "linear-gradient(180deg, #2A2118, #1C160F)", borderBottom: "3px solid #0B0805", padding: "2.6rem 1.8rem 2.2rem", textAlign: "center", position: "relative" }}>
         <button onClick={onBack} style={{ position: "absolute", top: "1.4rem", left: "1.4rem", background: "none", border: "1px solid rgba(244,239,228,0.3)", color: "rgba(244,239,228,0.7)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", padding: "0.4rem 0.8rem", borderRadius: 3, cursor: "pointer" }}>← Back</button>
+        <button onClick={onLogout} style={{ position: "absolute", top: "1.4rem", right: "1.4rem", background: "none", border: "1px solid rgba(244,239,228,0.2)", color: "rgba(244,239,228,0.5)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", padding: "0.4rem 0.8rem", borderRadius: 3, cursor: "pointer" }}>Log out</button>
         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", letterSpacing: "0.22em", textTransform: "uppercase", color: userAccent, marginBottom: "0.7rem" }}>{USERS[userId].name}'s Card Catalog</div>
         <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.1rem, 5.5vw, 3.2rem)", lineHeight: 1.05, margin: "0 0 0.5rem", color: "#F4EFE4" }}>{USERS[userId].name}'s Books</h1>
         <p style={{ color: "rgba(244,239,228,0.55)", fontSize: "0.92rem", margin: "0 auto", maxWidth: "46ch", lineHeight: 1.5 }}>Full summaries — key ideas, highlighted stories, {USERS[userId].name}'s quotes, and reading trackers.</p>
@@ -833,7 +837,7 @@ function AddShelfBookCard({ userAccent, onAdd }) {
   );
 }
 
-function Bookshelf({ userId, userAccent, onBack }) {
+function Bookshelf({ userId, userAccent, onBack, onLogout }) {
   const [shelfBooks, setShelfBooks] = useState([]);
   const [statuses, setStatuses] = useState({});
   const [loaded, setLoaded] = useState(false);
@@ -880,6 +884,7 @@ function Bookshelf({ userId, userAccent, onBack }) {
     <div style={{ minHeight: "100vh", background: "#0F1A2B", padding: "0 0 5rem" }}>
       <div style={{ background: "linear-gradient(180deg, #2A2118, #1C160F)", borderBottom: "3px solid #0B0805", padding: "2.6rem 1.8rem 2.2rem", textAlign: "center", position: "relative" }}>
         <button onClick={onBack} style={{ position: "absolute", top: "1.4rem", left: "1.4rem", background: "none", border: "1px solid rgba(244,239,228,0.3)", color: "rgba(244,239,228,0.7)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", padding: "0.4rem 0.8rem", borderRadius: 3, cursor: "pointer" }}>← Back</button>
+        <button onClick={onLogout} style={{ position: "absolute", top: "1.4rem", right: "1.4rem", background: "none", border: "1px solid rgba(244,239,228,0.2)", color: "rgba(244,239,228,0.5)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", padding: "0.4rem 0.8rem", borderRadius: 3, cursor: "pointer" }}>Log out</button>
         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", letterSpacing: "0.22em", textTransform: "uppercase", color: userAccent, marginBottom: "0.7rem" }}>{USERS[userId].name}'s Reading List</div>
         <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.1rem, 5.5vw, 3.2rem)", lineHeight: 1.05, margin: "0 0 0.5rem", color: "#F4EFE4" }}>{USERS[userId].name}'s Bookshelf</h1>
         <p style={{ color: "rgba(244,239,228,0.55)", fontSize: "0.92rem", margin: "0 auto", maxWidth: "46ch", lineHeight: 1.5 }}>Books on deck — tap a cover for a quick look.</p>
@@ -922,10 +927,10 @@ function Bookshelf({ userId, userAccent, onBack }) {
 // ---------------------------------------------------------------------------
 // USER HOME — shown after selecting Amy or Lynnell
 // ---------------------------------------------------------------------------
-function UserHome({ user, onOpenMyBooks, onOpenShelf, onBack }) {
+function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
   return (
     <div style={{ minHeight: "100vh", background: "#0F1A2B", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "3rem 1.8rem", position: "relative" }}>
-      <button onClick={onBack} style={{ position: "absolute", top: "1.4rem", left: "1.4rem", background: "none", border: "1px solid rgba(244,239,228,0.3)", color: "rgba(244,239,228,0.7)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", padding: "0.4rem 0.8rem", borderRadius: 3, cursor: "pointer" }}>← Home</button>
+      <button onClick={onLogout} style={{ position: "absolute", top: "1.4rem", right: "1.4rem", background: "none", border: "1px solid rgba(244,239,228,0.2)", color: "rgba(244,239,228,0.5)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", padding: "0.4rem 0.8rem", borderRadius: 3, cursor: "pointer" }}>Log out</button>
       <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", letterSpacing: "0.22em", textTransform: "uppercase", color: user.accent, marginBottom: "0.6rem" }}>Book Mind</div>
       <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.2rem, 6vw, 3.2rem)", lineHeight: 1.05, margin: "0 0 2.6rem", color: "#F4EFE4", textAlign: "center" }}>{user.name}'s Library</h1>
       <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem", width: "100%", maxWidth: 420 }}>
@@ -949,25 +954,105 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onBack }) {
 }
 
 // ---------------------------------------------------------------------------
-// TOP LANDING — choose whose Book Mind to enter
+// LOGIN SCREEN
 // ---------------------------------------------------------------------------
-function TopLanding({ onSelectUser }) {
+const PASSWORDS = {
+  amy: import.meta.env.VITE_PASSWORD_AMY || "estes",
+  lynnell: import.meta.env.VITE_PASSWORD_LYNNELL || "grube",
+};
+
+const SESSION_KEY = "bookbrain:loggedInUser";
+
+function LoginScreen({ onLogin }) {
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
+  const [shake, setShake] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    if (password === PASSWORDS[selectedUser]) {
+      sessionStorage.setItem(SESSION_KEY, selectedUser);
+      onLogin(selectedUser);
+    } else {
+      setError("Wrong password — try again.");
+      setPassword("");
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+    }
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "#0F1A2B", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "3rem 1.8rem" }}>
+      <style>{`
+        @keyframes shake {
+          0%,100% { transform: translateX(0); }
+          20% { transform: translateX(-8px); }
+          40% { transform: translateX(8px); }
+          60% { transform: translateX(-6px); }
+          80% { transform: translateX(6px); }
+        }
+        .shake { animation: shake 0.45s ease; }
+      `}</style>
       <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(244,239,228,0.45)", marginBottom: "0.8rem" }}>Welcome to</div>
-      <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.4rem, 6vw, 3.6rem)", lineHeight: 1.05, margin: "0 0 0.5rem", color: "#F4EFE4", textAlign: "center" }}>Book Brain Share</h1>
-      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.95rem", color: "rgba(244,239,228,0.5)", margin: "0 0 3rem", textAlign: "center" }}>Whose Book Mind would you like to open?</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem", width: "100%", maxWidth: 420 }}>
-        {Object.values(USERS).map((user) => (
-          <button key={user.id} onClick={() => onSelectUser(user.id)}
-            style={{ background: "#162338", border: `1px solid rgba(244,239,228,0.18)`, borderLeft: `4px solid ${user.accent}`, borderRadius: 4, padding: "1.8rem 2rem", textAlign: "left", cursor: "pointer", color: "#F4EFE4", transition: "transform .18s ease, background .18s ease" }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.background = "#1e2f45"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.background = "#162338"; }}>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.64rem", letterSpacing: "0.12em", textTransform: "uppercase", color: user.accent, marginBottom: "0.4rem" }}>Book Mind</div>
-            <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.7rem", lineHeight: 1.1 }}>{user.name}'s Book Mind</div>
-          </button>
-        ))}
-      </div>
+      <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.2rem, 6vw, 3.2rem)", lineHeight: 1.05, margin: "0 0 0.4rem", color: "#F4EFE4", textAlign: "center" }}>Book Brain Share</h1>
+      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", color: "rgba(244,239,228,0.45)", margin: "0 0 2.8rem", textAlign: "center" }}>mybookbrain.com</p>
+
+      <form onSubmit={handleSubmit} className={shake ? "shake" : ""} style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", gap: "1rem" }}>
+        {/* User selector */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem" }}>
+          {Object.values(USERS).map((user) => (
+            <button
+              key={user.id}
+              type="button"
+              onClick={() => { setSelectedUser(user.id); setError(null); setPassword(""); }}
+              style={{
+                background: selectedUser === user.id ? `${user.accent}22` : "#162338",
+                border: `2px solid ${selectedUser === user.id ? user.accent : "rgba(244,239,228,0.15)"}`,
+                borderRadius: 6, padding: "1.2rem 1rem", cursor: "pointer", color: "#F4EFE4",
+                transition: "all .15s ease", textAlign: "center",
+              }}
+            >
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: selectedUser === user.id ? user.accent : "rgba(244,239,228,0.4)", marginBottom: "0.35rem" }}>Book Mind</div>
+              <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.15rem" }}>{user.name}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* Password field — only shown after selecting a user */}
+        {selectedUser && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+            <input
+              autoFocus
+              type="password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setError(null); }}
+              placeholder={`${USERS[selectedUser].name}'s password`}
+              style={{
+                background: "#162338", border: `1px solid ${error ? "#C1432B" : "rgba(244,239,228,0.2)"}`,
+                borderRadius: 4, padding: "0.85rem 1rem", color: "#F4EFE4",
+                fontFamily: "'Inter', sans-serif", fontSize: "1rem", outline: "none",
+                transition: "border-color .15s ease",
+              }}
+            />
+            {error && (
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", color: "#C1432B", textAlign: "center" }}>{error}</div>
+            )}
+            <button
+              type="submit"
+              style={{
+                background: USERS[selectedUser].accent, border: "none", borderRadius: 4,
+                padding: "0.85rem", color: "#F4EFE4", fontFamily: "'JetBrains Mono', monospace",
+                fontSize: "0.78rem", letterSpacing: "0.08em", textTransform: "uppercase",
+                fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              Enter {USERS[selectedUser].name}'s Book Mind →
+            </button>
+          </div>
+        )}
+      </form>
     </div>
   );
 }
@@ -976,37 +1061,44 @@ function TopLanding({ onSelectUser }) {
 // ROOT APP
 // ---------------------------------------------------------------------------
 export default function App() {
-  const [activeUserId, setActiveUserId] = useState(null);
-  const [screen, setScreen] = useState("top"); // "top" | "userHome" | "myBooks" | "shelf"
+  const [loggedInUserId, setLoggedInUserId] = useState(() => sessionStorage.getItem(SESSION_KEY) || null);
+  const [screen, setScreen] = useState("userHome");
   const [activeBookId, setActiveBookId] = useState(null);
   const [customBooksVersion, setCustomBooksVersion] = useState(0);
   const [allCustomBooks, setAllCustomBooks] = useState([]);
 
-  const activeUser = activeUserId ? USERS[activeUserId] : null;
+  const activeUser = loggedInUserId ? USERS[loggedInUserId] : null;
 
   useEffect(() => {
-    if (!activeUserId) { setAllCustomBooks([]); return; }
-    loadCustomBooks(activeUserId).then(setAllCustomBooks);
-  }, [activeUserId, customBooksVersion]);
+    if (!loggedInUserId) { setAllCustomBooks([]); return; }
+    loadCustomBooks(loggedInUserId).then(setAllCustomBooks);
+  }, [loggedInUserId, customBooksVersion]);
 
   const staticBooks = activeUser ? activeUser.books : [];
   const activeBook = [...staticBooks, ...allCustomBooks].find((b) => b.id === activeBookId);
 
-  const selectUser = (userId) => { setActiveUserId(userId); setScreen("userHome"); setActiveBookId(null); };
-  const goTop = () => { setActiveUserId(null); setScreen("top"); setActiveBookId(null); };
+  const handleLogin = (userId) => { setLoggedInUserId(userId); setScreen("userHome"); setActiveBookId(null); };
+  const handleLogout = () => { sessionStorage.removeItem(SESSION_KEY); setLoggedInUserId(null); setScreen("userHome"); setActiveBookId(null); };
   const goUserHome = () => { setScreen("userHome"); setActiveBookId(null); };
+
+  if (!loggedInUserId) {
+    return (
+      <div style={{ fontFamily: "Inter, sans-serif" }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap'); * { box-sizing: border-box; }`}</style>
+        <LoginScreen onLogin={handleLogin} />
+      </div>
+    );
+  }
 
   let content;
   if (activeBook && activeUser) {
-    content = <BookDashboard userId={activeUser.id} book={activeBook} onBack={goUserHome} />;
+    content = <BookDashboard userId={activeUser.id} book={activeBook} onBack={goUserHome} onLogout={handleLogout} />;
   } else if (screen === "myBooks" && activeUser) {
-    content = <MyBooksHome userId={activeUser.id} userAccent={activeUser.accent} staticBooks={staticBooks} onSelect={(id) => setActiveBookId(id)} onBack={goUserHome} />;
+    content = <MyBooksHome userId={activeUser.id} userAccent={activeUser.accent} staticBooks={staticBooks} onSelect={(id) => setActiveBookId(id)} onBack={goUserHome} onLogout={handleLogout} />;
   } else if (screen === "shelf" && activeUser) {
-    content = <Bookshelf userId={activeUser.id} userAccent={activeUser.accent} onBack={goUserHome} />;
-  } else if (screen === "userHome" && activeUser) {
-    content = <UserHome user={activeUser} onOpenMyBooks={() => setScreen("myBooks")} onOpenShelf={() => setScreen("shelf")} onBack={goTop} />;
-  } else {
-    content = <TopLanding onSelectUser={selectUser} />;
+    content = <Bookshelf userId={activeUser.id} userAccent={activeUser.accent} onBack={goUserHome} onLogout={handleLogout} />;
+  } else if (activeUser) {
+    content = <UserHome user={activeUser} onOpenMyBooks={() => setScreen("myBooks")} onOpenShelf={() => setScreen("shelf")} onLogout={handleLogout} />;
   }
 
   return (
