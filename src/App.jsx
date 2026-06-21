@@ -16,7 +16,7 @@ const AMY_BOOKS = [
     theme: {
       bg: "#EDE8DC", card: "#F7F4EC", ink: "#1A1612",
       inkSoft: "rgba(26,22,18,0.62)", inkFaint: "rgba(26,22,18,0.4)", border: "rgba(26,22,18,0.16)",
-      display: "'Fraunces', serif", body: "'Inter', sans-serif", mono: "'JetBrains Mono', monospace",
+      display: FONT.display, body: FONT.body, mono: FONT.type,
       displayWeight: 600, headerBg: "#1A1612", headerInk: "#EDE8DC",
     },
     cover: "https://www.gladwellbooks.com/wp-content/uploads/2017/06/9780316316965.jpg",
@@ -46,7 +46,7 @@ const AMY_BOOKS = [
     theme: {
       bg: "#16140F", card: "#1F1B14", ink: "#F2ECDD",
       inkSoft: "rgba(242,236,221,0.66)", inkFaint: "rgba(242,236,221,0.42)", border: "rgba(242,236,221,0.16)",
-      display: "'Fraunces', serif", body: "'Inter', sans-serif", mono: "'JetBrains Mono', monospace",
+      display: FONT.display, body: FONT.body, mono: FONT.type,
       displayWeight: 800, headerBg: "#E8B23D", headerInk: "#16140F",
     },
     cover: "https://www.gladwellbooks.com/wp-content/uploads/2024/07/9780316575805_638919.jpg",
@@ -266,7 +266,7 @@ function daysBetween(fromISO, toISO) {
 const DEFAULT_THEME = {
   bg: "#EDE8DC", card: "#F7F4EC", ink: "#1A1612",
   inkSoft: "rgba(26,22,18,0.62)", inkFaint: "rgba(26,22,18,0.4)", border: "rgba(26,22,18,0.16)",
-  display: "'Fraunces', serif", body: "'Inter', sans-serif", mono: "'JetBrains Mono', monospace",
+  display: FONT.display, body: FONT.body, mono: FONT.type,
   displayWeight: 600, headerBg: "#1A1612", headerInk: "#EDE8DC",
 };
 
@@ -295,7 +295,7 @@ async function searchBooks(query) {
 const TOOLTIPS_KEY = "admin:tooltips";
 const TOOLTIP_SECTIONS = [
   { key: "home",          label: "Home Page" },
-  { key: "myBooks",       label: "Book Notes section" },
+  { key: "myBooks",       label: "Marginalia section" },
   { key: "shelf",         label: "Bookshelf section" },
   { key: "challenge",     label: "Reading Challenge" },
   { key: "friendReading", label: "Friend Reading widget" },
@@ -330,7 +330,7 @@ function TooltipIcon({ text, color }) {
           background: BRAND.darkCard, border: `1px solid ${BRAND.cream}22`, borderRadius: 8,
           padding: "0.8rem 1rem", zIndex: 100, width: 220, boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
         }}>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: BRAND.cream, margin: "0 0 0.5rem", lineHeight: 1.5 }}>{text}</p>
+          <p style={{ fontFamily: FONT.body, fontSize: "0.82rem", color: BRAND.cream, margin: "0 0 0.5rem", lineHeight: 1.5 }}>{text}</p>
           <button onClick={() => setShow(false)} style={{ background: "none", border: "none", color: `${BRAND.cream}55`, cursor: "pointer", fontSize: "0.7rem", padding: 0 }}>Close</button>
         </div>
       )}
@@ -929,7 +929,7 @@ function BookDashboard({ userId, book: initialBook, onBack, onLogout }) {
 function StatusBadge({ status, accent }) {
   if (status === "read") return (
     <div title="Finished" style={{ position: "absolute", top: -6, right: -10, width: 34, height: 34, borderRadius: "50%", background: accent, border: "2px solid #F4EFE4", display: "flex", alignItems: "center", justifyContent: "center", transform: "rotate(-12deg)", boxShadow: "0 2px 5px rgba(0,0,0,0.4)" }}>
-      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.03em", color: "#1A1610", textAlign: "center", lineHeight: 1.05 }}>READ</span>
+      <span style={{ fontFamily: FONT.type, fontSize: "0.52rem", fontWeight: 700, letterSpacing: "0.03em", color: "#1A1610", textAlign: "center", lineHeight: 1.05 }}>READ</span>
     </div>
   );
   if (status === "reading") return (
@@ -944,7 +944,7 @@ function StatusBadge({ status, accent }) {
   );
   return (
     <div title="To read" style={{ position: "absolute", top: -6, right: -10, width: 30, height: 30, borderRadius: "50%", background: "#F4EFE4", border: `2px solid ${accent}`, display: "flex", alignItems: "center", justifyContent: "center", transform: "rotate(-12deg)", boxShadow: "0 2px 5px rgba(0,0,0,0.35)" }}>
-      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.42rem", fontWeight: 700, letterSpacing: "0.02em", color: accent, textAlign: "center", lineHeight: 1.05 }}>TO<br/>READ</span>
+      <span style={{ fontFamily: FONT.type, fontSize: "0.42rem", fontWeight: 700, letterSpacing: "0.02em", color: accent, textAlign: "center", lineHeight: 1.05 }}>TO<br/>READ</span>
     </div>
   );
 }
@@ -1164,7 +1164,7 @@ function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack, onLogo
             The card catalogue
           </div>
           <h1 style={{ fontFamily: FONT.display, fontWeight: 500, fontSize: "clamp(34px,5vw,60px)", lineHeight: 1.03, letterSpacing: "-0.01em", color: BRAND.cream, margin: "0 0 14px" }}>
-            {USERS[userId].name}'s Book Notes
+            {USERS[userId].name}'s Marginalia
           </h1>
           <p style={{ fontFamily: FONT.read, fontSize: "clamp(15px,1.3vw,17px)", lineHeight: 1.6, color: "rgba(242,239,235,.62)", margin: 0, maxWidth: "40em" }}>
             Full summaries — key ideas, highlighted stories, quotes, and reading trackers.
@@ -1200,206 +1200,417 @@ function estimateReadTime(pages) {
   return Math.round(((pages * 250) / 200 / 60) * 10) / 10;
 }
 
-function ShelfSpine({ shelfBook, status, onClick }) {
-  const accent = shelfBook.accent || "#7A8B6F";
-  return (
-    <button onClick={onClick} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", width: 92, flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-      <div style={{ position: "relative", width: 84, height: 124 }}>
-        {shelfBook.cover ? (
-          <img src={shelfBook.cover} alt={shelfBook.title} style={{ width: "100%", height: "100%", objectFit: "cover", boxShadow: "0 4px 10px rgba(0,0,0,0.45)", display: "block" }} onError={(e) => { e.target.style.display = "none"; }} />
-        ) : (
-          <div style={{ width: "100%", height: "100%", background: accent, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 10px rgba(0,0,0,0.45)", padding: "0.5rem" }}>
-            <span style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "0.78rem", color: "#1A1612", textAlign: "center", lineHeight: 1.2 }}>{shelfBook.title}</span>
-          </div>
-        )}
-        <StatusBadge status={status} accent={accent} />
-      </div>
-      <div style={{ marginTop: "0.6rem", textAlign: "center", width: "100%" }}>
-        <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: "0.78rem", color: "#F4EFE4", lineHeight: 1.2, marginBottom: "0.15rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shelfBook.title}</div>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", color: "rgba(244,239,228,0.45)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shelfBook.author}</div>
-        {shelfBook.pages && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", color: "rgba(244,239,228,0.3)", marginTop: "0.1rem" }}>{shelfBook.pages}p</div>}
-      </div>
-      <div style={{ position: "absolute", bottom: -8, left: "10%", right: "10%", height: 6, background: "radial-gradient(ellipse at center, rgba(0,0,0,0.35), transparent 70%)" }} />
-    </button>
-  );
-}
+// ---------------------------------------------------------------------------
+// CARD CATALOGUE BOOKSHELF — oak drawer cabinet design
+// ---------------------------------------------------------------------------
 
-function ShelfRow({ books, statuses, onOpen }) {
+const CC_DRAWER_STORE = (uid) => `marginalia_shelf_drawers_v1_${uid}`;
+const CC_ASSIGN_STORE = (uid) => `marginalia_shelf_assign_v1_${uid}`;
+
+const DEFAULT_DRAWERS = [
+  { id: "reading", name: "Reading", removable: false },
+  { id: "read",    name: "Read",    removable: false },
+  { id: "want",    name: "Want to Read", removable: false },
+  { id: "upnext",  name: "Up Next", removable: true },
+  { id: "dnf",     name: "Did Not Finish", removable: true },
+];
+
+const STATUS_TO_DRAWER = { "reading": "reading", "read": "read", "to-read": "want", "up-next": "upnext", "did-not-finish": "dnf" };
+const DRAWER_TO_STATUS = { "reading": "reading", "read": "read", "want": "to-read", "upnext": "up-next", "dnf": "did-not-finish" };
+
+const SPINE_COLORS = ["#BF755A","#F25C5C","#2A201B","#D9A282","#9a6a3f","#6B4A3A","#3E7C57","#3a6ea5"];
+function spineColor(book) { return book.accent || SPINE_COLORS[Math.abs((book.id||"").charCodeAt(0) + (book.id||"").charCodeAt(2||0)) % SPINE_COLORS.length]; }
+
+const OAK_FACE = `linear-gradient(180deg,rgba(255,255,255,.12),rgba(0,0,0,.06) 38%,rgba(0,0,0,.22)),repeating-linear-gradient(92deg,#9a6232,#9a6232 3px,#945d30 3px,#945d30 7px,#a06a39 7px,#a06a39 11px),linear-gradient(180deg,#B07F49,#6E4422)`;
+const BRASS_GRAD = `linear-gradient(180deg,#E8CF93,#C2A35E 55%,#8F7233)`;
+const BRASS_GRAD_V = `linear-gradient(180deg,#E8CF93,#C2A35E 52%,#8F7233)`;
+const BRASS_BORDER = `1px solid #6f5722`;
+
+function BrassLabelHolder({ name, isEditing, draft, onInput, onKey, onCommit }) {
   return (
-    <div style={{ position: "relative", marginBottom: "2.6rem" }}>
-      <div style={{ display: "flex", gap: "1.4rem", overflowX: "auto", paddingBottom: "1.4rem", paddingTop: "0.4rem" }}>
-        {books.map((b) => (<ShelfSpine key={b.id} shelfBook={b} status={statuses[b.id] || "to-read"} onClick={() => onOpen(b)} />))}
+    <div style={{ position: "absolute", left: "50%", top: 30, transform: "translateX(-50%)", width: 132, display: "flex", flexDirection: "column", alignItems: "center" }}>
+      {/* Brass frame */}
+      <div style={{ width: 132, background: BRASS_GRAD_V, border: BRASS_BORDER, borderRadius: 3, padding: 4, boxShadow: "0 2px 3px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.55)" }}>
+        {/* Cream paper label */}
+        <div style={{ background: "#FBF6E8", border: "1px solid #ddceac", borderRadius: 1, minHeight: 42, display: "flex", alignItems: "center", justifyContent: "center", padding: "6px 7px", boxShadow: "inset 0 1px 2px rgba(0,0,0,.14)" }}>
+          {isEditing ? (
+            <input autoFocus value={draft} onInput={onInput} onKeyDown={onKey} onBlur={onCommit} onClick={(e) => e.stopPropagation()} maxLength={22}
+              style={{ width: "100%", border: "none", outline: "none", background: "#FFFCF2", textAlign: "center", fontFamily: FONT.type, fontSize: 13, color: "#2c2014", padding: "2px" }} />
+          ) : (
+            <span style={{ fontFamily: FONT.type, fontSize: 13, lineHeight: 1.18, letterSpacing: ".01em", color: "#2c2014", textAlign: "center", wordBreak: "break-word" }}>{name}</span>
+          )}
+        </div>
       </div>
-      <div style={{ height: 14, background: "linear-gradient(180deg, #6B4A2E, #4A311C)", borderRadius: 2, boxShadow: "0 4px 8px rgba(0,0,0,0.4), inset 0 2px 0 rgba(255,255,255,0.08)" }} />
+      {/* T drop-pull */}
+      <div style={{ width: 8, height: 13, background: `linear-gradient(180deg,#C2A35E,#8F7233)`, border: BRASS_BORDER, borderTop: "none" }} />
+      <div style={{ width: 46, height: 11, borderRadius: "0 0 4px 4px", background: BRASS_GRAD, border: BRASS_BORDER, boxShadow: "0 2px 3px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.5)" }} />
+      {/* Knob */}
+      <div style={{ marginTop: 11, width: 19, height: 19, borderRadius: "50%", background: "radial-gradient(circle at 38% 30%,#E8CF93,#C2A35E 52%,#8F7233)", border: BRASS_BORDER, boxShadow: "0 2px 3px rgba(0,0,0,.45),inset 0 1px 1px rgba(255,255,255,.6)" }} />
     </div>
   );
 }
 
-function ShelfPopup({ shelfBook, status, userAccent, onClose, onStatusChange }) {
-  const accent = shelfBook.accent || userAccent;
-  const readHours = estimateReadTime(shelfBook.pages);
+function IndexCard({ book, delay, onOpen }) {
+  const [hovered, setHovered] = useState(false);
+  const tabTitle = book.title.length > 14 ? book.title.slice(0, 13) + "…" : book.title;
+  const callNo = book.call || `${book.year || "????"} · ${(book.author || "").split(" ").pop().slice(0, 3).toUpperCase()}`;
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(15,26,43,0.78)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: "#F4EFE4", color: "#1A1612", borderRadius: 4, maxWidth: 420, width: "100%", overflow: "hidden", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}>
-        <div style={{ display: "flex", gap: "1.1rem", padding: "1.6rem", borderBottom: `3px solid ${accent}` }}>
-          {shelfBook.cover ? <img src={shelfBook.cover} alt={shelfBook.title} style={{ width: 76, height: 112, objectFit: "cover", flexShrink: 0, boxShadow: "0 3px 8px rgba(0,0,0,0.3)" }} onError={(e) => { e.target.style.display = "none"; }} />
-            : <div style={{ width: 76, height: 112, background: accent, flexShrink: 0 }} />}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.2rem", margin: "0 0 0.3rem", lineHeight: 1.2 }}>{shelfBook.title}</h3>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.74rem", color: "rgba(26,22,18,0.6)", marginBottom: "0.6rem" }}>{shelfBook.author}</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", color: "rgba(26,22,18,0.55)" }}>
-              {shelfBook.pages && <span>{shelfBook.pages} pages</span>}
-              {readHours && <span>· ~{readHours}h read</span>}
-            </div>
-          </div>
+    <button onClick={onOpen} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+      style={{ flexShrink: 0, width: 208, cursor: "pointer", border: "none", padding: 0, background: "transparent", textAlign: "left", animation: `cc-pop .4s cubic-bezier(.16,1,.3,1) ${delay}ms both` }}>
+      <div style={{ position: "relative", transition: "transform .26s cubic-bezier(.16,1,.3,1),box-shadow .26s cubic-bezier(.16,1,.3,1)", transform: hovered ? "translateY(-8px)" : "none", boxShadow: hovered ? "0 16px 40px rgba(20,30,50,.16)" : "0 4px 12px rgba(20,30,50,.10)" }}>
+        {/* Tab */}
+        <div style={{ marginLeft: 18, width: 118, height: 26, background: "#F6EEDD", border: "1px solid #E2D4BC", borderBottom: "none", borderRadius: "5px 5px 0 0", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 8px", overflow: "hidden" }}>
+          <span style={{ fontFamily: FONT.type, fontSize: 10, color: "#4a3a28", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tabTitle}</span>
         </div>
-        <div style={{ padding: "1.4rem 1.6rem" }}>
-          {shelfBook.summary && <p style={{ fontSize: "0.88rem", lineHeight: 1.6, color: "rgba(26,22,18,0.78)", margin: "0 0 1.2rem" }}>{shelfBook.summary}</p>}
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,22,18,0.5)", marginBottom: "0.6rem" }}>Status</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.4rem" }}>
-            {["to-read", "up-next", "reading", "read"].map((s) => (
-              <button key={s} onClick={() => onStatusChange(s)} style={{ background: status === s ? accent : "transparent", border: `1px solid ${status === s ? accent : "rgba(26,22,18,0.25)"}`, color: status === s ? "#1A1612" : "rgba(26,22,18,0.65)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", letterSpacing: "0.03em", textTransform: "uppercase", padding: "0.4rem 0.7rem", borderRadius: 3, cursor: "pointer", fontWeight: status === s ? 700 : 500 }}>
-                {s === "to-read" ? "To read" : s === "up-next" ? "Up next" : s === "reading" ? "Reading" : "Read"}
-              </button>
-            ))}
+        {/* Card body */}
+        <div style={{ background: "#F6EEDD", border: "1px solid #E2D4BC", borderTop: "none", borderRadius: "0 0 3px 3px", padding: "14px 16px 12px" }}>
+          <div style={{ fontFamily: FONT.type, fontSize: 10, letterSpacing: ".04em", color: BRAND.terracotta, borderBottom: "1px solid #C9B79A", paddingBottom: 8, marginBottom: 10 }}>{callNo}</div>
+          <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 19, lineHeight: 1.1, color: BRAND.ink, marginBottom: 5 }}>{book.title}</div>
+          <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13, color: BRAND.muted, marginBottom: 12 }}>{book.author}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
+            {[0.7, 0.5, 0.3].map((op, i) => <div key={i} style={{ height: 1, background: "#C9B79A", opacity: op }} />)}
           </div>
-          <button onClick={onClose} style={{ width: "100%", background: "#1A1612", border: "none", color: "#F4EFE4", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.74rem", letterSpacing: "0.05em", textTransform: "uppercase", padding: "0.7rem", borderRadius: 3, cursor: "pointer", fontWeight: 600 }}>Close</button>
+          <div style={{ textAlign: "right" }}>
+            <span style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.coral }}>Read card →</span>
+          </div>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
-function AddShelfBookCard({ userAccent, onAdd }) {
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState(null);
-
-  const handleSelect = (r) => setSelected(r);
-
-  const handleConfirm = () => {
-    if (!selected) return;
-    onAdd({ title: selected.title, author: selected.author, pages: selected.pages, cover: selected.cover, year: selected.year });
-    setSelected(null); setOpen(false);
-  };
-
-  if (!open) return (
-    <button onClick={() => setOpen(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.6rem", width: 92, height: 124, flexShrink: 0, background: "transparent", border: "1px dashed rgba(244,239,228,0.32)", color: "rgba(244,239,228,0.55)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", cursor: "pointer", flexDirection: "column" }}>
-      <span style={{ fontSize: "1.4rem", lineHeight: 1 }}>+</span>
-      <span>Add book</span>
-    </button>
-  );
-
+function BookModal({ book, drawers, currentDrawer, onMove, onClose }) {
+  const spine = spineColor(book);
+  const callNo = book.call || `${book.year || "????"} · ${(book.author || "").split(" ").pop().slice(0, 3).toUpperCase()}`;
+  const readHours = estimateReadTime(book.pages);
   return (
-    <div style={{ width: 260, flexShrink: 0, background: "#162338", border: "1px solid rgba(244,239,228,0.2)", borderRadius: 4, padding: "1rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-      {!selected ? (
-        <BookSearchInput onSelect={handleSelect} userAccent={userAccent} />
-      ) : (
-        <>
-          <div style={{ display: "flex", gap: "0.7rem", alignItems: "flex-start" }}>
-            {selected.cover && <img src={selected.cover} alt="" style={{ width: 36, height: 52, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} onError={(e) => e.target.style.display = "none"} />}
-            <div>
-              <div style={{ fontFamily: "'Fraunces', serif", fontSize: "0.88rem", color: "#F4EFE4", lineHeight: 1.2 }}>{selected.title}</div>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.74rem", color: "rgba(244,239,228,0.5)", marginTop: "0.2rem" }}>{selected.author}</div>
-              {selected.pages && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: "rgba(244,239,228,0.4)", marginTop: "0.15rem" }}>{selected.pages} pages</div>}
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(38,32,32,.62)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "cc-fade .2s cubic-bezier(.16,1,.3,1)" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(820px,100%)", maxHeight: "88vh", overflowY: "auto", display: "grid", gridTemplateColumns: "min(280px,40%) 1fr", background: BRAND.paper, borderRadius: 6, border: `1px solid ${BRAND.line}`, boxShadow: "0 16px 40px rgba(20,30,50,.16)", animation: "cc-pop .26s cubic-bezier(.16,1,.3,1)" }}>
+        <button onClick={onClose} style={{ position: "absolute", top: 14, right: 14, zIndex: 2, width: 34, height: 34, borderRadius: "50%", border: `1px solid ${BRAND.line2}`, background: BRAND.paper, color: BRAND.ink, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+        {/* Left — espresso cover */}
+        <div style={{ background: BRAND.espresso, padding: "34px 28px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18 }}>
+          {book.cover ? (
+            <img src={book.cover} alt={book.title} style={{ width: 140, height: 204, objectFit: "cover", borderRadius: "3px 5px 5px 3px", boxShadow: "inset -10px 0 0 rgba(0,0,0,.18),0 8px 28px rgba(0,0,0,.45)" }} onError={(e) => e.target.style.display = "none"} />
+          ) : (
+            <div style={{ position: "relative", width: 148, height: 216, borderRadius: "3px 5px 5px 3px", background: spine, boxShadow: "inset -12px 0 0 rgba(0,0,0,.18),0 16px 40px rgba(20,30,50,.16)", display: "flex", flexDirection: "column", justifyContent: "center", padding: "20px 18px 20px 26px" }}>
+              <span style={{ position: "absolute", left: 13, top: 14, bottom: 14, width: 1.5, background: "rgba(255,255,255,.28)", display: "block" }} />
+              <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 19, lineHeight: 1.08, color: "#fff", textShadow: "0 1px 4px rgba(0,0,0,.3)" }}>{book.title}</div>
+              <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 12, color: "rgba(255,255,255,.82)", marginTop: 8 }}>{book.author}</div>
             </div>
+          )}
+          <div style={{ display: "flex", gap: 14, fontFamily: FONT.body, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "rgba(242,239,235,.7)" }}>
+            {book.year && <span>{book.year}</span>}
+            {book.year && book.pages && <span style={{ opacity: .4 }}>·</span>}
+            {book.pages && <span>{book.pages} pp</span>}
+            {readHours && <><span style={{ opacity: .4 }}>·</span><span>~{readHours}h</span></>}
           </div>
-          <button type="button" onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: "rgba(244,239,228,0.4)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", cursor: "pointer", textAlign: "left", padding: 0 }}>← Search again</button>
-        </>
-      )}
-      <div style={{ display: "flex", gap: "0.5rem" }}>
-        {selected && <button type="button" onClick={handleConfirm} style={{ flex: 1, background: userAccent, border: "none", color: "#F4EFE4", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.04em", padding: "0.5rem", borderRadius: 3, cursor: "pointer", fontWeight: 700 }}>Add</button>}
-        <button type="button" onClick={() => { setOpen(false); setSelected(null); }} style={{ flex: selected ? 0 : 1, background: "none", border: "1px solid rgba(244,239,228,0.28)", color: "rgba(244,239,228,0.6)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", padding: "0.5rem 0.7rem", borderRadius: 3, cursor: "pointer" }}>Cancel</button>
+        </div>
+        {/* Right — paper details */}
+        <div style={{ padding: "34px 32px 28px" }}>
+          <div style={{ fontFamily: FONT.type, fontSize: 10, letterSpacing: ".06em", color: BRAND.terracotta, borderBottom: `1px solid ${BRAND.line}`, paddingBottom: 9, marginBottom: 16 }}>{callNo}</div>
+          <h2 style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 30, lineHeight: 1.05, color: BRAND.ink, margin: "0 0 4px" }}>{book.title}</h2>
+          {book.subtitle && <div style={{ fontFamily: FONT.read, fontSize: 14, color: BRAND.muted, marginBottom: 4 }}>{book.subtitle}</div>}
+          <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 15, color: BRAND.muted, marginBottom: 18 }}>by {book.author}</div>
+          {(book.tagline || book.summary) && (
+            <p style={{ fontFamily: FONT.read, fontSize: 15, lineHeight: 1.65, color: BRAND.ink, margin: "0 0 24px" }}>{book.tagline || book.summary}</p>
+          )}
+          <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: BRAND.muted, marginBottom: 11 }}>File in a drawer</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {drawers.map((dr) => {
+              const active = currentDrawer === dr.id;
+              return (
+                <button key={dr.id} onClick={() => onMove(dr.id)}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: FONT.body, fontSize: 13, letterSpacing: ".03em", cursor: "pointer", padding: "10px 15px", borderRadius: 2, border: active ? `1px solid ${BRAND.coral}` : `1px solid ${BRAND.line2}`, background: active ? BRAND.coral : "transparent", color: active ? "#fff" : BRAND.muted, transition: "all .2s" }}>
+                  <span>{active ? "✓" : "+"}</span>{dr.name}
+                </button>
+              );
+            })}
+          </div>
+          {currentDrawer && (
+            <div style={{ marginTop: 16, fontFamily: FONT.read, fontStyle: "italic", fontSize: 13.5, color: BRAND.muted }}>
+              Filed in the "{drawers.find((d) => d.id === currentDrawer)?.name}" drawer.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 function Bookshelf({ userId, userAccent, onBack, onLogout }) {
-  const [shelfBooks, setShelfBooks] = useState([]);
-  const [statuses, setStatuses] = useState({});
+  const [allBooks, setAllBooks] = useState([]);
+  const [assign, setAssign] = useState({});  // bookId → drawerId
+  const [drawers, setDrawers] = useState(() => {
+    try { const s = localStorage.getItem(CC_DRAWER_STORE(userId)); return s ? JSON.parse(s) : DEFAULT_DRAWERS; } catch { return DEFAULT_DRAWERS; }
+  });
+  const [openDrawer, setOpenDrawer] = useState(null);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [draft, setDraft] = useState("");
+  const [hoveredDrawer, setHoveredDrawer] = useState(null);
+  const [showAddBook, setShowAddBook] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [activeBook, setActiveBook] = useState(null);
 
+  // Load all books + statuses
   useEffect(() => {
     let active = true;
     (async () => {
-      const list = await loadShelfBooks(userId);
+      const [customBooks, shelfBooks] = await Promise.all([loadCustomBooks(userId), loadShelfBooks(userId)]);
+      const userStatic = USERS[userId]?.books || [];
+      const seen = new Set();
+      const merged = [...userStatic, ...customBooks, ...shelfBooks].filter((b) => {
+        if (seen.has(b.id)) return false; seen.add(b.id); return true;
+      });
       if (!active) return;
-      setShelfBooks(list);
-      const statusEntries = await Promise.all(list.map(async (b) => [b.id, (await loadStatus(userId, b.id)) || "to-read"]));
+      setAllBooks(merged);
+
+      // Load saved assignment or fall back to status
+      let saved = {};
+      try { const r = localStorage.getItem(CC_ASSIGN_STORE(userId)); if (r) saved = JSON.parse(r); } catch {}
+      const assigned = { ...saved };
+      await Promise.all(merged.map(async (b) => {
+        if (!assigned[b.id]) {
+          const status = await loadStatus(userId, b.id);
+          assigned[b.id] = STATUS_TO_DRAWER[status] || "want";
+        }
+      }));
       if (!active) return;
-      setStatuses(Object.fromEntries(statusEntries));
+      setAssign(assigned);
       setLoaded(true);
     })();
     return () => { active = false; };
   }, [userId]);
 
-  const handleAdd = async ({ title, author, pages, cover, year }) => {
+  const persist = (nextAssign, nextDrawers) => {
+    try {
+      localStorage.setItem(CC_ASSIGN_STORE(userId), JSON.stringify(nextAssign));
+      localStorage.setItem(CC_DRAWER_STORE(userId), JSON.stringify(nextDrawers));
+    } catch {}
+  };
+
+  const moveBook = async (book, drawerId) => {
+    const next = { ...assign, [book.id]: drawerId };
+    setAssign(next);
+    persist(next, drawers);
+    await saveStatus(userId, book.id, DRAWER_TO_STATUS[drawerId] || "to-read");
+    setSelectedBook((prev) => prev?.id === book.id ? { ...book, _drawer: drawerId } : prev);
+  };
+
+  const toggleDrawer = (id) => {
+    if (editing) { commitEdit(); return; }
+    setOpenDrawer((prev) => (prev === id ? null : id));
+  };
+
+  const startEdit = (e, id, name) => { e.stopPropagation(); setEditing(id); setDraft(name); };
+  const commitEdit = () => {
+    if (!editing) return;
+    const name = draft.trim() || "Untitled";
+    const next = drawers.map((d) => d.id === editing ? { ...d, name } : d);
+    setDrawers(next);
+    persist(assign, next);
+    setEditing(null); setDraft("");
+  };
+
+  const addDrawer = () => {
+    const id = "d" + Date.now();
+    const next = [...drawers, { id, name: "New Shelf", removable: true }];
+    setDrawers(next);
+    persist(assign, next);
+    setEditing(id); setDraft("New Shelf");
+  };
+
+  const removeDrawer = (e, id) => {
+    e.stopPropagation();
+    if (drawers.length <= 1) return;
+    const nextDrawers = drawers.filter((d) => d.id !== id);
+    const fallback = nextDrawers[0].id;
+    const nextAssign = { ...assign };
+    Object.keys(nextAssign).forEach((b) => { if (nextAssign[b] === id) nextAssign[b] = fallback; });
+    setDrawers(nextDrawers);
+    setAssign(nextAssign);
+    persist(nextAssign, nextDrawers);
+    if (openDrawer === id) setOpenDrawer(null);
+  };
+
+  const handleAddBook = async (result) => {
     const id = `shelf-${userId}-${Date.now().toString(36)}`;
-    const newBook = { id, title, author, cover: cover || null, pages: pages || null, year: year || null, summary: null, accent: userAccent };
-    const updated = [...shelfBooks, newBook];
-    setShelfBooks(updated);
-    setStatuses((s) => ({ ...s, [id]: "to-read" }));
-    await saveShelfBooks(userId, updated);
-    await saveStatus(userId, id, "to-read");
+    const newBook = { id, title: result.title, author: result.author, cover: result.cover || null, pages: result.pages || null, year: result.year || null, accent: userAccent };
+    const existing = await loadShelfBooks(userId);
+    await saveShelfBooks(userId, [...existing, newBook]);
+    setAllBooks((prev) => [...prev, newBook]);
+    setAssign((prev) => { const n = { ...prev, [id]: "want" }; persist(n, drawers); return n; });
+    setShowAddBook(false);
   };
 
-  const handleStatusChange = async (book, newStatus) => {
-    setStatuses((s) => ({ ...s, [book.id]: newStatus }));
-    await saveStatus(userId, book.id, newStatus);
-    setActiveBook(null);
-  };
-
-  const grouped = {
-    "up-next": shelfBooks.filter((b) => statuses[b.id] === "up-next"),
-    "to-read": shelfBooks.filter((b) => !statuses[b.id] || statuses[b.id] === "to-read"),
-    "reading": shelfBooks.filter((b) => statuses[b.id] === "reading"),
-    "read": shelfBooks.filter((b) => statuses[b.id] === "read"),
-  };
+  const booksInDrawer = (id) => allBooks.filter((b) => assign[b.id] === id);
+  const openBooks = openDrawer ? booksInDrawer(openDrawer) : [];
+  const openDrawerName = drawers.find((d) => d.id === openDrawer)?.name || "";
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0F1A2B", padding: "0 0 5rem" }}>
-      <div style={{ background: "linear-gradient(180deg, #2A2118, #1C160F)", borderBottom: "3px solid #0B0805", padding: "2.6rem 1.8rem 2.2rem", textAlign: "center", position: "relative" }}>
-        <button onClick={onBack} style={{ position: "absolute", top: "1.4rem", left: "1.4rem", background: "none", border: "1px solid rgba(244,239,228,0.3)", color: "rgba(244,239,228,0.7)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", padding: "0.4rem 0.8rem", borderRadius: 3, cursor: "pointer" }}>← Back</button>
-        <button onClick={onLogout} style={{ position: "absolute", top: "1.4rem", right: "1.4rem", background: "none", border: "1px solid rgba(244,239,228,0.2)", color: "rgba(244,239,228,0.5)", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", padding: "0.4rem 0.8rem", borderRadius: 3, cursor: "pointer" }}>Log out</button>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", letterSpacing: "0.22em", textTransform: "uppercase", color: userAccent, marginBottom: "0.7rem" }}>{USERS[userId].name}'s Reading List</div>
-        <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2.1rem, 5.5vw, 3.2rem)", lineHeight: 1.05, margin: "0 0 0.5rem", color: "#F4EFE4" }}>{USERS[userId].name}'s Bookshelf</h1>
-        <p style={{ color: "rgba(244,239,228,0.55)", fontSize: "0.92rem", margin: "0 auto", maxWidth: "46ch", lineHeight: 1.5 }}>Books on deck — tap a cover for a quick look.</p>
+    <div style={{ minHeight: "100vh", background: BRAND.cream, overflowX: "hidden" }}>
+      {/* Header */}
+      <div style={{ background: BRAND.espresso, borderBottom: "1px solid rgba(217,162,130,.18)", padding: "clamp(24px,4vw,44px) 28px clamp(20px,3vw,32px)" }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+            <button onClick={onBack} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: "none", border: "1px solid rgba(242,239,235,.3)", color: "rgba(242,239,235,.7)", padding: "8px 14px", borderRadius: 2, cursor: "pointer" }}>← Back</button>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowAddBook((v) => !v)} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", textTransform: "uppercase", background: showAddBook ? BRAND.coral : "transparent", border: `1px solid ${showAddBook ? BRAND.coral : "rgba(242,239,235,.3)"}`, color: showAddBook ? "#fff" : "rgba(242,239,235,.7)", padding: "8px 16px", borderRadius: 2, cursor: "pointer" }}>+ Add book</button>
+              <button onClick={onLogout} style={{ fontFamily: FONT.body, fontSize: 13, color: "rgba(242,239,235,.45)", background: "none", border: "none", cursor: "pointer" }}>Sign out</button>
+            </div>
+          </div>
+          <div style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: ".28em", textTransform: "uppercase", color: BRAND.tan, marginBottom: 10 }}>The card catalogue</div>
+          <h1 style={{ fontFamily: FONT.display, fontWeight: 500, fontSize: "clamp(30px,4.5vw,52px)", lineHeight: 1.03, letterSpacing: "-.01em", color: BRAND.cream, margin: "0 0 10px" }}>
+            Pull a drawer. Find a book. <span style={{ fontStyle: "italic", color: BRAND.coral }}>Open the card.</span>
+          </h1>
+          <p style={{ fontFamily: FONT.read, fontSize: "clamp(14px,1.2vw,16px)", lineHeight: 1.6, color: "rgba(242,239,235,.62)", margin: 0 }}>Your shelves, filed the old-fashioned way.</p>
+        </div>
       </div>
-      <div style={{ maxWidth: 920, margin: "0 auto", padding: "2.8rem 1.8rem 0" }}>
+
+      {/* Add book search panel */}
+      {showAddBook && (
+        <div style={{ background: BRAND.paper, borderBottom: `1px solid ${BRAND.line}`, padding: "20px 28px" }}>
+          <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+            <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".2em", textTransform: "uppercase", color: BRAND.terracotta, marginBottom: 10 }}>Search to add a book</div>
+            <BookSearchInput onSelect={handleAddBook} userAccent={userAccent} />
+          </div>
+        </div>
+      )}
+
+      {/* Cabinet */}
+      <section style={{ maxWidth: 1040, margin: "0 auto", padding: "clamp(16px,2.5vw,28px) 28px clamp(48px,7vw,80px)" }}>
         {!loaded ? (
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.8rem", color: "rgba(244,239,228,0.4)" }}>Loading shelf…</div>
+          <div style={{ textAlign: "center", padding: "60px 0", fontFamily: FONT.read, fontStyle: "italic", color: BRAND.muted }}>Loading your catalogue…</div>
         ) : (
           <>
-            {grouped["up-next"].length > 0 && (<>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(244,239,228,0.4)", marginBottom: "0.8rem" }}>Up next</div>
-              <ShelfRow books={grouped["up-next"]} statuses={statuses} onOpen={setActiveBook} />
-            </>)}
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(244,239,228,0.4)", marginBottom: "0.8rem" }}>To read</div>
-            <div style={{ position: "relative", marginBottom: "2.6rem" }}>
-              <div style={{ display: "flex", gap: "1.4rem", overflowX: "auto", paddingBottom: "1.4rem", paddingTop: "0.4rem" }}>
-                {grouped["to-read"].map((b) => (<ShelfSpine key={b.id} shelfBook={b} status={statuses[b.id] || "to-read"} onClick={() => setActiveBook(b)} />))}
-                <AddShelfBookCard userAccent={userAccent} onAdd={handleAdd} />
+            {/* Oak cabinet frame */}
+            <div style={{ padding: 14, borderRadius: 5, background: "linear-gradient(180deg,#6E4422,#4A2C16)", boxShadow: "0 16px 40px rgba(20,30,50,.16),inset 0 1px 0 rgba(255,255,255,.14)", border: "2px solid #3a230f" }}>
+              {/* Nameplate */}
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+                <div style={{ background: BRASS_GRAD, border: BRASS_BORDER, borderRadius: 2, padding: "5px 22px", boxShadow: "0 1px 2px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.5)", fontFamily: FONT.body, fontSize: 11, letterSpacing: ".34em", textTransform: "uppercase", color: "#3a2c12" }}>
+                  Marginalia · Catalogue
+                </div>
               </div>
-              <div style={{ height: 14, background: "linear-gradient(180deg, #6B4A2E, #4A311C)", borderRadius: 2, boxShadow: "0 4px 8px rgba(0,0,0,0.4), inset 0 2px 0 rgba(255,255,255,0.08)" }} />
+
+              {/* Drawer grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,160px),1fr))", gap: 9 }}>
+                {drawers.map((dr) => {
+                  const count = booksInDrawer(dr.id).length;
+                  const isOpen = openDrawer === dr.id;
+                  const isHovered = hoveredDrawer === dr.id;
+                  const isEditingThis = editing === dr.id;
+                  return (
+                    <div key={dr.id} onClick={() => toggleDrawer(dr.id)}
+                      onMouseEnter={() => setHoveredDrawer(dr.id)}
+                      onMouseLeave={() => setHoveredDrawer(null)}
+                      style={{ position: "relative", height: 166, cursor: "pointer", borderRadius: 3, border: "1px solid #4A2C16", background: OAK_FACE, boxShadow: isOpen ? "inset 0 3px 6px rgba(0,0,0,.35),0 1px 2px rgba(0,0,0,.3)" : "0 2px 4px rgba(0,0,0,.3)", transform: isHovered && !isOpen ? "translateY(2px)" : isOpen ? "translateY(3px)" : "none", transition: "transform .26s cubic-bezier(.16,1,.3,1),box-shadow .26s cubic-bezier(.16,1,.3,1)" }}>
+                      {/* Tool buttons — show on hover */}
+                      {isHovered && (
+                        <>
+                          <button onClick={(e) => startEdit(e, dr.id, dr.name)} aria-label="Rename"
+                            style={{ position: "absolute", top: 8, right: 8, zIndex: 3, width: 24, height: 24, borderRadius: "50%", border: BRASS_BORDER, cursor: "pointer", background: BRASS_GRAD, color: "#3a2c12", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 2px rgba(0,0,0,.4)" }}>✎</button>
+                          {dr.removable && drawers.length > 1 && (
+                            <button onClick={(e) => removeDrawer(e, dr.id)} aria-label="Remove"
+                              style={{ position: "absolute", top: 8, left: 8, zIndex: 3, width: 24, height: 24, borderRadius: "50%", border: "1px solid #6f3030", cursor: "pointer", background: "rgba(38,32,32,.6)", color: BRAND.cream, fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 2px rgba(0,0,0,.4)" }}>✕</button>
+                          )}
+                        </>
+                      )}
+                      {/* Brass label */}
+                      <BrassLabelHolder name={dr.name} isEditing={isEditingThis} draft={draft}
+                        onInput={(e) => setDraft(e.target.value)}
+                        onKey={(e) => { if (e.key === "Enter") commitEdit(); if (e.key === "Escape") { setEditing(null); setDraft(""); } }}
+                        onCommit={commitEdit} />
+                      {/* Count label */}
+                      <div style={{ position: "absolute", left: 0, right: 0, bottom: 10, textAlign: "center", fontFamily: FONT.body, fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(251,246,232,.82)", textShadow: "0 1px 1px rgba(0,0,0,.4)" }}>
+                        {count} {count === 1 ? "card" : "cards"} · {isOpen ? "Open" : "Pull"}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Add drawer slot */}
+                <button onClick={addDrawer}
+                  style={{ height: 166, cursor: "pointer", borderRadius: 3, border: "2px dashed rgba(251,246,232,.4)", background: "rgba(0,0,0,.18)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: "rgba(251,246,232,.78)" }}>
+                  <span style={{ width: 34, height: 34, borderRadius: "50%", border: `1px solid ${BRAND.brass}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: "#E8CF93" }}>+</span>
+                  <span style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase" }}>Add a drawer</span>
+                </button>
+              </div>
             </div>
-            {grouped["reading"].length > 0 && (<>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(244,239,228,0.4)", marginBottom: "0.8rem" }}>Currently reading</div>
-              <ShelfRow books={grouped["reading"]} statuses={statuses} onOpen={setActiveBook} />
-            </>)}
-            {grouped["read"].length > 0 && (<>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(244,239,228,0.4)", marginBottom: "0.8rem" }}>Read</div>
-              <ShelfRow books={grouped["read"]} statuses={statuses} onOpen={setActiveBook} />
-            </>)}
+
+            {/* Open drawer tray */}
+            {openDrawer && (
+              <div style={{ marginTop: 16, borderRadius: 5, overflow: "hidden", border: "1px solid #4A2C16", boxShadow: "0 16px 40px rgba(20,30,50,.16)", animation: "cc-tray .32s cubic-bezier(.16,1,.3,1)" }}>
+                {/* Tray header */}
+                <div style={{ background: "linear-gradient(180deg,#B07F49,#6E4422)", padding: "15px 22px", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, borderBottom: "2px solid rgba(0,0,0,.4)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+                    <span style={{ width: 15, height: 15, borderRadius: "50%", background: "radial-gradient(circle at 38% 30%,#E8CF93,#C2A35E)", border: BRASS_BORDER, flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontFamily: FONT.body, fontSize: 10.5, letterSpacing: ".22em", textTransform: "uppercase", color: "rgba(251,246,232,.72)" }}>Drawer</div>
+                      <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 22, color: "#FBF6E8", lineHeight: 1.05 }}>{openDrawerName}</div>
+                    </div>
+                  </div>
+                  <button onClick={() => setOpenDrawer(null)}
+                    style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase", background: "rgba(0,0,0,.28)", color: "#FBF6E8", border: "1px solid rgba(251,246,232,.32)", cursor: "pointer", padding: "9px 16px", borderRadius: 2 }}>
+                    Close drawer ✕
+                  </button>
+                </div>
+                {/* Felt rail */}
+                <div style={{ background: "repeating-linear-gradient(90deg,#3a2618,#3a2618 2px,#412b1b 2px,#412b1b 22px)", padding: "30px 26px 34px" }}>
+                  {openBooks.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "26px 10px", fontFamily: FONT.read, fontStyle: "italic", fontSize: 17, color: "rgba(251,246,232,.7)" }}>
+                      This drawer is empty. File a book card here to fill it.
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 8, alignItems: "stretch" }}>
+                        {openBooks.map((book, i) => (
+                          <IndexCard key={book.id} book={book} delay={i * 50} onOpen={() => setSelectedBook(book)} />
+                        ))}
+                      </div>
+                      <div style={{ fontFamily: FONT.body, fontSize: 11.5, letterSpacing: ".06em", color: "rgba(251,246,232,.55)", marginTop: 16, textAlign: "center" }}>
+                        Scroll the rail · tap a card to open it
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!openDrawer && (
+              <div style={{ marginTop: 24, textAlign: "center", fontFamily: FONT.read, fontStyle: "italic", fontSize: 17, color: BRAND.muted }}>
+                Select a drawer above to slide it open · hover a drawer to rename it.
+              </div>
+            )}
           </>
         )}
+      </section>
+
+      {/* Marquee band */}
+      <div style={{ background: BRAND.ink, overflow: "hidden", whiteSpace: "nowrap", padding: "16px 0", borderTop: `1px solid ${BRAND.espresso2}` }}>
+        <div style={{ display: "flex", width: "max-content", animation: "mg-marquee 32s linear infinite" }}>
+          {[0, 1].map((k) => (
+            <span key={k} style={{ display: "flex", alignItems: "center", gap: 28, paddingRight: 28, fontFamily: FONT.display, fontStyle: "italic", fontWeight: 500, fontSize: "clamp(22px,3vw,38px)", color: BRAND.cream }}>
+              <span>File it</span><span style={{ color: BRAND.coral, fontStyle: "normal" }}>✦</span>
+              <span style={{ color: BRAND.tan }}>Find it</span><span style={{ color: BRAND.coral, fontStyle: "normal" }}>✦</span>
+              <span>Keep it forever</span><span style={{ color: BRAND.coral, fontStyle: "normal" }}>✦</span>
+            </span>
+          ))}
+        </div>
       </div>
-      {activeBook && (
-        <ShelfPopup shelfBook={activeBook} status={statuses[activeBook.id] || "to-read"} userAccent={userAccent} onClose={() => setActiveBook(null)} onStatusChange={(s) => handleStatusChange(activeBook, s)} />
+
+      {/* Book modal */}
+      {selectedBook && (
+        <BookModal
+          book={selectedBook}
+          drawers={drawers}
+          currentDrawer={assign[selectedBook.id]}
+          onMove={(drawerId) => moveBook(selectedBook, drawerId)}
+          onClose={() => setSelectedBook(null)}
+        />
       )}
     </div>
   );
 }
+
 
 // ---------------------------------------------------------------------------
 // SHARED CHAT
@@ -1465,7 +1676,7 @@ function SharedChat({ activeUser, friends, tooltipText }) {
       {/* Header */}
       <div style={{ padding: "0.9rem 1.2rem", borderBottom: collapsed ? "none" : `1px solid ${BRAND.cream}14`, display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
         <span style={{ fontSize: "1rem" }}>💬</span>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.tan }}>Book Brain Chat</div>
+        <div style={{ fontFamily: FONT.type, fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.tan }}>Book Brain Chat</div>
         <TooltipIcon text={tooltipText} color={BRAND.tan} />
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
           {/* Filter buttons */}
@@ -1474,7 +1685,7 @@ function SharedChat({ activeUser, friends, tooltipText }) {
             const active = filter === p.id;
             return (
               <button key={p.id || "all"} onClick={() => { setFilter(p.id); if (!collapsed) markRead(); }}
-                style={{ position: "relative", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", letterSpacing: "0.06em", textTransform: "uppercase", background: active ? `${p.accent}44` : `${p.accent}22`, color: p.accent, padding: "0.2rem 0.55rem", borderRadius: 20, border: `1px solid ${active ? p.accent : "transparent"}`, cursor: "pointer" }}>
+                style={{ position: "relative", fontFamily: FONT.type, fontSize: "0.55rem", letterSpacing: "0.06em", textTransform: "uppercase", background: active ? `${p.accent}44` : `${p.accent}22`, color: p.accent, padding: "0.2rem 0.55rem", borderRadius: 20, border: `1px solid ${active ? p.accent : "transparent"}`, cursor: "pointer" }}>
                 {p.name}
                 {unread > 0 && (
                   <span style={{ position: "absolute", top: -5, right: -5, background: BRAND.coral, color: BRAND.cream, borderRadius: "50%", width: 14, height: 14, fontSize: "0.5rem", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>{unread > 9 ? "9+" : unread}</span>
@@ -1484,7 +1695,7 @@ function SharedChat({ activeUser, friends, tooltipText }) {
           })}
           {/* Collapse toggle */}
           <button onClick={() => { setCollapsed((c) => !c); if (collapsed) markRead(); }}
-            style={{ background: "none", border: `1px solid ${BRAND.cream}22`, color: `${BRAND.cream}55`, borderRadius: 20, padding: "0.2rem 0.55rem", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem" }}>
+            style={{ background: "none", border: `1px solid ${BRAND.cream}22`, color: `${BRAND.cream}55`, borderRadius: 20, padding: "0.2rem 0.55rem", cursor: "pointer", fontFamily: FONT.type, fontSize: "0.55rem" }}>
             {collapsed ? "▼ Open" : "▲ Close"}
           </button>
         </div>
@@ -1494,9 +1705,9 @@ function SharedChat({ activeUser, friends, tooltipText }) {
         <>
           <div ref={scrollRef} onClick={markRead} style={{ height: 260, overflowY: "auto", padding: "1rem 1.2rem", display: "flex", flexDirection: "column", gap: "0.65rem" }}>
             {!loaded ? (
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", color: `${BRAND.cream}44` }}>Loading…</div>
+              <div style={{ fontFamily: FONT.type, fontSize: "0.75rem", color: `${BRAND.cream}44` }}>Loading…</div>
             ) : visibleMessages.length === 0 ? (
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: `${BRAND.cream}33`, fontStyle: "italic", textAlign: "center", marginTop: "2rem" }}>No messages yet — say hello!</div>
+              <div style={{ fontFamily: FONT.body, fontSize: "0.84rem", color: `${BRAND.cream}33`, fontStyle: "italic", textAlign: "center", marginTop: "2rem" }}>No messages yet — say hello!</div>
             ) : (
               visibleMessages.map((m, i) => {
                 const sender = USERS[m.userId];
@@ -1504,10 +1715,10 @@ function SharedChat({ activeUser, friends, tooltipText }) {
                 return (
                   <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start" }}>
                     <div style={{ display: "flex", gap: "0.4rem", alignItems: "baseline", marginBottom: "0.2rem" }}>
-                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: sender?.accent }}>{isMe ? "You" : sender?.name}</span>
-                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", color: `${BRAND.cream}33` }}>{formatTime(m.ts)}</span>
+                      <span style={{ fontFamily: FONT.type, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: sender?.accent }}>{isMe ? "You" : sender?.name}</span>
+                      <span style={{ fontFamily: FONT.type, fontSize: "0.55rem", color: `${BRAND.cream}33` }}>{formatTime(m.ts)}</span>
                     </div>
-                    <div style={{ maxWidth: "78%", padding: "0.6rem 0.9rem", borderRadius: isMe ? "12px 12px 2px 12px" : "12px 12px 12px 2px", background: isMe ? `${activeUser.accent}33` : `${BRAND.cream}0f`, border: `1px solid ${isMe ? activeUser.accent + "55" : BRAND.cream + "18"}`, fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", lineHeight: 1.5, color: BRAND.cream, wordBreak: "break-word" }}>
+                    <div style={{ maxWidth: "78%", padding: "0.6rem 0.9rem", borderRadius: isMe ? "12px 12px 2px 12px" : "12px 12px 12px 2px", background: isMe ? `${activeUser.accent}33` : `${BRAND.cream}0f`, border: `1px solid ${isMe ? activeUser.accent + "55" : BRAND.cream + "18"}`, fontFamily: FONT.body, fontSize: "0.88rem", lineHeight: 1.5, color: BRAND.cream, wordBreak: "break-word" }}>
                       {m.text}
                     </div>
                   </div>
@@ -1517,8 +1728,8 @@ function SharedChat({ activeUser, friends, tooltipText }) {
           </div>
           <form onSubmit={handleSend} style={{ display: "flex", gap: "0.6rem", padding: "0.8rem 1rem", borderTop: `1px solid ${BRAND.cream}14` }}>
             <input value={input} onChange={(e) => setInput(e.target.value)} placeholder={`Message as ${activeUser.name}…`}
-              style={{ flex: 1, background: `${BRAND.dark}cc`, border: `1px solid ${BRAND.cream}22`, borderRadius: 20, padding: "0.6rem 1rem", color: BRAND.cream, fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", outline: "none" }} />
-            <button type="submit" disabled={!input.trim()} style={{ background: `linear-gradient(135deg, ${activeUser.accent}, ${BRAND.terracotta})`, border: "none", borderRadius: 20, padding: "0.6rem 1.1rem", color: BRAND.cream, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 700, cursor: "pointer", opacity: input.trim() ? 1 : 0.4, transition: "opacity .15s ease" }}>Send</button>
+              style={{ flex: 1, background: `${BRAND.dark}cc`, border: `1px solid ${BRAND.cream}22`, borderRadius: 20, padding: "0.6rem 1rem", color: BRAND.cream, fontFamily: FONT.body, fontSize: "0.88rem", outline: "none" }} />
+            <button type="submit" disabled={!input.trim()} style={{ background: `linear-gradient(135deg, ${activeUser.accent}, ${BRAND.terracotta})`, border: "none", borderRadius: 20, padding: "0.6rem 1.1rem", color: BRAND.cream, fontFamily: FONT.type, fontSize: "0.7rem", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 700, cursor: "pointer", opacity: input.trim() ? 1 : 0.4, transition: "opacity .15s ease" }}>Send</button>
           </form>
         </>
       )}
@@ -1585,39 +1796,38 @@ function FriendChallenge({ friendId, year }) {
   const pct = goal ? Math.min(100, Math.round((count / goal) * 100)) : 0;
 
   return (
-    <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: `1px solid ${BRAND.cream}14` }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.8rem" }}>
-        <span style={{ fontSize: "0.9rem" }}>👀</span>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: friend.accent }}>
+    <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${BRAND.line}` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: friend.accent }}>
           {friend.name}'s {year} Challenge
         </div>
         {goal && (
-          <div style={{ marginLeft: "auto", fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.1rem", color: BRAND.cream }}>
-            {count} <span style={{ color: `${BRAND.cream}44`, fontWeight: 500, fontSize: "0.9rem" }}>/ {goal}</span>
+          <div style={{ marginLeft: "auto", fontFamily: FONT.display, fontWeight: 600, fontSize: "1.1rem", color: BRAND.ink }}>
+            {count} <span style={{ color: BRAND.muted, fontWeight: 400, fontSize: "0.9rem" }}>/ {goal}</span>
           </div>
         )}
       </div>
 
       {!loaded ? (
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: `${BRAND.cream}33` }}>Loading…</div>
+        <div style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.muted }}>Loading…</div>
       ) : !goal ? (
-        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", color: `${BRAND.cream}33`, fontStyle: "italic" }}>{friend.name} hasn't set a goal for {year} yet.</div>
+        <div style={{ fontFamily: FONT.read, fontSize: "0.85rem", color: BRAND.muted, fontStyle: "italic" }}>{friend.name} hasn't set a goal for {year} yet.</div>
       ) : (
         <>
-          <div style={{ position: "relative", height: 8, borderRadius: 6, background: `${BRAND.cream}14`, overflow: "hidden", marginBottom: "0.35rem" }}>
-            <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${pct}%`, background: `linear-gradient(90deg, ${friend.accent}, ${BRAND.tan})`, borderRadius: 6, transition: "width .6s ease" }} />
+          <div style={{ position: "relative", height: 6, borderRadius: 99, background: BRAND.line, overflow: "hidden", marginBottom: 6 }}>
+            <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${pct}%`, background: `linear-gradient(90deg, ${friend.accent}, ${BRAND.tan})`, borderRadius: 99, transition: "width .6s ease" }} />
           </div>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: `${BRAND.cream}44`, marginBottom: "0.8rem" }}>
-            {pct >= 100 ? `🎉 ${friend.name} hit their goal!` : `${pct}% — ${Math.max(0, goal - count)} book${goal - count === 1 ? "" : "s"} to go`}
+          <div style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.muted, marginBottom: 10 }}>
+            {pct >= 100 ? `🎉 ${friend.name} hit their goal!` : `${pct}% — ${Math.max(0, goal - count)} to go`}
           </div>
           {booksRead.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {booksRead.map((book) => (
                 <div key={book.id} title={`${book.title} — ${book.author}`}>
                   {book.cover ? (
-                    <img src={book.cover} alt={book.title} style={{ width: 36, height: 52, objectFit: "cover", borderRadius: 3, boxShadow: "0 2px 6px rgba(0,0,0,0.4)", display: "block" }} onError={(e) => { e.target.style.display = "none"; }} />
+                    <img src={book.cover} alt={book.title} style={{ width: 36, height: 52, objectFit: "cover", borderRadius: 2, boxShadow: "0 2px 6px rgba(20,30,50,.12)", display: "block" }} onError={(e) => { e.target.style.display = "none"; }} />
                   ) : (
-                    <div style={{ width: 36, height: 52, background: book.accent || friend.accent, borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.4)" }}>
+                    <div style={{ width: 36, height: 52, background: book.accent || friend.accent, borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(20,30,50,.12)" }}>
                       <span style={{ fontSize: "0.85rem" }}>📗</span>
                     </div>
                   )}
@@ -1701,76 +1911,52 @@ function BookChallenge({ userId, userAccent, friends, tooltipText }) {
   const yearOptions = [currentYear, currentYear - 1, currentYear - 2];
 
   return (
-    <div style={{
-      width: "100%",
-      background: `${BRAND.darkCard}cc`, backdropFilter: "blur(10px)",
-      border: `1px solid ${BRAND.cream}14`, borderRadius: 10, overflow: "hidden",
-    }}>
+    <div style={{ width: "100%", background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 5, overflow: "hidden", boxShadow: "0 1px 2px rgba(20,30,50,.06)" }}>
       {/* Header */}
-      <div style={{ padding: "1rem 1.2rem", borderBottom: `1px solid ${BRAND.cream}14`, display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
-        <span style={{ fontSize: "1rem" }}>🏆</span>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: userAccent, display: "flex", alignItems: "center", gap: "0.3rem" }}>
-          {USERS[userId].name}'s Reading Challenge <TooltipIcon text={tooltipText} color={userAccent} />
+      <div style={{ padding: "14px 20px", borderBottom: `1px solid ${BRAND.line}`, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: BRAND.terracotta, display: "flex", alignItems: "center", gap: 6 }}>
+          {USERS[userId].name}'s Reading Challenge <TooltipIcon text={tooltipText} color={BRAND.terracotta} />
         </div>
-        {/* Year selector */}
-        <div style={{ marginLeft: "auto", display: "flex", gap: "0.35rem" }}>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
           {yearOptions.map((y) => (
-            <button key={y} onClick={() => setYear(y)} style={{
-              background: year === y ? `${userAccent}33` : "transparent",
-              border: `1px solid ${year === y ? userAccent : `${BRAND.cream}22`}`,
-              borderRadius: 20, padding: "0.2rem 0.6rem",
-              color: year === y ? userAccent : `${BRAND.cream}55`,
-              fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem",
-              cursor: "pointer", transition: "all .15s ease",
-            }}>{y}</button>
+            <button key={y} onClick={() => setYear(y)} style={{ background: year === y ? BRAND.coral : "transparent", border: `1px solid ${year === y ? BRAND.coral : BRAND.line2}`, borderRadius: 99, padding: "3px 11px", color: year === y ? "#fff" : BRAND.muted, fontFamily: FONT.body, fontSize: 11.5, cursor: "pointer", transition: "all .15s" }}>{y}</button>
           ))}
         </div>
       </div>
 
-      <div style={{ padding: "1.2rem" }}>
+      <div style={{ padding: "16px 20px" }}>
         {/* Goal setting */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", marginBottom: "1.1rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
           {goal && !editingGoal ? (
             <>
-              <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.5rem", color: BRAND.cream, lineHeight: 1 }}>
-                {count} <span style={{ color: `${BRAND.cream}44`, fontWeight: 500 }}>/ {goal}</span>
+              <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: "1.5rem", color: BRAND.ink, lineHeight: 1 }}>
+                {count} <span style={{ color: BRAND.muted, fontWeight: 400 }}>/ {goal}</span>
               </div>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: `${BRAND.cream}66` }}>
-                books read in {year}
-              </div>
-              <button onClick={() => { setGoalDraft(String(goal)); setEditingGoal(true); }} style={{ marginLeft: "auto", background: "none", border: `1px solid ${BRAND.cream}22`, borderRadius: 20, padding: "0.25rem 0.65rem", color: `${BRAND.cream}44`, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer" }}>
-                Edit goal
-              </button>
+              <div style={{ fontFamily: FONT.body, fontSize: "0.82rem", color: BRAND.muted }}>books read in {year}</div>
+              <button onClick={() => { setGoalDraft(String(goal)); setEditingGoal(true); }} style={{ marginLeft: "auto", background: "none", border: `1px solid ${BRAND.line2}`, borderRadius: 99, padding: "3px 12px", color: BRAND.muted, fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer" }}>Edit goal</button>
             </>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: `${BRAND.cream}77` }}>Read</span>
-              <input
-                autoFocus={editingGoal}
-                type="number"
-                min={1}
-                value={goalDraft}
-                onChange={(e) => setGoalDraft(e.target.value)}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span style={{ fontFamily: FONT.body, fontSize: "0.84rem", color: BRAND.muted }}>Read</span>
+              <input autoFocus={editingGoal} type="number" min={1} value={goalDraft} onChange={(e) => setGoalDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleSaveGoal(); if (e.key === "Escape") setEditingGoal(false); }}
-                placeholder="0"
-                style={{ width: 64, background: `${BRAND.dark}cc`, border: `1px solid ${userAccent}77`, borderRadius: 6, padding: "0.4rem 0.6rem", color: BRAND.cream, fontFamily: "'JetBrains Mono', monospace", fontSize: "1rem", textAlign: "center", outline: "none" }}
-              />
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: `${BRAND.cream}77` }}>books in {year}</span>
-              <button onClick={handleSaveGoal} style={{ background: userAccent, border: "none", borderRadius: 6, padding: "0.4rem 0.9rem", color: BRAND.cream, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 700, cursor: "pointer" }}>Set</button>
+                placeholder="0" style={{ width: 60, background: BRAND.cream, border: `1px solid ${BRAND.line2}`, borderRadius: 2, padding: "6px 8px", color: BRAND.ink, fontFamily: FONT.body, fontSize: "1rem", textAlign: "center", outline: "none" }} />
+              <span style={{ fontFamily: FONT.body, fontSize: "0.84rem", color: BRAND.muted }}>books in {year}</span>
+              <button onClick={handleSaveGoal} style={{ background: BRAND.coral, border: "none", borderRadius: 2, padding: "7px 16px", color: "#fff", fontFamily: FONT.body, fontSize: 12, letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer" }}>Set</button>
             </div>
           )}
         </div>
 
         {/* Progress bar */}
         {goal && (
-          <div style={{ marginBottom: "1.2rem" }}>
-            <div style={{ position: "relative", height: 10, borderRadius: 6, background: `${BRAND.cream}14`, overflow: "hidden", marginBottom: "0.4rem" }}>
-              <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${pct}%`, background: `linear-gradient(90deg, ${userAccent}, ${BRAND.tan})`, borderRadius: 6, transition: "width .6s ease" }} />
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ position: "relative", height: 7, borderRadius: 99, background: BRAND.line, overflow: "hidden", marginBottom: 6 }}>
+              <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${pct}%`, background: `linear-gradient(90deg, ${BRAND.coral}, ${BRAND.terracotta})`, borderRadius: 99, transition: "width .6s ease" }} />
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", color: `${BRAND.cream}44` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: FONT.body, fontSize: 11, color: BRAND.muted }}>
               <span>0</span>
-              <span style={{ color: pct >= 100 ? userAccent : `${BRAND.cream}66`, fontWeight: 700 }}>
-                {pct >= 100 ? "🎉 Goal reached!" : `${pct}% — ${Math.max(0, goal - count)} book${goal - count === 1 ? "" : "s"} to go`}
+              <span style={{ color: pct >= 100 ? BRAND.coral : BRAND.muted }}>
+                {pct >= 100 ? "🎉 Goal reached!" : `${pct}% — ${Math.max(0, goal - count)} to go`}
               </span>
               <span>{goal}</span>
             </div>
@@ -1779,24 +1965,24 @@ function BookChallenge({ userId, userAccent, friends, tooltipText }) {
 
         {/* Book covers */}
         {!loaded ? (
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", color: `${BRAND.cream}33` }}>Loading…</div>
+          <div style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.muted }}>Loading…</div>
         ) : booksRead.length === 0 ? (
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: `${BRAND.cream}33`, fontStyle: "italic" }}>
-            {goal ? `No books finished in ${year} yet — mark a book as "read" with a finish date to see it here.` : `Set a goal above to start your ${year} reading challenge.`}
+          <div style={{ fontFamily: FONT.read, fontSize: "0.88rem", color: BRAND.muted, fontStyle: "italic" }}>
+            {goal ? `No books finished in ${year} yet — mark a book as "read" to see it here.` : `Set a goal above to start your ${year} reading challenge.`}
           </div>
         ) : (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {booksRead.map((book) => (
               <div key={book.id} title={`${book.title} — ${book.author}`} style={{ position: "relative" }}>
                 {book.cover ? (
-                  <img src={book.cover} alt={book.title} style={{ width: 44, height: 64, objectFit: "cover", borderRadius: 3, boxShadow: "0 2px 8px rgba(0,0,0,0.4)", display: "block" }} onError={(e) => { e.target.style.display = "none"; }} />
+                  <img src={book.cover} alt={book.title} style={{ width: 44, height: 64, objectFit: "cover", borderRadius: 2, boxShadow: "0 2px 6px rgba(20,30,50,.12)", display: "block" }} onError={(e) => { e.target.style.display = "none"; }} />
                 ) : (
-                  <div style={{ width: 44, height: 64, background: book.accent || userAccent, borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>
-                    <span style={{ fontSize: "1rem" }}>📗</span>
+                  <div style={{ width: 44, height: 64, background: book.accent || BRAND.terracotta, borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(20,30,50,.12)" }}>
+                    <span style={{ fontSize: "0.9rem" }}>📗</span>
                   </div>
                 )}
                 {book.finishDate && (
-                  <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.45rem", color: `${BRAND.cream}99`, whiteSpace: "nowrap" }}>
+                  <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontFamily: FONT.type, fontSize: "0.42rem", color: BRAND.muted, whiteSpace: "nowrap" }}>
                     {book.finishDate.slice(5).replace("-", "/")}
                   </div>
                 )}
@@ -1805,22 +1991,14 @@ function BookChallenge({ userId, userAccent, friends, tooltipText }) {
           </div>
         )}
 
-        {/* Toggle friend challenge progress — one button per connected friend */}
+        {/* Friend challenge toggles */}
         {connectedFriends.length > 0 && (
-          <div style={{ marginTop: "1.1rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 6 }}>
             {connectedFriends.map((f) => {
               const isShowing = showFriendId === f.id;
               return (
-                <button key={f.id}
-                  onClick={() => setShowFriendId(isShowing ? null : f.id)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "0.4rem",
-                    background: "none", border: `1px solid ${f.accent}44`, borderRadius: 20,
-                    padding: "0.3rem 0.8rem", color: f.accent, cursor: "pointer",
-                    fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem",
-                    letterSpacing: "0.08em", textTransform: "uppercase", transition: "all .15s ease",
-                  }}
-                >
+                <button key={f.id} onClick={() => setShowFriendId(isShowing ? null : f.id)}
+                  style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: `1px solid ${f.accent}55`, borderRadius: 99, padding: "4px 12px", color: f.accent, cursor: "pointer", fontFamily: FONT.body, fontSize: 11.5, letterSpacing: "0.04em", textTransform: "uppercase" }}>
                   <span>{isShowing ? "▲" : "▼"}</span>
                   {isShowing ? `Hide ${f.name}'s progress` : `${f.name}'s ${year}`}
                 </button>
@@ -1920,7 +2098,7 @@ function SharedBookshelf({ viewerId, friends, tooltipText }) {
                 <div style={{ fontFamily: FONT.body, fontWeight: 300, fontSize: 13, color: BRAND.tan, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{book.author}</div>
                 <div style={{ display: "flex", gap: "0.35rem", marginTop: "0.3rem" }}>
                   {(book.readers || []).map((u) => (
-                    <span key={u.id} style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.55rem", letterSpacing: "0.06em", textTransform: "uppercase", background: `${u.accent}33`, color: u.accent, padding: "0.15rem 0.45rem", borderRadius: 20 }}>{u.name} ✓</span>
+                    <span key={u.id} style={{ fontFamily: FONT.type, fontSize: "0.55rem", letterSpacing: "0.06em", textTransform: "uppercase", background: `${u.accent}33`, color: u.accent, padding: "0.15rem 0.45rem", borderRadius: 20 }}>{u.name} ✓</span>
                   ))}
                 </div>
               </div>
@@ -2084,13 +2262,13 @@ function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated, to
         background: BRAND.darkCard, border: `1px solid ${BRAND.cream}22`,
         borderTop: `3px solid ${BRAND.coral}`, borderRadius: 12,
         padding: "2rem", width: "100%", maxWidth: 480,
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: FONT.body,
       }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.6rem" }}>
           <div>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: BRAND.coral, marginBottom: "0.3rem" }}>Admin · Access Control</div>
-            <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.4rem", color: BRAND.cream }}>Manage Connections</div>
+            <div style={{ fontFamily: FONT.type, fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: BRAND.coral, marginBottom: "0.3rem" }}>Admin · Access Control</div>
+            <div style={{ fontFamily: FONT.display, fontWeight: 700, fontSize: "1.4rem", color: BRAND.cream }}>Manage Connections</div>
             <div style={{ fontSize: "0.8rem", color: `${BRAND.cream}66`, marginTop: "0.3rem" }}>Toggle which users can see each other's info and chat.</div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: `${BRAND.cream}55`, cursor: "pointer", fontSize: "1.2rem", lineHeight: 1, padding: "0.2rem" }}>✕</button>
@@ -2098,13 +2276,13 @@ function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated, to
 
         {/* User list with avatars */}
         <div style={{ marginBottom: "1.4rem" }}>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "0.8rem" }}>Members</div>
+          <div style={{ fontFamily: FONT.type, fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "0.8rem" }}>Members</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
             {allUsers.map((u) => (
               <div key={u.id} style={{ display: "flex", alignItems: "center", gap: "0.4rem", background: `${u.accent}18`, border: `1px solid ${u.accent}44`, borderRadius: 20, padding: "0.3rem 0.7rem" }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: u.accent }} />
-                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: u.accent }}>{u.name}</span>
-                {u.id === ADMIN_USER_ID && <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.5rem", color: BRAND.coral }}>admin</span>}
+                <span style={{ fontFamily: FONT.type, fontSize: "0.65rem", color: u.accent }}>{u.name}</span>
+                {u.id === ADMIN_USER_ID && <span style={{ fontFamily: FONT.type, fontSize: "0.5rem", color: BRAND.coral }}>admin</span>}
               </div>
             ))}
           </div>
@@ -2112,7 +2290,7 @@ function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated, to
 
         {/* Connection toggles */}
         <div style={{ marginBottom: "1.6rem" }}>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "0.8rem" }}>Connections</div>
+          <div style={{ fontFamily: FONT.type, fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "0.8rem" }}>Connections</div>
           {!connections ? (
             <div style={{ fontSize: "0.82rem", color: `${BRAND.cream}44` }}>Loading…</div>
           ) : (
@@ -2122,9 +2300,9 @@ function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated, to
                 return (
                   <div key={`${u1.id}-${u2.id}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: `${BRAND.dark}88`, borderRadius: 8, padding: "0.75rem 1rem" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", color: BRAND.cream }}>{u1.name}</span>
+                      <span style={{ fontFamily: FONT.body, fontSize: "0.88rem", color: BRAND.cream }}>{u1.name}</span>
                       <span style={{ color: `${BRAND.cream}33`, fontSize: "0.8rem" }}>↔</span>
-                      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", color: BRAND.cream }}>{u2.name}</span>
+                      <span style={{ fontFamily: FONT.body, fontSize: "0.88rem", color: BRAND.cream }}>{u2.name}</span>
                     </div>
                     <button
                       onClick={() => toggleConnection(u1.id, u2.id)}
@@ -2154,7 +2332,7 @@ function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated, to
           style={{
             width: "100%", padding: "0.75rem", borderRadius: 8, border: "none", cursor: "pointer",
             background: saved ? "#4caf50" : BRAND.coral, color: BRAND.cream,
-            fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", letterSpacing: "0.1em", textTransform: "uppercase",
+            fontFamily: FONT.type, fontSize: "0.72rem", letterSpacing: "0.1em", textTransform: "uppercase",
             transition: "background .2s ease",
           }}
         >
@@ -2165,20 +2343,20 @@ function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated, to
         <div style={{ margin: "1.6rem 0", height: 1, background: `${BRAND.cream}14` }} />
 
         {/* Create New User */}
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "1rem" }}>Create New User</div>
+        <div style={{ fontFamily: FONT.type, fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "1rem" }}>Create New User</div>
         <form onSubmit={handleCreateUser} style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
           <input
             type="text" value={newName} onChange={(e) => { setNewName(e.target.value); setCreateError(null); }}
             placeholder="First name (e.g. Jane)"
-            style={{ background: `${BRAND.dark}88`, border: `1px solid ${BRAND.cream}22`, borderRadius: 8, padding: "0.7rem 0.9rem", color: BRAND.cream, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", outline: "none", width: "100%" }}
+            style={{ background: `${BRAND.dark}88`, border: `1px solid ${BRAND.cream}22`, borderRadius: 8, padding: "0.7rem 0.9rem", color: BRAND.cream, fontFamily: FONT.body, fontSize: "0.9rem", outline: "none", width: "100%" }}
           />
           <input
             type="password" value={newPassword} onChange={(e) => { setNewPassword(e.target.value); setCreateError(null); }}
             placeholder="Password"
-            style={{ background: `${BRAND.dark}88`, border: `1px solid ${BRAND.cream}22`, borderRadius: 8, padding: "0.7rem 0.9rem", color: BRAND.cream, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", outline: "none", width: "100%" }}
+            style={{ background: `${BRAND.dark}88`, border: `1px solid ${BRAND.cream}22`, borderRadius: 8, padding: "0.7rem 0.9rem", color: BRAND.cream, fontFamily: FONT.body, fontSize: "0.9rem", outline: "none", width: "100%" }}
           />
           <div>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.56rem", letterSpacing: "0.1em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "0.5rem" }}>Accent color</div>
+            <div style={{ fontFamily: FONT.type, fontSize: "0.56rem", letterSpacing: "0.1em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "0.5rem" }}>Accent color</div>
             <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
               {ACCENT_PRESETS.map((c) => (
                 <button key={c} type="button" onClick={() => setNewAccent(c)}
@@ -2187,9 +2365,9 @@ function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated, to
               ))}
             </div>
           </div>
-          {createError && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: BRAND.coral }}>{createError}</div>}
+          {createError && <div style={{ fontFamily: FONT.type, fontSize: "0.65rem", color: BRAND.coral }}>{createError}</div>}
           <button type="submit" disabled={creating}
-            style={{ padding: "0.7rem", borderRadius: 8, border: "none", cursor: "pointer", background: createSuccess ? "#4caf50" : newAccent, color: BRAND.cream, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", transition: "background .2s ease" }}
+            style={{ padding: "0.7rem", borderRadius: 8, border: "none", cursor: "pointer", background: createSuccess ? "#4caf50" : newAccent, color: BRAND.cream, fontFamily: FONT.type, fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", transition: "background .2s ease" }}
           >
             {creating ? "Creating…" : createSuccess ? "User Created ✓" : "Create User"}
           </button>
@@ -2198,12 +2376,12 @@ function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated, to
         {/* Dynamic users list with delete */}
         {dynamicUsers && dynamicUsers.length > 0 && (
           <div style={{ marginTop: "1.2rem" }}>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.56rem", letterSpacing: "0.1em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "0.6rem" }}>Added users</div>
+            <div style={{ fontFamily: FONT.type, fontSize: "0.56rem", letterSpacing: "0.1em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "0.6rem" }}>Added users</div>
             {dynamicUsers.map((u) => (
               <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.5rem 0", borderBottom: `1px solid ${BRAND.cream}0e` }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                   <div style={{ width: 10, height: 10, borderRadius: "50%", background: u.accent }} />
-                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", color: BRAND.cream }}>{u.name}</span>
+                  <span style={{ fontFamily: FONT.body, fontSize: "0.88rem", color: BRAND.cream }}>{u.name}</span>
                 </div>
                 <button onClick={() => handleDeleteUser(u.id)} style={{ background: "none", border: "none", color: `${BRAND.cream}44`, cursor: "pointer", fontSize: "0.8rem", padding: "0.2rem 0.4rem" }}>✕ Remove</button>
               </div>
@@ -2215,19 +2393,19 @@ function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated, to
         <div style={{ margin: "1.6rem 0", height: 1, background: `${BRAND.cream}14` }} />
 
         {/* Tooltip Editor */}
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "0.8rem" }}>Section Tooltips</div>
-        <div style={{ fontSize: "0.78rem", color: `${BRAND.cream}55`, fontFamily: "'Inter', sans-serif", marginBottom: "0.8rem" }}>Add instructions that appear as a ⓘ icon on each section. Leave blank to hide.</div>
+        <div style={{ fontFamily: FONT.type, fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "0.8rem" }}>Section Tooltips</div>
+        <div style={{ fontSize: "0.78rem", color: `${BRAND.cream}55`, fontFamily: FONT.body, marginBottom: "0.8rem" }}>Add instructions that appear as a ⓘ icon on each section. Leave blank to hide.</div>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.7rem" }}>
           {TOOLTIP_SECTIONS.map(({ key, label }) => (
             <div key={key}>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.56rem", color: `${BRAND.cream}55`, marginBottom: "0.3rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
+              <div style={{ fontFamily: FONT.type, fontSize: "0.56rem", color: `${BRAND.cream}55`, marginBottom: "0.3rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
               <textarea
                 value={(tooltips || {})[key] || ""}
                 onChange={(e) => onTooltipsChanged({ ...(tooltips || {}), [key]: e.target.value })}
                 onBlur={async () => { await saveTooltips(tooltips || {}); }}
                 placeholder={`Instructions for ${label}…`}
                 rows={2}
-                style={{ width: "100%", background: `${BRAND.dark}88`, border: `1px solid ${BRAND.cream}22`, borderRadius: 6, padding: "0.55rem 0.7rem", color: BRAND.cream, fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", resize: "vertical", outline: "none", boxSizing: "border-box" }}
+                style={{ width: "100%", background: `${BRAND.dark}88`, border: `1px solid ${BRAND.cream}22`, borderRadius: 6, padding: "0.55rem 0.7rem", color: BRAND.cream, fontFamily: FONT.body, fontSize: "0.82rem", resize: "vertical", outline: "none", boxSizing: "border-box" }}
               />
             </div>
           ))}
@@ -2241,13 +2419,68 @@ function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated, to
 // USER HOME
 // ---------------------------------------------------------------------------
 function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dynamicPasswords, onUserCreated, tooltips, onTooltipsChanged }) {
+  const currentYear = new Date().getFullYear();
   const [connections, setConnections] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [nowReading, setNowReading] = useState([]);
+  const [challengeYear, setChallengeYear] = useState(currentYear);
+  const [challengeGoal, setChallengeGoal] = useState(null);
+  const [challengeCount, setChallengeCount] = useState(0);
+  const [logBookId, setLogBookId] = useState(null);
+  const [logPageInput, setLogPageInput] = useState("");
   const isAdmin = user.id === ADMIN_USER_ID;
 
   useEffect(() => {
     loadConnections().then(setConnections);
-  }, [showAdmin]); // reload after admin panel closes
+  }, [showAdmin]);
+
+  const loadTrackers = async () => {
+    const [customBooks, goal] = await Promise.all([
+      loadCustomBooks(user.id),
+      loadChallengeGoal(user.id, challengeYear),
+    ]);
+    setChallengeGoal(goal);
+    const customIds = new Set(customBooks.map((b) => b.id));
+    const userStaticBooks = USERS[user.id]?.books || [];
+    const shelfBooks = await loadShelfBooks(user.id);
+    const allBooks = [...userStaticBooks.filter((b) => !customIds.has(b.id)), ...customBooks, ...shelfBooks.filter((b) => !customIds.has(b.id) && !userStaticBooks.some((s) => s.id === b.id))];
+    const withProgress = await Promise.all(
+      allBooks.map(async (b) => {
+        const [prog, status, dateAdded] = await Promise.all([
+          loadProgress(user.id, b.id),
+          loadStatus(user.id, b.id),
+          loadDateAdded(user.id, b.id),
+        ]);
+        return { ...b, prog, status, dateAdded };
+      })
+    );
+    const trackers = withProgress.filter((b) => b.prog && b.prog.pagesRead > 0 && !b.prog.tracking === false && b.pages && b.prog.pagesRead < b.pages);
+    setNowReading(trackers.map((b) => ({ ...b, pagesRead: b.prog.pagesRead })));
+    const readThisYear = withProgress.filter((b) => {
+      if (b.status !== "read") return false;
+      const date = b.prog?.dateFinished || b.dateAdded;
+      return date && parseInt(date.slice(0, 4), 10) === challengeYear;
+    });
+    setChallengeCount(readThisYear.length);
+  };
+
+  useEffect(() => { loadTrackers(); }, [user.id, challengeYear]);
+
+  const handleLogPages = async (book) => {
+    const pages = parseInt(logPageInput, 10);
+    if (!pages || pages < 0) { setLogBookId(null); return; }
+    const existing = book.prog || {};
+    await saveProgress(user.id, book.id, { ...existing, pagesRead: Math.min(pages, book.pages || 9999) });
+    setLogBookId(null);
+    setLogPageInput("");
+    loadTrackers();
+  };
+
+  const handleRemoveTracker = async (book) => {
+    const existing = book.prog || {};
+    await saveProgress(user.id, book.id, { ...existing, tracking: false });
+    setNowReading((prev) => prev.filter((b) => b.id !== book.id));
+  };
 
   const friends = connections ? getConnectedUsers(user.id, connections) : [];
 
@@ -2255,85 +2488,201 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dy
     <div style={{ minHeight: "100vh", background: BRAND.cream, color: BRAND.ink, fontFamily: FONT.body, overflowX: "hidden" }}>
       {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} dynamicUsers={dynamicUsers} dynamicPasswords={dynamicPasswords} onUserCreated={onUserCreated} tooltips={tooltips} onTooltipsChanged={onTooltipsChanged} />}
 
-      {/* Sticky nav */}
-      <header style={{ position: "sticky", top: 0, zIndex: 40, background: "rgba(242,239,235,.9)", backdropFilter: "saturate(180%) blur(12px)", WebkitBackdropFilter: "saturate(180%) blur(12px)", borderBottom: `1px solid ${BRAND.line}` }}>
-        <nav style={{ maxWidth: 1220, margin: "0 auto", padding: "13px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ width: 34, height: 34, borderRadius: 3, background: BRAND.coral, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.display, fontWeight: 600, fontSize: 20, color: BRAND.cream }}>B</span>
-            <span style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 22, color: BRAND.ink }}>Book Brain</span>
+      {/* Sticky nav — matches design: M tile + Marginalia wordmark, center links, user avatar */}
+      <header style={{ position: "sticky", top: 0, zIndex: 40, background: "rgba(242,239,235,.92)", backdropFilter: "saturate(180%) blur(14px)", WebkitBackdropFilter: "saturate(180%) blur(14px)", borderBottom: `1px solid ${BRAND.line}` }}>
+        <nav style={{ maxWidth: 1220, margin: "0 auto", padding: "15px 30px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+            <span style={{ width: 34, height: 34, borderRadius: 3, background: BRAND.coral, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.display, fontWeight: 600, fontSize: 21, color: BRAND.cream }}>M</span>
+            <span style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 22, color: BRAND.ink }}>Marginalia</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "none", gap: 28, fontFamily: FONT.body, fontSize: 13.5, letterSpacing: "0.02em", "@media(minWidth:860px)": { display: "flex" } }} className="mg-center-nav">
+            <span style={{ color: BRAND.coral, fontWeight: 500 }}>Dashboard</span>
+            <button onClick={onOpenMyBooks} style={{ color: BRAND.ink, background: "none", border: "none", cursor: "pointer", opacity: 0.8, fontFamily: FONT.body, fontSize: 13.5 }}>The Library</button>
+            <button onClick={onOpenMyBooks} style={{ color: BRAND.ink, background: "none", border: "none", cursor: "pointer", opacity: 0.8, fontFamily: FONT.body, fontSize: 13.5 }}>Card Catalogue</button>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             {isAdmin && (
-              <button onClick={() => setShowAdmin(true)} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.04em", textTransform: "uppercase", background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "8px 14px", borderRadius: 2, cursor: "pointer" }}
+              <button onClick={() => setShowAdmin(true)} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.04em", textTransform: "uppercase", background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "7px 13px", borderRadius: 2, cursor: "pointer" }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = BRAND.coral; e.currentTarget.style.borderColor = BRAND.coral; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = BRAND.muted; e.currentTarget.style.borderColor = BRAND.line2; }}>
                 ⚙ Admin
               </button>
             )}
-            <button onClick={onLogout} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.04em", color: BRAND.muted, background: "none", border: "none", cursor: "pointer" }}
-              onMouseEnter={(e) => e.currentTarget.style.color = BRAND.coral}
-              onMouseLeave={(e) => e.currentTarget.style.color = BRAND.muted}>
-              Sign out
-            </button>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: user.accent || BRAND.terracotta, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.display, fontWeight: 600, fontSize: 17, color: "#fff", cursor: "pointer" }} title={`Signed in as ${user.name} · click to sign out`} onClick={onLogout}>
+              {user.name?.[0]?.toUpperCase() || "?"}
+            </div>
           </div>
         </nav>
       </header>
 
-      {/* Hero */}
-      <section style={{ maxWidth: 1220, margin: "0 auto", padding: "clamp(44px,7vw,80px) 24px clamp(32px,5vw,56px)" }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 10, fontFamily: FONT.body, fontSize: 12.5, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.terracotta, marginBottom: 18 }}>
-          <span style={{ width: 26, height: 1, background: BRAND.terracotta, display: "inline-block" }} />
-          Your reading life <TooltipIcon text={tooltips?.home} color={BRAND.terracotta} />
+      {/* Main content */}
+      <div style={{ maxWidth: 1220, margin: "0 auto", padding: "34px 30px 40px" }}>
+
+        {/* Greeting */}
+        <div style={{ marginBottom: 26 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 10, fontFamily: FONT.body, fontSize: 11.5, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.terracotta, marginBottom: 14 }}>
+            <span style={{ width: 24, height: 1, background: BRAND.terracotta, display: "inline-block" }} />
+            Your reading life <TooltipIcon text={tooltips?.home} color={BRAND.terracotta} />
+          </div>
+          <h1 style={{ fontFamily: FONT.display, fontWeight: 500, fontSize: "clamp(38px,5vw,54px)", lineHeight: 1.02, letterSpacing: "-0.01em", color: BRAND.ink, margin: "0 0 10px" }}>
+            Good to see you, <span style={{ fontStyle: "italic", color: BRAND.coral }}>{user.name}.</span>
+          </h1>
+          <p style={{ fontFamily: FONT.read, fontSize: "clamp(15px,1.3vw,18px)", color: BRAND.muted, margin: 0, lineHeight: 1.6 }}>Your library is waiting. Pick up where you left off.</p>
         </div>
-        <h1 style={{ fontFamily: FONT.display, fontWeight: 500, fontSize: "clamp(40px,6vw,76px)", lineHeight: 1.03, letterSpacing: "-0.01em", color: BRAND.ink, margin: "0 0 20px" }}>
-          Good to see you,{" "}
-          <span style={{ fontStyle: "italic", color: BRAND.coral }}>{user.name}.</span>
-        </h1>
-        <p style={{ fontFamily: FONT.read, fontSize: "clamp(16px,1.3vw,18px)", lineHeight: 1.6, color: BRAND.muted, margin: 0, maxWidth: "38em" }}>Your library is waiting. Pick up where you left off.</p>
-      </section>
 
-      {/* Reading challenge */}
-      <section style={{ maxWidth: 1220, margin: "0 auto", padding: "0 24px clamp(24px,3vw,36px)" }}>
-        <BookChallenge userId={user.id} userAccent={user.accent} friends={friends} tooltipText={tooltips?.challenge} />
-      </section>
+        {/* ===== NOW READING TRACKER (espresso card) ===== */}
+        <section style={{ background: BRAND.espresso, borderRadius: 6, padding: "26px 28px 28px", boxShadow: "0 4px 12px rgba(20,30,50,.10)", marginBottom: 22 }}>
+          {/* Header row: "Now reading" + year challenge strip */}
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 22 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontFamily: FONT.body, fontSize: 11.5, letterSpacing: "0.26em", textTransform: "uppercase", color: BRAND.tan }}>Now reading</span>
+              {nowReading.length > 0 && (
+                <span style={{ fontFamily: FONT.body, fontSize: 11.5, letterSpacing: "0.04em", color: "rgba(251,246,232,.5)" }}>{nowReading.length} book{nowReading.length !== 1 ? "s" : ""}</span>
+              )}
+            </div>
+            {/* Challenge strip */}
+            <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
+                <span style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 23, color: "#FBF6E8", lineHeight: 1 }}>{challengeCount}</span>
+                <span style={{ fontFamily: FONT.body, fontSize: 12, color: "rgba(251,246,232,.74)" }}>/ {challengeGoal || "—"} read in</span>
+              </div>
+              <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,.06)", padding: 4, borderRadius: 99, border: "1px solid rgba(217,162,130,.22)" }}>
+                {[currentYear, currentYear - 1].map((yr) => (
+                  <button key={yr} onClick={() => setChallengeYear(yr)} style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: "0.04em", border: "none", cursor: "pointer", padding: "5px 13px", borderRadius: 99, transition: "background .2s,color .2s", background: challengeYear === yr ? BRAND.coral : "transparent", color: challengeYear === yr ? "#fff" : "rgba(251,246,232,.7)" }}>
+                    {yr}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
 
-      {/* Nav cards */}
-      <section style={{ maxWidth: 1220, margin: "0 auto", padding: "0 24px clamp(32px,4vw,48px)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: 16 }}>
-          <button onClick={onOpenMyBooks} style={{ background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderLeft: `3px solid ${user.accent}`, borderRadius: 4, padding: "clamp(20px,3vw,28px)", textAlign: "left", cursor: "pointer", color: BRAND.ink, boxShadow: "0 1px 2px rgba(20,30,50,.06)", transition: "box-shadow .2s,transform .2s,border-color .2s" }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(20,30,50,.10)"; e.currentTarget.style.borderColor = BRAND.tan; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 1px 2px rgba(20,30,50,.06)"; e.currentTarget.style.borderColor = BRAND.line; }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <span style={{ fontSize: 20 }}>🗂️</span>
-              <span style={{ fontFamily: FONT.body, fontSize: 11.5, letterSpacing: "0.2em", textTransform: "uppercase", color: BRAND.terracotta, display: "flex", alignItems: "center", gap: 6 }}>
+          {/* Tracker rows */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {nowReading.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "22px", fontFamily: FONT.read, fontStyle: "italic", fontSize: 16, color: "rgba(251,246,232,.5)" }}>
+                No trackers yet — open a book and log your page to start tracking.
+              </div>
+            ) : nowReading.map((book) => {
+              const pct = Math.min(100, Math.round((book.pagesRead / book.pages) * 100));
+              const spineColors = ["#BF755A","#F25C5C","#D9A282","#9a6a3f","#6B4A3A","#3E7C57","#3a6ea5"];
+              const spine = book.accent || spineColors[Math.abs((book.id || "").charCodeAt(0)) % spineColors.length];
+              const isLogging = logBookId === book.id;
+              return (
+                <div key={book.id} style={{ display: "flex", alignItems: "center", gap: 18, background: "rgba(255,255,255,.04)", border: "1px solid rgba(217,162,130,.18)", borderRadius: 5, padding: "16px 18px" }}>
+                  {/* Spine block — 46×66px matching design */}
+                  <div style={{ position: "relative", width: 46, height: 66, flexShrink: 0, borderRadius: "2px 3px 3px 2px", background: spine, boxShadow: "inset -6px 0 0 rgba(0,0,0,.16),0 4px 12px rgba(20,30,50,.10)" }}>
+                    <span style={{ position: "absolute", left: 6, top: 7, bottom: 7, width: 1, background: "rgba(255,255,255,.25)", display: "block" }} />
+                  </div>
+                  {/* Content */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 14, marginBottom: 9 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 21, lineHeight: 1.1, color: "#FBF6E8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{book.title}</div>
+                        <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13.5, color: BRAND.tan, marginTop: 2 }}>{book.author}</div>
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div style={{ fontFamily: FONT.body, fontSize: 13, color: "#FBF6E8", fontWeight: 500, whiteSpace: "nowrap" }}>
+                          p. {book.pagesRead} <span style={{ color: "rgba(251,246,232,.5)" }}>/ {book.pages}</span>
+                        </div>
+                        <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.coral, marginTop: 2 }}>{pct}%</div>
+                      </div>
+                    </div>
+                    {/* Progress bar */}
+                    <div style={{ height: 7, width: "100%", background: "rgba(255,255,255,.1)", borderRadius: 99, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${pct}%`, background: BRAND.coral, borderRadius: 99 }} />
+                    </div>
+                    {/* Inline log input */}
+                    {isLogging && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+                        <input type="number" min={0} max={book.pages || 9999} value={logPageInput} onChange={(e) => setLogPageInput(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") handleLogPages(book); if (e.key === "Escape") { setLogBookId(null); setLogPageInput(""); } }}
+                          placeholder={`Current page (max ${book.pages})`} autoFocus
+                          style={{ fontFamily: FONT.body, fontSize: 13, background: "rgba(255,255,255,.1)", border: "1px solid rgba(217,162,130,.4)", borderRadius: 2, color: "#FBF6E8", padding: "6px 10px", width: 180, outline: "none" }} />
+                        <button onClick={() => handleLogPages(book)} style={{ fontFamily: FONT.body, fontSize: 12, padding: "6px 13px", borderRadius: 2, border: "none", background: BRAND.coral, color: "#fff", cursor: "pointer" }}>Save</button>
+                        <button onClick={() => { setLogBookId(null); setLogPageInput(""); }} style={{ fontFamily: FONT.body, fontSize: 12, padding: "6px 10px", borderRadius: 2, border: "1px solid rgba(251,246,232,.2)", background: "transparent", color: "rgba(251,246,232,.6)", cursor: "pointer" }}>Cancel</button>
+                      </div>
+                    )}
+                  </div>
+                  {/* Action buttons */}
+                  {!isLogging && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 7, flexShrink: 0 }}>
+                      <button onClick={() => { setLogBookId(book.id); setLogPageInput(String(book.pagesRead)); }}
+                        style={{ fontFamily: FONT.body, fontSize: 11.5, letterSpacing: "0.04em", cursor: "pointer", padding: "8px 13px", borderRadius: 2, border: "1px solid rgba(217,162,130,.4)", background: "rgba(242,92,92,.14)", color: "#FBF6E8", whiteSpace: "nowrap" }}>
+                        + Log pages
+                      </button>
+                      <button onClick={() => handleRemoveTracker(book)}
+                        style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer", padding: "5px 13px", borderRadius: 2, border: "1px solid rgba(251,246,232,.18)", background: "transparent", color: "rgba(251,246,232,.5)" }}>
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Add tracker */}
+          <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid rgba(217,162,130,.16)" }}>
+            <button onClick={onOpenShelf} style={{ display: "inline-flex", alignItems: "center", gap: 9, fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.03em", cursor: "pointer", padding: "10px 16px", borderRadius: 2, border: "1px dashed rgba(217,162,130,.5)", background: "transparent", color: "#FBF6E8" }}>
+              <span style={{ fontSize: 16, color: BRAND.tan }}>+</span> Add a tracker
+            </button>
+          </div>
+        </section>
+
+        {/* ===== Two category cards (1fr 1fr) ===== */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,280px),1fr))", gap: 20, marginBottom: 8 }}>
+          {/* Card Catalogue / Marginalia */}
+          <button onClick={onOpenMyBooks} style={{ textDecoration: "none", background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 5, padding: 26, boxShadow: "0 1px 2px rgba(20,30,50,.06)", transition: "box-shadow .24s,border-color .24s,transform .24s", textAlign: "left", cursor: "pointer", color: BRAND.ink }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(20,30,50,.10)"; e.currentTarget.style.borderColor = BRAND.tan; e.currentTarget.style.transform = "translateY(-2px)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 1px 2px rgba(20,30,50,.06)"; e.currentTarget.style.borderColor = BRAND.line; e.currentTarget.style.transform = "none"; }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+              <span style={{ width: 36, height: 36, borderRadius: 3, background: "rgba(242,92,92,.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={BRAND.coral} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+              </span>
+              <span style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: BRAND.terracotta, display: "flex", alignItems: "center", gap: 6 }}>
                 Card Catalogue <TooltipIcon text={tooltips?.myBooks} color={BRAND.terracotta} />
               </span>
             </div>
-            <h2 style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: "clamp(22px,2.5vw,28px)", margin: "0 0 8px", color: BRAND.ink }}>{user.name}'s Book Notes</h2>
-            <p style={{ fontFamily: FONT.body, fontWeight: 300, fontSize: 14.5, lineHeight: 1.65, color: BRAND.muted, margin: 0 }}>Full summaries, key ideas, quotes, and reading trackers — all in one place.</p>
+            <h2 style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: "clamp(21px,2.4vw,28px)", margin: "0 0 10px", color: BRAND.ink, lineHeight: 1.1 }}>{user.name}'s Marginalia</h2>
+            <p style={{ fontFamily: FONT.body, fontWeight: 300, fontSize: 14.5, lineHeight: 1.65, color: BRAND.muted, margin: "0 0 18px" }}>Full summaries, key ideas, quotes, and reading notes — all filed in one place.</p>
+            <span style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.coral, letterSpacing: "0.04em" }}>Open the drawers →</span>
           </button>
 
-          <button onClick={onOpenShelf} style={{ background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderLeft: `3px solid ${BRAND.terracotta}`, borderRadius: 4, padding: "clamp(20px,3vw,28px)", textAlign: "left", cursor: "pointer", color: BRAND.ink, boxShadow: "0 1px 2px rgba(20,30,50,.06)", transition: "box-shadow .2s,transform .2s,border-color .2s" }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(20,30,50,.10)"; e.currentTarget.style.borderColor = BRAND.tan; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 1px 2px rgba(20,30,50,.06)"; e.currentTarget.style.borderColor = BRAND.line; }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <span style={{ fontSize: 20 }}>📚</span>
-              <span style={{ fontFamily: FONT.body, fontSize: 11.5, letterSpacing: "0.2em", textTransform: "uppercase", color: BRAND.terracotta, display: "flex", alignItems: "center", gap: 6 }}>
+          {/* Reading List / Bookshelf */}
+          <button onClick={onOpenShelf} style={{ textDecoration: "none", background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 5, padding: 26, boxShadow: "0 1px 2px rgba(20,30,50,.06)", transition: "box-shadow .24s,border-color .24s,transform .24s", textAlign: "left", cursor: "pointer", color: BRAND.ink }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(20,30,50,.10)"; e.currentTarget.style.borderColor = BRAND.tan; e.currentTarget.style.transform = "translateY(-2px)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 1px 2px rgba(20,30,50,.06)"; e.currentTarget.style.borderColor = BRAND.line; e.currentTarget.style.transform = "none"; }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+              <span style={{ width: 36, height: 36, borderRadius: 3, background: "rgba(191,117,90,.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={BRAND.terracotta} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                </svg>
+              </span>
+              <span style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: BRAND.terracotta, display: "flex", alignItems: "center", gap: 6 }}>
                 Reading List <TooltipIcon text={tooltips?.shelf} color={BRAND.terracotta} />
               </span>
             </div>
-            <h2 style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: "clamp(22px,2.5vw,28px)", margin: "0 0 8px", color: BRAND.ink }}>{user.name}'s Bookshelf</h2>
-            <p style={{ fontFamily: FONT.body, fontWeight: 300, fontSize: 14.5, lineHeight: 1.65, color: BRAND.muted, margin: 0 }}>Books on deck — covers, page counts, and read-time estimates.</p>
+            <h2 style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: "clamp(21px,2.4vw,28px)", margin: "0 0 10px", color: BRAND.ink, lineHeight: 1.1 }}>{user.name}'s Bookshelf</h2>
+            <p style={{ fontFamily: FONT.body, fontWeight: 300, fontSize: 14.5, lineHeight: 1.65, color: BRAND.muted, margin: "0 0 18px" }}>Books on deck — covers, page counts, read-time estimates, and shelf tracking.</p>
+            <span style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.terracotta, letterSpacing: "0.04em" }}>Browse the shelf →</span>
           </button>
         </div>
-      </section>
 
-      {/* Social widgets — espresso section */}
+        {/* Reading challenge — compact strip below cards */}
+        <section style={{ marginTop: 8 }}>
+          <BookChallenge userId={user.id} userAccent={user.accent} friends={friends} tooltipText={tooltips?.challenge} />
+        </section>
+
+      </div>{/* /main content */}
+
+      {/* Reading room — espresso full-bleed, 3-col friend grid */}
       {friends.length > 0 && (
-        <section style={{ background: BRAND.espresso, padding: "clamp(40px,6vw,72px) 0" }}>
-          <div style={{ maxWidth: 1220, margin: "0 auto", padding: "0 24px" }}>
-            <div style={{ fontFamily: FONT.body, fontSize: 12.5, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.tan, marginBottom: 28 }}>Your reading room</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: 16, marginBottom: 16 }}>
+        <section style={{ background: BRAND.espresso, padding: "clamp(40px,6vw,64px) 0" }}>
+          <div style={{ maxWidth: 1220, margin: "0 auto", padding: "0 30px" }}>
+            <div style={{ fontFamily: FONT.body, fontSize: 12.5, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.tan, marginBottom: 26 }}>Reading room</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,280px),1fr))", gap: 16, marginBottom: 22 }}>
               <FriendReading friends={friends} tooltipText={tooltips?.friendReading} />
               <SharedBookshelf viewerId={user.id} friends={friends} tooltipText={tooltips?.sharedBooks} />
             </div>
@@ -2343,10 +2692,10 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dy
       )}
 
       {/* Footer */}
-      <footer style={{ background: BRAND.espresso2, padding: "28px 24px", borderTop: `1px solid rgba(217,162,130,.14)` }}>
+      <footer style={{ background: BRAND.espresso2, padding: "28px 30px", borderTop: "1px solid rgba(217,162,130,.14)" }}>
         <div style={{ maxWidth: 1220, margin: "0 auto", display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
           <span style={{ fontFamily: FONT.display, fontStyle: "italic", fontSize: 18, color: BRAND.tan }}>Turn the page.</span>
-          <span style={{ fontFamily: FONT.body, fontSize: 12, color: "rgba(242,239,235,.4)", letterSpacing: "0.08em" }}>© 2026 Book Brain · mybookbrain.com</span>
+          <span style={{ fontFamily: FONT.body, fontSize: 12, color: "rgba(242,239,235,.4)", letterSpacing: "0.08em" }}>© 2026 Marginalia · mybookbrain.com</span>
         </div>
       </footer>
     </div>
@@ -2593,12 +2942,7 @@ export default function App() {
   if (!usersLoaded) return null; // wait for dynamic users before rendering login
 
   if (!loggedInUserId) {
-    return (
-      <div style={{ fontFamily: "Inter, sans-serif" }}>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap'); * { box-sizing: border-box; }`}</style>
-        <LoginScreen onLogin={handleLogin} allPasswords={allPasswords} />
-      </div>
-    );
+    return <LoginScreen onLogin={handleLogin} allPasswords={allPasswords} />;
   }
 
   let content;
@@ -2613,9 +2957,8 @@ export default function App() {
   }
 
   return (
-    <div style={{ fontFamily: "Inter, sans-serif" }}>
+    <div style={{ fontFamily: FONT.body }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
         @media (max-width: 720px) { .casefile-grid { grid-template-columns: 1fr !important; } .quote-form { grid-template-columns: 1fr !important; } }
         * { box-sizing: border-box; }
       `}</style>
