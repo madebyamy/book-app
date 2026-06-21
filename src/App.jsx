@@ -1916,7 +1916,7 @@ function LoginScreen({ onLogin }) {
         <form onSubmit={handleSubmit} className={shake ? "shake" : ""} style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.9rem" }}>
           {/* User selector */}
           <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.14em", textTransform: "uppercase", color: `${BRAND.cream}55`, margin: "0 0 0.2rem", textAlign: "center" }}>Who's reading today?</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: "0.75rem" }}>
             {Object.values(USERS).map((user) => {
               const active = selectedUser === user.id;
               return (
