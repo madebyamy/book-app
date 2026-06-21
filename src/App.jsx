@@ -951,7 +951,7 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
         backgroundSize: "cover", backgroundPosition: "center top",
         opacity: 0.14,
       }} />
-      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, ${BRAND.dark}77 0%, ${BRAND.dark}aa 50%, ${BRAND.dark}dd 100%)` }} />
+      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, ${BRAND.dark}33 0%, ${BRAND.dark}66 50%, ${BRAND.dark}bb 100%)` }} />
 
       {/* Top bar */}
       <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.2rem 1.4rem" }}>
@@ -1053,12 +1053,12 @@ function LoginScreen({ onLogin }) {
         position: "absolute", inset: 0,
         backgroundImage: "url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=1400&q=80')",
         backgroundSize: "cover", backgroundPosition: "center",
-        opacity: 0.45,
+        opacity: 0.75,
       }} />
       {/* Gradient overlay — heavier at bottom for readability */}
       <div style={{
         position: "absolute", inset: 0,
-        background: `linear-gradient(to bottom, ${BRAND.dark}88 0%, ${BRAND.dark}bb 60%, ${BRAND.dark}ee 100%)`,
+        background: `linear-gradient(to bottom, ${BRAND.dark}44 0%, ${BRAND.dark}77 60%, ${BRAND.dark}cc 100%)`,
       }} />
 
       <style>{`
