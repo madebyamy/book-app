@@ -114,17 +114,53 @@ async function saveConnections(connections) {
 }
 
 // ---------------------------------------------------------------------------
-// USERS — to add a new user:
-//   1. Add their books array above (e.g. const JANE_BOOKS = [];)
-//   2. Add an entry here: jane: { id: "jane", name: "Jane", accent: "#hexcolor", books: JANE_BOOKS }
-//   3. Add their password below in PASSWORDS: jane: import.meta.env.VITE_PASSWORD_JANE || "fallback"
-//   4. Add VITE_PASSWORD_JANE to Netlify environment variables
+// USERS — base users are hardcoded; dynamic users are loaded from Supabase
+// at runtime via loadDynamicUsers(). Use USERS as the live merged registry.
 // ---------------------------------------------------------------------------
 const USERS = {
   amy:      { id: "amy",      name: "Amy",      accent: "#F25C5C", books: AMY_BOOKS },
   lynnell:  { id: "lynnell",  name: "Lynnell",  accent: "#BF755A", books: LYNNELL_BOOKS },
   christina:{ id: "christina",name: "Christina", accent: "#8C5634", books: CHRISTINA_BOOKS },
 };
+
+const DYNAMIC_USERS_KEY = "admin:dynamic-users";
+const DYNAMIC_PASSWORDS_KEY = "admin:dynamic-passwords";
+
+async function loadDynamicUsers() {
+  try {
+    const [usersRes, pwRes] = await Promise.all([
+      storage.get(DYNAMIC_USERS_KEY),
+      storage.get(DYNAMIC_PASSWORDS_KEY),
+    ]);
+    const dynamicUsers = usersRes ? JSON.parse(usersRes.value) : [];
+    const dynamicPasswords = pwRes ? JSON.parse(pwRes.value) : {};
+    // Merge into live USERS registry
+    dynamicUsers.forEach((u) => { USERS[u.id] = { ...u, books: [] }; });
+    return { dynamicUsers, dynamicPasswords };
+  } catch { return { dynamicUsers: [], dynamicPasswords: {} }; }
+}
+
+async function saveNewUser(newUser, password, existingDynamic, existingPasswords) {
+  const updatedUsers = [...existingDynamic.filter((u) => u.id !== newUser.id), newUser];
+  const updatedPasswords = { ...existingPasswords, [newUser.id]: password };
+  await Promise.all([
+    storage.set(DYNAMIC_USERS_KEY, JSON.stringify(updatedUsers)),
+    storage.set(DYNAMIC_PASSWORDS_KEY, JSON.stringify(updatedPasswords)),
+  ]);
+  return { dynamicUsers: updatedUsers, dynamicPasswords: updatedPasswords };
+}
+
+async function deleteDynamicUser(userId, existingDynamic, existingPasswords) {
+  const updatedUsers = existingDynamic.filter((u) => u.id !== userId);
+  const updatedPasswords = { ...existingPasswords };
+  delete updatedPasswords[userId];
+  await Promise.all([
+    storage.set(DYNAMIC_USERS_KEY, JSON.stringify(updatedUsers)),
+    storage.set(DYNAMIC_PASSWORDS_KEY, JSON.stringify(updatedPasswords)),
+  ]);
+  delete USERS[userId];
+  return { dynamicUsers: updatedUsers, dynamicPasswords: updatedPasswords };
+}
 
 // ---------------------------------------------------------------------------
 // STORAGE KEY HELPERS — all namespaced by userId
@@ -1594,11 +1630,21 @@ function FriendReading({ friends }) {
 // ---------------------------------------------------------------------------
 // ADMIN PANEL — only accessible to the admin user (Amy)
 // ---------------------------------------------------------------------------
-function AdminPanel({ onClose }) {
+const ACCENT_PRESETS = ["#F25C5C","#BF755A","#8C5634","#B98D6A","#D1A88C","#7C9E87","#6B8CAE","#A07CC5","#C5876B","#5E9E9E"];
+
+function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated }) {
   const allUsers = Object.values(USERS);
   const [connections, setConnections] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // New user form
+  const [newName, setNewName] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newAccent, setNewAccent] = useState(ACCENT_PRESETS[3]);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState(null);
+  const [createSuccess, setCreateSuccess] = useState(false);
 
   useEffect(() => {
     loadConnections().then(setConnections);
@@ -1619,6 +1665,31 @@ function AdminPanel({ onClose }) {
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    setCreateError(null);
+    const name = newName.trim();
+    if (!name) { setCreateError("Name is required."); return; }
+    if (!newPassword.trim()) { setCreateError("Password is required."); return; }
+    const id = name.toLowerCase().replace(/\s+/g, "");
+    if (USERS[id]) { setCreateError(`A user named "${name}" already exists.`); return; }
+    setCreating(true);
+    const newUser = { id, name, accent: newAccent };
+    const result = await saveNewUser(newUser, newPassword.trim(), dynamicUsers || [], dynamicPasswords || {});
+    USERS[id] = { ...newUser, books: [] };
+    onUserCreated(result);
+    setCreating(false);
+    setCreateSuccess(true);
+    setNewName(""); setNewPassword(""); setNewAccent(ACCENT_PRESETS[3]);
+    setTimeout(() => setCreateSuccess(false), 3000);
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm(`Remove ${USERS[userId]?.name}? This cannot be undone.`)) return;
+    const result = await deleteDynamicUser(userId, dynamicUsers || [], dynamicPasswords || {});
+    onUserCreated(result);
   };
 
   // Build all unique user pairs
@@ -1714,6 +1785,56 @@ function AdminPanel({ onClose }) {
         >
           {saving ? "Saving…" : saved ? "Saved ✓" : "Save Changes"}
         </button>
+
+        {/* Divider */}
+        <div style={{ margin: "1.6rem 0", height: 1, background: `${BRAND.cream}14` }} />
+
+        {/* Create New User */}
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "1rem" }}>Create New User</div>
+        <form onSubmit={handleCreateUser} style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
+          <input
+            type="text" value={newName} onChange={(e) => { setNewName(e.target.value); setCreateError(null); }}
+            placeholder="First name (e.g. Jane)"
+            style={{ background: `${BRAND.dark}88`, border: `1px solid ${BRAND.cream}22`, borderRadius: 8, padding: "0.7rem 0.9rem", color: BRAND.cream, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", outline: "none", width: "100%" }}
+          />
+          <input
+            type="password" value={newPassword} onChange={(e) => { setNewPassword(e.target.value); setCreateError(null); }}
+            placeholder="Password"
+            style={{ background: `${BRAND.dark}88`, border: `1px solid ${BRAND.cream}22`, borderRadius: 8, padding: "0.7rem 0.9rem", color: BRAND.cream, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", outline: "none", width: "100%" }}
+          />
+          <div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.56rem", letterSpacing: "0.1em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "0.5rem" }}>Accent color</div>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              {ACCENT_PRESETS.map((c) => (
+                <button key={c} type="button" onClick={() => setNewAccent(c)}
+                  style={{ width: 26, height: 26, borderRadius: "50%", background: c, border: newAccent === c ? `2px solid ${BRAND.cream}` : "2px solid transparent", cursor: "pointer", padding: 0, outline: "none" }}
+                />
+              ))}
+            </div>
+          </div>
+          {createError && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: BRAND.coral }}>{createError}</div>}
+          <button type="submit" disabled={creating}
+            style={{ padding: "0.7rem", borderRadius: 8, border: "none", cursor: "pointer", background: createSuccess ? "#4caf50" : newAccent, color: BRAND.cream, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", transition: "background .2s ease" }}
+          >
+            {creating ? "Creating…" : createSuccess ? "User Created ✓" : "Create User"}
+          </button>
+        </form>
+
+        {/* Dynamic users list with delete */}
+        {dynamicUsers && dynamicUsers.length > 0 && (
+          <div style={{ marginTop: "1.2rem" }}>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.56rem", letterSpacing: "0.1em", textTransform: "uppercase", color: `${BRAND.cream}44`, marginBottom: "0.6rem" }}>Added users</div>
+            {dynamicUsers.map((u) => (
+              <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.5rem 0", borderBottom: `1px solid ${BRAND.cream}0e` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: u.accent }} />
+                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", color: BRAND.cream }}>{u.name}</span>
+                </div>
+                <button onClick={() => handleDeleteUser(u.id)} style={{ background: "none", border: "none", color: `${BRAND.cream}44`, cursor: "pointer", fontSize: "0.8rem", padding: "0.2rem 0.4rem" }}>✕ Remove</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1722,7 +1843,7 @@ function AdminPanel({ onClose }) {
 // ---------------------------------------------------------------------------
 // USER HOME
 // ---------------------------------------------------------------------------
-function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
+function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dynamicPasswords, onUserCreated }) {
   const [connections, setConnections] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
   const isAdmin = user.id === ADMIN_USER_ID;
@@ -1748,7 +1869,7 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
       }} />
       <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, ${BRAND.dark}11 0%, ${BRAND.dark}44 50%, ${BRAND.dark}99 100%)` }} />
 
-      {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
+      {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} dynamicUsers={dynamicUsers} dynamicPasswords={dynamicPasswords} onUserCreated={onUserCreated} />}
 
       {/* Top bar */}
       <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.2rem 1.4rem" }}>
@@ -1839,7 +1960,7 @@ const PASSWORDS = {
 
 const SESSION_KEY = "bookbrain:loggedInUser";
 
-function LoginScreen({ onLogin }) {
+function LoginScreen({ onLogin, allPasswords }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
@@ -1855,7 +1976,8 @@ function LoginScreen({ onLogin }) {
       setTimeout(() => setShake(false), 500);
       return;
     }
-    if (password === PASSWORDS[userId]) {
+    const passwords = allPasswords || PASSWORDS;
+    if (password === passwords[userId]) {
       sessionStorage.setItem(SESSION_KEY, userId);
       onLogin(userId);
     } else {
@@ -1966,6 +2088,20 @@ export default function App() {
   const [activeBookId, setActiveBookId] = useState(null);
   const [customBooksVersion, setCustomBooksVersion] = useState(0);
   const [allCustomBooks, setAllCustomBooks] = useState([]);
+  const [dynamicUsers, setDynamicUsers] = useState([]);
+  const [dynamicPasswords, setDynamicPasswords] = useState({});
+  const [usersLoaded, setUsersLoaded] = useState(false);
+
+  // Load dynamic users once on mount — merges them into the USERS registry
+  useEffect(() => {
+    loadDynamicUsers().then(({ dynamicUsers: du, dynamicPasswords: dp }) => {
+      setDynamicUsers(du);
+      setDynamicPasswords(dp);
+      setUsersLoaded(true);
+    });
+  }, []);
+
+  const allPasswords = { ...PASSWORDS, ...dynamicPasswords };
 
   const activeUser = loggedInUserId ? USERS[loggedInUserId] : null;
 
@@ -1981,11 +2117,18 @@ export default function App() {
   const handleLogout = () => { sessionStorage.removeItem(SESSION_KEY); setLoggedInUserId(null); setScreen("userHome"); setActiveBookId(null); };
   const goUserHome = () => { setScreen("userHome"); setActiveBookId(null); };
 
+  const handleUserCreated = ({ dynamicUsers: du, dynamicPasswords: dp }) => {
+    setDynamicUsers(du);
+    setDynamicPasswords(dp);
+  };
+
+  if (!usersLoaded) return null; // wait for dynamic users before rendering login
+
   if (!loggedInUserId) {
     return (
       <div style={{ fontFamily: "Inter, sans-serif" }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap'); * { box-sizing: border-box; }`}</style>
-        <LoginScreen onLogin={handleLogin} />
+        <LoginScreen onLogin={handleLogin} allPasswords={allPasswords} />
       </div>
     );
   }
@@ -1998,7 +2141,7 @@ export default function App() {
   } else if (screen === "shelf" && activeUser) {
     content = <Bookshelf userId={activeUser.id} userAccent={activeUser.accent} onBack={goUserHome} onLogout={handleLogout} />;
   } else if (activeUser) {
-    content = <UserHome user={activeUser} onOpenMyBooks={() => setScreen("myBooks")} onOpenShelf={() => setScreen("shelf")} onLogout={handleLogout} />;
+    content = <UserHome user={activeUser} onOpenMyBooks={() => setScreen("myBooks")} onOpenShelf={() => setScreen("shelf")} onLogout={handleLogout} dynamicUsers={dynamicUsers} dynamicPasswords={dynamicPasswords} onUserCreated={handleUserCreated} />;
   }
 
   return (
