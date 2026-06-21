@@ -942,9 +942,31 @@ function StatusBadge({ status, accent }) {
   );
 }
 
-function CatalogCard({ userId, book, onSelect }) {
+function DeleteConfirmModal({ bookTitle, onConfirm, onCancel }) {
+  return (
+    <div onClick={onCancel} style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(38,32,32,.62)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 5, maxWidth: 420, width: "100%", padding: "32px 28px 24px", boxShadow: "0 16px 40px rgba(20,30,50,.18)" }}>
+        <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(242,92,92,.1)", border: `1px solid rgba(242,92,92,.3)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, fontSize: 20 }}>🗑</div>
+        <h3 style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 22, color: BRAND.ink, margin: "0 0 10px", lineHeight: 1.2 }}>Delete this book?</h3>
+        <p style={{ fontFamily: FONT.read, fontSize: 15, lineHeight: 1.6, color: BRAND.muted, margin: "0 0 6px" }}>
+          Are you sure you want to delete <em>"{bookTitle}"</em>?
+        </p>
+        <p style={{ fontFamily: FONT.read, fontSize: 13.5, lineHeight: 1.6, color: BRAND.coral, margin: "0 0 26px" }}>
+          This will delete all data associated with this book.
+        </p>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onCancel} style={{ flex: 1, fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "11px 16px", borderRadius: 3, cursor: "pointer" }}>Cancel</button>
+          <button onClick={onConfirm} style={{ flex: 1, fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: BRAND.coral, border: "none", color: "#fff", padding: "11px 16px", borderRadius: 3, cursor: "pointer" }}>Yes, delete</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CatalogCard({ userId, book, onSelect, onDelete }) {
   const [date, setDate] = useState(null);
   const [readStatus, setReadStatus] = useState("to-read");
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -971,36 +993,56 @@ function CatalogCard({ userId, book, onSelect }) {
   const callNumber = `${book.author.split(" ").pop().slice(0, 3).toUpperCase()}-${book.year || "NEW"}`;
 
   return (
-    <button onClick={() => onSelect(book.id)} style={{ position: "relative", display: "flex", gap: 16, textAlign: "left", cursor: "pointer", width: "100%", background: BRAND.card, color: BRAND.ink, border: `1px solid ${BRAND.cardEdge}`, borderTop: "none", borderRadius: "0 0 3px 3px", padding: "16px 18px", boxShadow: "0 4px 12px rgba(20,30,50,.10)", transition: "transform .22s,box-shadow .22s" }}
-      onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-6px)"; e.currentTarget.style.boxShadow = "0 16px 40px rgba(20,30,50,.16)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(20,30,50,.10)"; }}>
-      {/* Tab */}
-      <span style={{ position: "absolute", top: -26, left: 16, width: 110, height: 26, background: BRAND.card, border: `1px solid ${BRAND.cardEdge}`, borderBottom: "none", borderRadius: "5px 5px 0 0", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontFamily: FONT.type, fontSize: 10, color: BRAND.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 94 }}>{book.title}</span>
-      </span>
-      <span style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 4, background: book.accent, borderRadius: "0 0 0 3px" }} />
-      <div style={{ position: "relative", flexShrink: 0 }}>
-        {book.cover
-          ? <img src={book.cover} alt={book.title} style={{ width: 54, height: 78, objectFit: "cover", display: "block", borderRadius: 2, boxShadow: "0 2px 6px rgba(20,30,50,.2)" }} onError={(e) => { e.target.style.display = "none"; }} />
-          : <div style={{ width: 54, height: 78, background: book.accent, borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "center", padding: 4 }}><span style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 11, color: "#fff", textAlign: "center", lineHeight: 1.2 }}>{book.title}</span></div>}
-        <StatusBadge status={readStatus} accent={book.accent} />
+    <>
+      <div style={{ position: "relative" }}>
+        {/* Tab */}
+        <span style={{ position: "absolute", top: 0, left: 16, width: 110, height: 26, background: BRAND.card, border: `1px solid ${BRAND.cardEdge}`, borderBottom: "none", borderRadius: "5px 5px 0 0", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1 }}>
+          <span style={{ fontFamily: FONT.type, fontSize: 10, color: BRAND.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 94 }}>{book.title}</span>
+        </span>
+        <button onClick={() => onSelect(book.id)} style={{ position: "relative", display: "flex", gap: 16, textAlign: "left", cursor: "pointer", width: "100%", background: BRAND.card, color: BRAND.ink, border: `1px solid ${BRAND.cardEdge}`, borderRadius: "0 0 3px 3px", marginTop: 26, padding: "16px 18px", boxShadow: "0 4px 12px rgba(20,30,50,.10)", transition: "transform .22s,box-shadow .22s" }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-6px)"; e.currentTarget.style.boxShadow = "0 16px 40px rgba(20,30,50,.16)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(20,30,50,.10)"; }}>
+          <span style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 4, background: book.accent, borderRadius: "3px 0 0 3px" }} />
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            {book.cover
+              ? <img src={book.cover} alt={book.title} style={{ width: 54, height: 78, objectFit: "cover", display: "block", borderRadius: 2, boxShadow: "0 2px 6px rgba(20,30,50,.2)" }} onError={(e) => { e.target.style.display = "none"; }} />
+              : <div style={{ width: 54, height: 78, background: book.accent, borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "center", padding: 4 }}><span style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 11, color: "#fff", textAlign: "center", lineHeight: 1.2 }}>{book.title}</span></div>}
+            <StatusBadge status={readStatus} accent={book.accent} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: FONT.type, fontSize: 9.5, letterSpacing: "0.04em", color: BRAND.terracotta, borderBottom: `1px solid ${BRAND.rule}`, paddingBottom: 7, marginBottom: 10 }}>{callNumber}</div>
+            <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 20, lineHeight: 1.1, color: BRAND.ink, marginBottom: 4 }}>{book.title}</div>
+            {book.subtitle && <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13, color: BRAND.muted, marginBottom: 6 }}>{book.subtitle}</div>}
+            <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13.5, color: BRAND.muted, marginBottom: 12 }}>{book.author}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <div style={{ height: 1, background: BRAND.rule, opacity: 0.7 }} />
+              <div style={{ height: 1, background: BRAND.rule, opacity: 0.45 }} />
+              <div style={{ height: 1, background: BRAND.rule, opacity: 0.25 }} />
+            </div>
+            <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontFamily: FONT.type, fontSize: 9.5, color: BRAND.muted }}>{book.year}{book.pages ? ` · ${book.pages} pp` : ""}</span>
+              <span style={{ fontFamily: FONT.body, fontSize: 11.5, color: BRAND.coral }}>{date ? formatCatalogDate(date) : ""} Read card →</span>
+            </div>
+          </div>
+        </button>
+        {onDelete && (
+          <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
+            title="Delete book"
+            style={{ position: "absolute", top: 32, right: 10, zIndex: 2, width: 30, height: 30, borderRadius: "50%", border: `1px solid ${BRAND.line2}`, background: BRAND.paper, color: BRAND.muted, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, transition: "background .2s,color .2s,border-color .2s" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(242,92,92,.1)"; e.currentTarget.style.borderColor = "rgba(242,92,92,.4)"; e.currentTarget.style.color = BRAND.coral; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = BRAND.paper; e.currentTarget.style.borderColor = BRAND.line2; e.currentTarget.style.color = BRAND.muted; }}>
+            🗑
+          </button>
+        )}
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: FONT.type, fontSize: 9.5, letterSpacing: "0.04em", color: BRAND.terracotta, borderBottom: `1px solid ${BRAND.rule}`, paddingBottom: 7, marginBottom: 10 }}>{callNumber}</div>
-        <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 20, lineHeight: 1.1, color: BRAND.ink, marginBottom: 4 }}>{book.title}</div>
-        {book.subtitle && <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13, color: BRAND.muted, marginBottom: 6 }}>{book.subtitle}</div>}
-        <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13.5, color: BRAND.muted, marginBottom: 12 }}>{book.author}</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <div style={{ height: 1, background: BRAND.rule, opacity: 0.7 }} />
-          <div style={{ height: 1, background: BRAND.rule, opacity: 0.45 }} />
-          <div style={{ height: 1, background: BRAND.rule, opacity: 0.25 }} />
-        </div>
-        <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontFamily: FONT.type, fontSize: 9.5, color: BRAND.muted }}>{book.year}{book.pages ? ` · ${book.pages} pp` : ""}</span>
-          <span style={{ fontFamily: FONT.body, fontSize: 11.5, color: BRAND.coral }}>{date ? formatCatalogDate(date) : ""} Read card →</span>
-        </div>
-      </div>
-    </button>
+      {confirmDelete && (
+        <DeleteConfirmModal
+          bookTitle={book.title}
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={() => { setConfirmDelete(false); onDelete(book.id); }}
+        />
+      )}
+    </>
   );
 }
 
@@ -1144,6 +1186,19 @@ function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack, onLogo
   const customIds = new Set(customBooks.map((b) => b.id));
   const allBooks = [...staticBooks.filter((b) => !customIds.has(b.id)), ...customBooks];
 
+  const handleDelete = async (bookId) => {
+    // Remove from custom books if present
+    const updated = customBooks.filter((b) => b.id !== bookId);
+    await saveCustomBooks(userId, updated);
+    setCustomBooks(updated);
+    // Also purge all associated data
+    await Promise.all([
+      storage.delete(`${userId}:progress:${bookId}`),
+      storage.delete(`${userId}:status:${bookId}`),
+      storage.delete(`${userId}:dateAdded:${bookId}`),
+    ]);
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: BRAND.cream, color: BRAND.ink, fontFamily: FONT.body }}>
       {/* Header */}
@@ -1173,7 +1228,7 @@ function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack, onLogo
           <div style={{ fontFamily: FONT.body, fontSize: 14, color: BRAND.muted, padding: "1.5rem 0" }}>Loading…</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {allBooks.map((book) => (<CatalogCard key={book.id} userId={userId} book={book} onSelect={onSelect} />))}
+            {allBooks.map((book) => (<CatalogCard key={book.id} userId={userId} book={book} onSelect={onSelect} onDelete={customIds.has(book.id) ? handleDelete : undefined} />))}
           </div>
         )}
         <div style={{ marginTop: 20 }}>
@@ -2718,7 +2773,7 @@ function LoginScreen({ onLogin, allPasswords }) {
     const user = USERS[userId];
     if (!user) { setError("Name not recognised — try again."); setShake(true); setTimeout(() => setShake(false), 500); return; }
     const passwords = allPasswords || PASSWORDS;
-    if (password === passwords[userId]) { sessionStorage.setItem(SESSION_KEY, userId); onLogin(userId); }
+    if (password === passwords[userId]) { localStorage.setItem(SESSION_KEY, userId); onLogin(userId); }
     else { setError("Wrong password — try again."); setPassword(""); setShake(true); setTimeout(() => setShake(false), 500); }
   };
 
@@ -2900,9 +2955,9 @@ function parseLocation(userId) {
 }
 
 export default function App() {
-  const [loggedInUserId, setLoggedInUserId] = useState(() => sessionStorage.getItem(SESSION_KEY) || null);
-  const [screen, setScreen] = useState(() => parseLocation(sessionStorage.getItem(SESSION_KEY) || null).screen);
-  const [activeBookId, setActiveBookId] = useState(() => parseLocation(sessionStorage.getItem(SESSION_KEY) || null).activeBookId);
+  const [loggedInUserId, setLoggedInUserId] = useState(() => localStorage.getItem(SESSION_KEY) || null);
+  const [screen, setScreen] = useState(() => parseLocation(localStorage.getItem(SESSION_KEY) || null).screen);
+  const [activeBookId, setActiveBookId] = useState(() => parseLocation(localStorage.getItem(SESSION_KEY) || null).activeBookId);
   const [customBooksVersion, setCustomBooksVersion] = useState(0);
   const [allCustomBooks, setAllCustomBooks] = useState([]);
   const [dynamicUsers, setDynamicUsers] = useState([]);
@@ -2925,7 +2980,7 @@ export default function App() {
   // Sync back/forward browser navigation
   useEffect(() => {
     const onPop = (e) => {
-      const userId = sessionStorage.getItem(SESSION_KEY);
+      const userId = localStorage.getItem(SESSION_KEY);
       if (!userId) { setLoggedInUserId(null); return; }
       const { screen: s, activeBookId: b } = e.state || parseLocation(userId);
       setScreen(s || "userHome");
@@ -2968,7 +3023,7 @@ export default function App() {
     setActiveBookId(null);
   };
   const handleLogout = () => {
-    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
     setLoggedInUserId(null);
     window.history.pushState({}, "", "/");
     setScreen("userHome");
