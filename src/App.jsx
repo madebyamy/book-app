@@ -1828,11 +1828,13 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
           <>
             {/* Oak cabinet frame */}
             <div style={{ padding: 14, borderRadius: 5, background: "linear-gradient(180deg,#6E4422,#4A2C16)", boxShadow: "0 16px 40px rgba(20,30,50,.16),inset 0 1px 0 rgba(255,255,255,.14)", border: "2px solid #3a230f" }}>
-              {/* Nameplate */}
+              {/* Add Book nameplate button */}
               <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-                <div style={{ background: BRASS_GRAD, border: BRASS_BORDER, borderRadius: 2, padding: "5px 22px", boxShadow: "0 1px 2px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.5)", fontFamily: FONT.body, fontSize: 11, letterSpacing: ".34em", textTransform: "uppercase", color: "#3a2c12" }}>
-                  Marginalia · Catalogue
-                </div>
+                <button onClick={() => setShowAddBook(true)} style={{ background: BRASS_GRAD, border: BRASS_BORDER, borderRadius: 2, padding: "5px 22px", boxShadow: "0 1px 2px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.5)", fontFamily: FONT.body, fontSize: 11, letterSpacing: ".34em", textTransform: "uppercase", color: "#3a2c12", cursor: "pointer", transition: "filter .18s", outline: "none" }}
+                  onMouseEnter={(e) => e.currentTarget.style.filter = "brightness(1.08)"}
+                  onMouseLeave={(e) => e.currentTarget.style.filter = ""}>
+                  + Add a Book
+                </button>
               </div>
 
               {/* Drawer grid */}
