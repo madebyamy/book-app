@@ -935,9 +935,94 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
 }
 
 // ---------------------------------------------------------------------------
+// FRIEND READING — shows what the other user is currently reading
+// ---------------------------------------------------------------------------
+function FriendReading({ friend }) {
+  const [currentlyReading, setCurrentlyReading] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      // Pull from both My Books (static + custom) and Bookshelf
+      const [customBooks, shelfBooks] = await Promise.all([
+        loadCustomBooks(friend.id),
+        loadShelfBooks(friend.id),
+      ]);
+
+      const allBooks = [...friend.books, ...customBooks, ...shelfBooks];
+
+      // Load status for every book
+      const withStatus = await Promise.all(
+        allBooks.map(async (b) => {
+          const status = await loadStatus(friend.id, b.id);
+          return { ...b, status };
+        })
+      );
+
+      if (!active) return;
+      // Deduplicate by id and keep only "reading"
+      const seen = new Set();
+      const reading = withStatus.filter((b) => {
+        if (b.status !== "reading" || seen.has(b.id)) return false;
+        seen.add(b.id);
+        return true;
+      });
+
+      setCurrentlyReading(reading);
+      setLoaded(true);
+    })();
+    return () => { active = false; };
+  }, [friend.id]);
+
+  if (!loaded) return null;
+
+  return (
+    <div style={{
+      width: "100%", maxWidth: 400,
+      background: `${BRAND.darkCard}cc`, backdropFilter: "blur(10px)",
+      border: `1px solid ${BRAND.cream}14`, borderLeft: `3px solid ${friend.accent}`,
+      borderRadius: 10, padding: "1.2rem 1.4rem",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.9rem" }}>
+        <span style={{ fontSize: "1rem" }}>👀</span>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: friend.accent }}>
+          {friend.name} is currently reading
+        </div>
+      </div>
+
+      {currentlyReading.length === 0 ? (
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: `${BRAND.cream}44`, margin: 0, fontStyle: "italic" }}>
+          {friend.name} hasn't started anything yet.
+        </p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          {currentlyReading.map((book) => (
+            <div key={book.id} style={{ display: "flex", gap: "0.8rem", alignItems: "center" }}>
+              {book.cover ? (
+                <img src={book.cover} alt={book.title} style={{ width: 36, height: 52, objectFit: "cover", borderRadius: 2, flexShrink: 0, boxShadow: "0 2px 6px rgba(0,0,0,0.4)" }} onError={(e) => { e.target.style.display = "none"; }} />
+              ) : (
+                <div style={{ width: 36, height: 52, background: friend.accent, borderRadius: 2, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontSize: "0.9rem" }}>📖</span>
+                </div>
+              )}
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: "0.95rem", color: BRAND.cream, lineHeight: 1.2, marginBottom: "0.15rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{book.title}</div>
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: `${BRAND.cream}55`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{book.author}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // USER HOME — shown after selecting Amy or Lynnell
 // ---------------------------------------------------------------------------
 function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
+  const friend = Object.values(USERS).find((u) => u.id !== user.id);
   return (
     <div style={{
       minHeight: "100vh", background: BRAND.dark,
@@ -1000,6 +1085,11 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
             <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.35rem", marginBottom: "0.3rem" }}>{user.name}'s Bookshelf</div>
             <p style={{ margin: 0, fontSize: "0.84rem", color: `${BRAND.cream}66`, lineHeight: 1.5 }}>Books on deck — covers, page counts, read time estimates.</p>
           </button>
+        </div>
+
+        {/* Friend's currently reading */}
+        <div style={{ marginTop: "1.2rem", width: "100%", maxWidth: 400 }}>
+          <FriendReading friend={friend} />
         </div>
       </div>
     </div>
