@@ -1585,6 +1585,11 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
           <div style={{ flex: 1, height: 1, background: `linear-gradient(to left, transparent, ${BRAND.tan}55)` }} />
         </div>
 
+        {/* Book challenge */}
+        <div style={{ marginBottom: "1.2rem", width: "100%", maxWidth: 860 }}>
+          <BookChallenge userId={user.id} userAccent={user.accent} />
+        </div>
+
         {/* Nav cards — 2-column grid on desktop, single column on mobile */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem", width: "100%", maxWidth: 860 }}>
           <button onClick={onOpenMyBooks}
@@ -1616,11 +1621,6 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem", marginTop: "1.2rem", width: "100%", maxWidth: 860 }}>
           <FriendReading friend={friend} />
           <SharedBookshelf />
-        </div>
-
-        {/* Book challenge */}
-        <div style={{ marginTop: "1rem", width: "100%", maxWidth: 860 }}>
-          <BookChallenge userId={user.id} userAccent={user.accent} />
         </div>
 
         {/* Shared chat */}
