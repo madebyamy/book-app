@@ -1305,39 +1305,108 @@ function BrassLabelHolder({ name, isEditing, draft, onInput, onKey, onCommit }) 
   );
 }
 
-function IndexCard({ book, delay, onOpen }) {
+function CatalogueDeleteModal({ book, hasMarginalia, onDeleteShelfOnly, onDeleteAll, onCancel }) {
+  return (
+    <div onClick={onCancel} style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(38,32,32,.68)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 6, width: "min(480px,100%)", boxShadow: "0 20px 50px rgba(20,30,50,.22)", animation: "cc-pop .22s cubic-bezier(.16,1,.3,1)" }}>
+        {/* Header */}
+        <div style={{ background: BRAND.espresso, padding: "20px 26px 16px", borderRadius: "6px 6px 0 0", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(242,92,92,.2)", border: "1px solid rgba(242,92,92,.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>🗑</div>
+          <div>
+            <div style={{ fontFamily: FONT.body, fontSize: 10, letterSpacing: ".2em", textTransform: "uppercase", color: BRAND.tan }}>Remove book</div>
+            <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 19, color: BRAND.cream, lineHeight: 1.1, marginTop: 2 }}>{book.title}</div>
+          </div>
+        </div>
+        <div style={{ padding: "22px 26px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
+          {hasMarginalia ? (
+            <>
+              <p style={{ fontFamily: FONT.read, fontSize: 14.5, lineHeight: 1.6, color: BRAND.muted, margin: 0 }}>
+                This book is linked to your <strong style={{ color: BRAND.ink }}>Marginalia</strong> page. How would you like to remove it?
+              </p>
+              {/* Option A */}
+              <button onClick={onDeleteShelfOnly} style={{ textAlign: "left", background: BRAND.cream, border: `1px solid ${BRAND.line}`, borderRadius: 4, padding: "14px 16px", cursor: "pointer", display: "flex", gap: 13, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 20, marginTop: 1 }}>📋</span>
+                <div>
+                  <div style={{ fontFamily: FONT.body, fontWeight: 500, fontSize: 14, color: BRAND.ink, marginBottom: 3 }}>Remove from Card Catalogue only</div>
+                  <div style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.5, color: BRAND.muted }}>Removes the card from this catalogue. Your Marginalia entry stays intact — and will now show a delete option if you want to remove it later.</div>
+                </div>
+              </button>
+              {/* Option B */}
+              <button onClick={onDeleteAll} style={{ textAlign: "left", background: "rgba(242,92,92,.05)", border: `1px solid rgba(242,92,92,.3)`, borderRadius: 4, padding: "14px 16px", cursor: "pointer", display: "flex", gap: 13, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 20, marginTop: 1 }}>🗑</span>
+                <div>
+                  <div style={{ fontFamily: FONT.body, fontWeight: 500, fontSize: 14, color: BRAND.coral, marginBottom: 3 }}>Delete everything</div>
+                  <div style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.5, color: BRAND.muted }}>Permanently removes this card <em>and</em> the Marginalia entry, including all reading progress, notes, and quotes.</div>
+                </div>
+              </button>
+            </>
+          ) : (
+            <>
+              <p style={{ fontFamily: FONT.read, fontSize: 14.5, lineHeight: 1.6, color: BRAND.muted, margin: 0 }}>
+                Remove <em>"{book.title}"</em> from the Card Catalogue? This will also delete its reading data.
+              </p>
+              <button onClick={onDeleteAll} style={{ textAlign: "left", background: "rgba(242,92,92,.05)", border: `1px solid rgba(242,92,92,.3)`, borderRadius: 4, padding: "14px 16px", cursor: "pointer", display: "flex", gap: 13, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 20, marginTop: 1 }}>🗑</span>
+                <div>
+                  <div style={{ fontFamily: FONT.body, fontWeight: 500, fontSize: 14, color: BRAND.coral, marginBottom: 3 }}>Delete from Card Catalogue</div>
+                  <div style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.5, color: BRAND.muted }}>Permanently removes this card and all associated data.</div>
+                </div>
+              </button>
+            </>
+          )}
+          <button onClick={onCancel} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "11px", borderRadius: 3, cursor: "pointer", marginTop: 4 }}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IndexCard({ book, delay, onOpen, onDelete }) {
   const [hovered, setHovered] = useState(false);
+  const [trashHovered, setTrashHovered] = useState(false);
   const tabTitle = book.title.length > 14 ? book.title.slice(0, 13) + "…" : book.title;
   const callNo = book.call || `${book.year || "????"} · ${(book.author || "").split(" ").pop().slice(0, 3).toUpperCase()}`;
   const summary = book.summary || book.tagline || null;
   return (
-    <button onClick={onOpen} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      style={{ flexShrink: 0, width: 220, cursor: "pointer", border: "none", padding: 0, background: "transparent", textAlign: "left", animation: `cc-pop .4s cubic-bezier(.16,1,.3,1) ${delay}ms both` }}>
-      <div style={{ position: "relative", transition: "transform .26s cubic-bezier(.16,1,.3,1),box-shadow .26s cubic-bezier(.16,1,.3,1)", transform: hovered ? "translateY(-8px)" : "none", boxShadow: hovered ? "0 16px 40px rgba(20,30,50,.16)" : "0 4px 12px rgba(20,30,50,.10)" }}>
+    <div style={{ flexShrink: 0, width: 220, position: "relative", animation: `cc-pop .4s cubic-bezier(.16,1,.3,1) ${delay}ms both` }}
+      onMouseEnter={() => setHovered(true)} onMouseLeave={() => { setHovered(false); setTrashHovered(false); }}>
+      <div style={{ position: "relative", transition: "transform .26s cubic-bezier(.16,1,.3,1),box-shadow .26s cubic-bezier(.16,1,.3,1)", transform: hovered && !trashHovered ? "translateY(-8px)" : "none", boxShadow: hovered ? "0 16px 40px rgba(20,30,50,.16)" : "0 4px 12px rgba(20,30,50,.10)" }}>
         {/* Tab */}
         <div style={{ marginLeft: 18, width: 118, height: 26, background: "#F6EEDD", border: "1px solid #E2D4BC", borderBottom: "none", borderRadius: "5px 5px 0 0", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 8px", overflow: "hidden" }}>
           <span style={{ fontFamily: FONT.type, fontSize: 10, color: "#4a3a28", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tabTitle}</span>
         </div>
-        {/* Card body */}
-        <div style={{ background: "#F6EEDD", border: "1px solid #E2D4BC", borderTop: "none", borderRadius: "0 0 3px 3px", padding: "14px 16px 12px" }}>
-          <div style={{ fontFamily: FONT.type, fontSize: 10, letterSpacing: ".04em", color: BRAND.terracotta, borderBottom: "1px solid #C9B79A", paddingBottom: 8, marginBottom: 10 }}>{callNo}</div>
-          <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 18, lineHeight: 1.1, color: BRAND.ink, marginBottom: 4 }}>{book.title}</div>
-          <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 12.5, color: BRAND.muted, marginBottom: 9 }}>{book.author}</div>
-          {/* Summary line (traditional card catalogue description) */}
-          {summary ? (
-            <div style={{ fontFamily: FONT.read, fontSize: 11.5, lineHeight: 1.5, color: "#5a4a38", marginBottom: 9, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{summary}</div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 9 }}>
-              {[0.7, 0.5, 0.3].map((op, i) => <div key={i} style={{ height: 1, background: "#C9B79A", opacity: op }} />)}
+        {/* Card body — clickable to open */}
+        <button onClick={onOpen} style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", border: "none", padding: 0, background: "transparent" }}>
+          <div style={{ background: "#F6EEDD", border: "1px solid #E2D4BC", borderTop: "none", borderRadius: "0 0 3px 3px", padding: "14px 16px 12px" }}>
+            <div style={{ fontFamily: FONT.type, fontSize: 10, letterSpacing: ".04em", color: BRAND.terracotta, borderBottom: "1px solid #C9B79A", paddingBottom: 8, marginBottom: 10 }}>{callNo}</div>
+            <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 18, lineHeight: 1.1, color: BRAND.ink, marginBottom: 4 }}>{book.title}</div>
+            <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 12.5, color: BRAND.muted, marginBottom: 9 }}>{book.author}</div>
+            {summary ? (
+              <div style={{ fontFamily: FONT.read, fontSize: 11.5, lineHeight: 1.5, color: "#5a4a38", marginBottom: 9, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{summary}</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 9 }}>
+                {[0.7, 0.5, 0.3].map((op, i) => <div key={i} style={{ height: 1, background: "#C9B79A", opacity: op }} />)}
+              </div>
+            )}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontFamily: FONT.type, fontSize: 9.5, color: "#8a7a68" }}>{book.pages ? `${book.pages} pp` : ""}</span>
+              <span style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.coral }}>Read card →</span>
             </div>
-          )}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontFamily: FONT.type, fontSize: 9.5, color: "#8a7a68" }}>{book.pages ? `${book.pages} pp` : ""}</span>
-            <span style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.coral }}>Read card →</span>
           </div>
-        </div>
+        </button>
       </div>
-    </button>
+      {/* Trash button — appears on hover */}
+      {hovered && onDelete && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(book); }}
+          onMouseEnter={() => setTrashHovered(true)}
+          onMouseLeave={() => setTrashHovered(false)}
+          title="Remove book"
+          style={{ position: "absolute", top: 30, right: -10, width: 28, height: 28, borderRadius: "50%", border: `1px solid ${trashHovered ? "rgba(242,92,92,.5)" : "#E2D4BC"}`, background: trashHovered ? "rgba(242,92,92,.12)" : "#F6EEDD", color: trashHovered ? BRAND.coral : "#8a7a68", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, transition: "all .18s", boxShadow: "0 2px 6px rgba(20,30,50,.12)", zIndex: 3 }}>
+          🗑
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -1556,6 +1625,8 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
   const [showAddBook, setShowAddBook] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [sentToMarginalia, setSentToMarginalia] = useState(new Set());
+  const [customBookIds, setCustomBookIds] = useState(new Set());
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Load all books + statuses
   useEffect(() => {
@@ -1569,6 +1640,7 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
       });
       if (!active) return;
       setAllBooks(merged);
+      setCustomBookIds(new Set(customBooks.map((b) => b.id)));
 
       // Load saved assignment or fall back to status
       let saved = {};
@@ -1662,6 +1734,35 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
     setSentToMarginalia((prev) => new Set([...prev, book.id]));
   };
 
+  const handleDeleteFromShelf = async (book) => {
+    const existing = await loadShelfBooks(userId);
+    await saveShelfBooks(userId, existing.filter((b) => b.id !== book.id));
+    setAllBooks((prev) => prev.filter((b) => b.id !== book.id));
+    const nextAssign = { ...assign };
+    delete nextAssign[book.id];
+    setAssign(nextAssign);
+    persist(nextAssign, drawers);
+    setDeleteTarget(null);
+  };
+
+  const handleDeleteAll = async (book) => {
+    const [existingShelf, existingCustom] = await Promise.all([loadShelfBooks(userId), loadCustomBooks(userId)]);
+    await Promise.all([
+      saveShelfBooks(userId, existingShelf.filter((b) => b.id !== book.id)),
+      saveCustomBooks(userId, existingCustom.filter((b) => b.id !== book.id)),
+      storage.delete(`${userId}:progress:${book.id}`),
+      storage.delete(`${userId}:status:${book.id}`),
+      storage.delete(`${userId}:dateAdded:${book.id}`),
+    ]);
+    setAllBooks((prev) => prev.filter((b) => b.id !== book.id));
+    setCustomBookIds((prev) => { const s = new Set(prev); s.delete(book.id); return s; });
+    const nextAssign = { ...assign };
+    delete nextAssign[book.id];
+    setAssign(nextAssign);
+    persist(nextAssign, drawers);
+    setDeleteTarget(null);
+  };
+
   const booksInDrawer = (id) => allBooks.filter((b) => assign[b.id] === id);
   const openBooks = openDrawer ? booksInDrawer(openDrawer) : [];
   const openDrawerName = drawers.find((d) => d.id === openDrawer)?.name || "";
@@ -1688,6 +1789,17 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
 
       {/* Add book modal */}
       {showAddBook && <AddBookModal drawers={drawers} onAdd={handleAddBook} onClose={() => setShowAddBook(false)} />}
+
+      {/* Delete confirmation modal */}
+      {deleteTarget && (
+        <CatalogueDeleteModal
+          book={deleteTarget}
+          hasMarginalia={customBookIds.has(deleteTarget.id)}
+          onDeleteShelfOnly={() => handleDeleteFromShelf(deleteTarget)}
+          onDeleteAll={() => handleDeleteAll(deleteTarget)}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
 
       {/* Cabinet */}
       <section style={{ maxWidth: 1040, margin: "0 auto", padding: "clamp(16px,2.5vw,28px) 28px clamp(48px,7vw,80px)" }}>
@@ -1776,7 +1888,7 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
                     <>
                       <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 8, alignItems: "stretch" }}>
                         {openBooks.map((book, i) => (
-                          <IndexCard key={book.id} book={book} delay={i * 50} onOpen={() => setSelectedBook(book)} />
+                          <IndexCard key={book.id} book={book} delay={i * 50} onOpen={() => setSelectedBook(book)} onDelete={(b) => setDeleteTarget(b)} />
                         ))}
                       </div>
                       <div style={{ fontFamily: FONT.body, fontSize: 11.5, letterSpacing: ".06em", color: "rgba(251,246,232,.55)", marginTop: 16, textAlign: "center" }}>
