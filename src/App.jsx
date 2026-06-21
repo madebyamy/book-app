@@ -1,6 +1,42 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { storage, subscribeToChatUpdates } from "./storage.js";
 
+// Brand palette — Marginalia warm library aesthetic
+const BRAND = {
+  cream: "#F2EFEB",
+  paper: "#FBF8F3",
+  ink: "#262020",
+  muted: "#6B5D54",
+  coral: "#F25C5C",
+  coralDeep: "#D94A4A",
+  terracotta: "#BF755A",
+  tan: "#D9A282",
+  espresso: "#2A201B",
+  espresso2: "#3A2A22",
+  line: "#E4D9CC",
+  line2: "#D6C7B6",
+  oakHi: "#B07F49",
+  oak: "#925E32",
+  oakLo: "#6E4422",
+  oakDeep: "#4A2C16",
+  brassHi: "#E8CF93",
+  brass: "#C2A35E",
+  brassLo: "#8F7233",
+  card: "#F6EEDD",
+  cardEdge: "#E2D4BC",
+  rule: "#C9B79A",
+  dark: "#2A201B",
+  darkCard: "#3A2A22",
+};
+
+// Typography tokens
+const FONT = {
+  display: "'Cormorant Garamond', Georgia, serif",
+  read: "'Spectral', Georgia, serif",
+  body: "'Jost', system-ui, -apple-system, sans-serif",
+  type: "'Special Elite', 'Courier New', ui-monospace, monospace",
+};
+
 // ---------------------------------------------------------------------------
 // STATIC BOOKS — Amy's pre-loaded books. Lynnell starts with an empty shelf.
 // ---------------------------------------------------------------------------
@@ -70,49 +106,6 @@ const AMY_BOOKS = [
 const LYNNELL_BOOKS = [];
 
 const CHRISTINA_BOOKS = [];
-
-// Brand palette — Marginalia warm library aesthetic
-const BRAND = {
-  // Page surfaces
-  cream: "#F2EFEB",
-  paper: "#FBF8F3",
-  // Text
-  ink: "#262020",
-  muted: "#6B5D54",
-  // Accent
-  coral: "#F25C5C",
-  coralDeep: "#D94A4A",
-  terracotta: "#BF755A",
-  tan: "#D9A282",
-  // Dark sections (footer, shelves, espresso bars)
-  espresso: "#2A201B",
-  espresso2: "#3A2A22",
-  // Borders
-  line: "#E4D9CC",
-  line2: "#D6C7B6",
-  // Card catalogue wood & brass
-  oakHi: "#B07F49",
-  oak: "#925E32",
-  oakLo: "#6E4422",
-  oakDeep: "#4A2C16",
-  brassHi: "#E8CF93",
-  brass: "#C2A35E",
-  brassLo: "#8F7233",
-  card: "#F6EEDD",
-  cardEdge: "#E2D4BC",
-  rule: "#C9B79A",
-  // Legacy aliases (used by book themes & widgets)
-  dark: "#2A201B",
-  darkCard: "#3A2A22",
-};
-
-// Typography tokens
-const FONT = {
-  display: "'Cormorant Garamond', Georgia, serif",
-  read: "'Spectral', Georgia, serif",
-  body: "'Jost', system-ui, -apple-system, sans-serif",
-  type: "'Special Elite', 'Courier New', ui-monospace, monospace",
-};
 
 // ---------------------------------------------------------------------------
 // ADMIN & ACCESS CONTROL
