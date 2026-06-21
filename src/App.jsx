@@ -1840,17 +1840,24 @@ const PASSWORDS = {
 const SESSION_KEY = "bookbrain:loggedInUser";
 
 function LoginScreen({ onLogin }) {
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const [shake, setShake] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!selectedUser) return;
-    if (password === PASSWORDS[selectedUser]) {
-      sessionStorage.setItem(SESSION_KEY, selectedUser);
-      onLogin(selectedUser);
+    const userId = username.trim().toLowerCase();
+    const user = USERS[userId];
+    if (!user) {
+      setError("Name not recognised — try again.");
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      return;
+    }
+    if (password === PASSWORDS[userId]) {
+      sessionStorage.setItem(SESSION_KEY, userId);
+      onLogin(userId);
     } else {
       setError("Wrong password — try again.");
       setPassword("");
@@ -1859,30 +1866,28 @@ function LoginScreen({ onLogin }) {
     }
   };
 
+  const inputStyle = (hasError) => ({
+    background: `${BRAND.darkCard}cc`, backdropFilter: "blur(8px)",
+    border: `1.5px solid ${hasError ? BRAND.coral : `${BRAND.cream}22`}`,
+    borderRadius: 8, padding: "0.9rem 1rem", color: BRAND.cream,
+    fontFamily: "'Inter', sans-serif", fontSize: "1rem", outline: "none",
+    width: "100%", boxSizing: "border-box",
+    transition: "border-color .15s ease",
+  });
+
   return (
     <div style={{
-      minHeight: "100vh",
-      background: BRAND.dark,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "2rem 1.2rem",
-      position: "relative",
-      overflow: "hidden",
+      minHeight: "100vh", background: BRAND.dark,
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      padding: "2rem 1.2rem", position: "relative", overflow: "hidden",
     }}>
-      {/* Background image */}
       <div style={{
         position: "absolute", inset: 0,
         backgroundImage: "url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=1400&q=80')",
-        backgroundSize: "cover", backgroundPosition: "center",
-        opacity: 1,
+        backgroundSize: "cover", backgroundPosition: "center", opacity: 1,
       }} />
-      {/* Gradient overlay — heavier at bottom for readability */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: `linear-gradient(to bottom, ${BRAND.dark}22 0%, ${BRAND.dark}55 60%, ${BRAND.dark}aa 100%)`,
-      }} />
+      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, ${BRAND.dark}22 0%, ${BRAND.dark}55 60%, ${BRAND.dark}aa 100%)` }} />
 
       <style>{`
         @keyframes shake {
@@ -1893,13 +1898,11 @@ function LoginScreen({ onLogin }) {
           80% { transform: translateX(6px); }
         }
         .shake { animation: shake 0.45s ease; }
-        .user-btn:hover { transform: translateY(-2px); }
+        .login-input:focus { border-color: ${BRAND.tan} !important; }
         .submit-btn:hover { opacity: 0.88; }
       `}</style>
 
-      {/* Content */}
-      <div style={{ position: "relative", width: "100%", maxWidth: 420, display: "flex", flexDirection: "column", alignItems: "center" }}>
-        {/* Brand mark */}
+      <div style={{ position: "relative", width: "100%", maxWidth: 380, display: "flex", flexDirection: "column", alignItems: "center" }}>
         <div style={{
           width: 52, height: 52, borderRadius: "50%",
           background: `linear-gradient(135deg, ${BRAND.terracotta}, ${BRAND.coral})`,
@@ -1913,69 +1916,41 @@ function LoginScreen({ onLogin }) {
         <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "clamp(2rem, 8vw, 3rem)", lineHeight: 1.05, margin: "0 0 0.35rem", color: BRAND.cream, textAlign: "center" }}>Book Brain</h1>
         <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", color: `${BRAND.cream}66`, margin: "0 0 2.4rem", textAlign: "center", letterSpacing: "0.04em" }}>mybookbrain.com</p>
 
-        <form onSubmit={handleSubmit} className={shake ? "shake" : ""} style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.9rem" }}>
-          {/* User selector */}
-          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.66rem", letterSpacing: "0.14em", textTransform: "uppercase", color: `${BRAND.cream}55`, margin: "0 0 0.2rem", textAlign: "center" }}>Who's reading today?</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: "0.75rem" }}>
-            {Object.values(USERS).map((user) => {
-              const active = selectedUser === user.id;
-              return (
-                <button
-                  key={user.id}
-                  type="button"
-                  className="user-btn"
-                  onClick={() => { setSelectedUser(user.id); setError(null); setPassword(""); }}
-                  style={{
-                    background: active ? `${user.accent}20` : `${BRAND.darkCard}cc`,
-                    border: `2px solid ${active ? user.accent : `${BRAND.cream}18`}`,
-                    borderRadius: 10, padding: "1.1rem 0.8rem", cursor: "pointer", color: BRAND.cream,
-                    transition: "all .2s ease", textAlign: "center", backdropFilter: "blur(8px)",
-                  }}
-                >
-                  <div style={{ fontSize: "1.6rem", marginBottom: "0.4rem" }}>📚</div>
-                  <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: "1.1rem", marginBottom: "0.2rem" }}>{user.name}</div>
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.58rem", letterSpacing: "0.1em", textTransform: "uppercase", color: active ? user.accent : `${BRAND.cream}44` }}>Book Mind</div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Password */}
-          {selectedUser && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
-              <input
-                autoFocus
-                type="password"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(null); }}
-                placeholder={`${USERS[selectedUser].name}'s password`}
-                style={{
-                  background: `${BRAND.darkCard}cc`, backdropFilter: "blur(8px)",
-                  border: `1.5px solid ${error ? BRAND.coral : `${BRAND.cream}22`}`,
-                  borderRadius: 8, padding: "0.9rem 1rem", color: BRAND.cream,
-                  fontFamily: "'Inter', sans-serif", fontSize: "1rem", outline: "none",
-                  transition: "border-color .15s ease", width: "100%",
-                }}
-              />
-              {error && (
-                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: BRAND.coral, textAlign: "center" }}>{error}</div>
-              )}
-              <button
-                type="submit"
-                className="submit-btn"
-                style={{
-                  background: `linear-gradient(135deg, ${USERS[selectedUser].accent}, ${BRAND.terracotta})`,
-                  border: "none", borderRadius: 8, padding: "0.95rem",
-                  color: BRAND.cream, fontFamily: "'Fraunces', serif",
-                  fontSize: "1.05rem", fontWeight: 700, cursor: "pointer",
-                  boxShadow: `0 4px 16px ${USERS[selectedUser].accent}44`,
-                  transition: "opacity .15s ease",
-                }}
-              >
-                Enter {USERS[selectedUser].name}'s Book Mind →
-              </button>
-            </div>
+        <form onSubmit={handleSubmit} className={shake ? "shake" : ""} style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <input
+            autoFocus
+            type="text"
+            value={username}
+            onChange={(e) => { setUsername(e.target.value); setError(null); }}
+            placeholder="Your first name"
+            className="login-input"
+            style={inputStyle(!!error)}
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => { setPassword(e.target.value); setError(null); }}
+            placeholder="Password"
+            className="login-input"
+            style={inputStyle(!!error)}
+          />
+          {error && (
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: BRAND.coral, textAlign: "center" }}>{error}</div>
           )}
+          <button
+            type="submit"
+            className="submit-btn"
+            style={{
+              background: `linear-gradient(135deg, ${BRAND.terracotta}, ${BRAND.coral})`,
+              border: "none", borderRadius: 8, padding: "0.95rem",
+              color: BRAND.cream, fontFamily: "'Fraunces', serif",
+              fontSize: "1.05rem", fontWeight: 700, cursor: "pointer",
+              boxShadow: `0 4px 16px ${BRAND.coral}44`,
+              transition: "opacity .15s ease", marginTop: "0.2rem",
+            }}
+          >
+            Sign in →
+          </button>
         </form>
       </div>
     </div>
