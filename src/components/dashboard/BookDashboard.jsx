@@ -50,7 +50,7 @@ function DateAddedInverted({ userId, book, theme }) {
 
 export function BookDashboard({ userId, book: initialBook, onBack, onLogout }) {
   const [book, setBook] = useState(initialBook);
-  const theme = { ...(book.theme ? DEFAULT_THEME : MARGINALIA_THEME), ...(book.theme || {}) };
+  const theme = { ...DEFAULT_THEME, ...(book.theme || {}) };
   const hasAcademic = !!(book.nodes && book.nodes.length && book.caseFile && book.keyLines && book.thread);
   const [openNode, setOpenNode] = useState(null);
   const isUserBook = book.id.startsWith("book-") || book.id.startsWith("shelf-");
