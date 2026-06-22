@@ -86,7 +86,7 @@ function IndexCard({ book, delay, onOpen, onDelete, onRate }) {
   const callNo = book.call || `${book.year || "????"} · ${(book.author || "").split(" ").pop().slice(0, 3).toUpperCase()}`;
   const summary = book.summary || book.tagline || null;
   return (
-    <div style={{ flexShrink: 0, width: 220, position: "relative", animation: `card-fly .55s cubic-bezier(.16,1,.3,1) ${delay}ms both` }}
+    <div style={{ flexShrink: 0, width: 220, position: "relative", animation: `card-shuffle .5s cubic-bezier(.16,1,.3,1) ${delay}ms both` }}
       onMouseEnter={() => setHovered(true)} onMouseLeave={() => { setHovered(false); setTrashHovered(false); }}>
       <div style={{ position: "relative", transition: "transform .26s cubic-bezier(.16,1,.3,1),box-shadow .26s cubic-bezier(.16,1,.3,1)", transform: hovered && !trashHovered ? "translateY(-8px)" : "none", boxShadow: hovered ? "0 16px 40px rgba(20,30,50,.16)" : "0 4px 12px rgba(20,30,50,.10)" }}>
         <div style={{ marginLeft: 18, width: 118, height: 26, background: "#F6EEDD", border: "1px solid #E2D4BC", borderBottom: "none", borderRadius: "5px 5px 0 0", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 8px", overflow: "hidden" }}>
@@ -126,6 +126,33 @@ function IndexCard({ book, delay, onOpen, onDelete, onRate }) {
 }
 
 const SFX_KEY = "bookbrain:sfx";
+
+function playDrawerCloseSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Short slide back
+    const bufLen = Math.floor(ctx.sampleRate * 0.22);
+    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource(); noise.buffer = buf;
+    const filter = ctx.createBiquadFilter(); filter.type = "bandpass"; filter.frequency.value = 420; filter.Q.value = 0.7;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.22, ctx.currentTime);
+    ng.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+    noise.connect(filter); filter.connect(ng); ng.connect(ctx.destination);
+    noise.start(); noise.stop(ctx.currentTime + 0.22);
+    // Hard stop thud
+    const osc = ctx.createOscillator(); const og = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(160, ctx.currentTime + 0.18);
+    osc.frequency.exponentialRampToValueAtTime(55, ctx.currentTime + 0.3);
+    og.gain.setValueAtTime(0.85, ctx.currentTime + 0.18);
+    og.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.34);
+    osc.connect(og); og.connect(ctx.destination);
+    osc.start(ctx.currentTime + 0.18); osc.stop(ctx.currentTime + 0.34);
+  } catch {}
+}
 
 function playDrawerSound() {
   try {
@@ -231,7 +258,10 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
   const toggleDrawer = (id) => {
     if (editing) { commitEdit(); return; }
     setOpenDrawer((prev) => {
-      if (prev === id) return null;
+      if (prev === id) {
+        if (soundEnabled) playDrawerCloseSound();
+        return null;
+      }
       if (soundEnabled) playDrawerSound();
       setOpeningDrawer(id);
       setTimeout(() => setOpeningDrawer(null), 500);
@@ -416,43 +446,60 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
             </div>
 
             {openDrawer && (
-              <div style={{ marginTop: 16, borderRadius: 5, overflow: "hidden", border: "1px solid #4A2C16", boxShadow: "0 16px 40px rgba(20,30,50,.16)", animation: "cc-tray .32s cubic-bezier(.16,1,.3,1)" }}>
-                <div style={{ background: "linear-gradient(180deg,#B07F49,#6E4422)", padding: "15px 22px", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, borderBottom: "2px solid rgba(0,0,0,.4)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-                    <span style={{ width: 15, height: 15, borderRadius: "50%", background: "radial-gradient(circle at 38% 30%,#E8CF93,#C2A35E)", border: BRASS_BORDER, flexShrink: 0 }} />
-                    <div>
-                      <div style={{ fontFamily: FONT.body, fontSize: 10.5, letterSpacing: ".22em", textTransform: "uppercase", color: "rgba(251,246,232,.72)" }}>Drawer</div>
-                      <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 22, color: "#FBF6E8", lineHeight: 1.05 }}>{openDrawerName}</div>
+              <div style={{ marginTop: 16, animation: "drawer-open-tray .34s cubic-bezier(.16,1,.3,1)" }}>
+                {/* Drawer face — the front panel you're looking at when it's pulled out */}
+                <div style={{ background: "linear-gradient(180deg,#C8924E 0%,#A0682A 40%,#7A4A1C 100%)", borderRadius: "4px 4px 0 0", border: "2px solid #3a200a", borderBottom: "none", padding: "12px 22px 0", boxShadow: "0 -4px 12px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.18)" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <span style={{ width: 13, height: 13, borderRadius: "50%", background: "radial-gradient(circle at 38% 30%,#E8CF93,#C2A35E)", border: BRASS_BORDER, flexShrink: 0, boxShadow: "0 1px 3px rgba(0,0,0,.5)" }} />
+                      <div>
+                        <div style={{ fontFamily: FONT.body, fontSize: 9.5, letterSpacing: ".26em", textTransform: "uppercase", color: "rgba(251,246,232,.6)" }}>Open drawer</div>
+                        <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 20, color: "#FBF6E8", lineHeight: 1 }}>{openDrawerName}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={() => setShowAddBook(true)}
+                        style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".1em", textTransform: "uppercase", background: BRAND.coral, color: "#fff", border: "none", cursor: "pointer", padding: "7px 14px", borderRadius: 2 }}>
+                        + Add Book
+                      </button>
+                      <button onClick={() => toggleDrawer(openDrawer)}
+                        style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".1em", textTransform: "uppercase", background: "rgba(0,0,0,.3)", color: "#FBF6E8", border: "1px solid rgba(251,246,232,.28)", cursor: "pointer", padding: "7px 14px", borderRadius: 2 }}>
+                        Push shut ✕
+                      </button>
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={() => setShowAddBook(true)}
-                      style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase", background: BRAND.coral, color: "#fff", border: "none", cursor: "pointer", padding: "9px 16px", borderRadius: 2 }}>
-                      + Add Book
-                    </button>
-                    <button onClick={() => setOpenDrawer(null)}
-                      style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase", background: "rgba(0,0,0,.28)", color: "#FBF6E8", border: "1px solid rgba(251,246,232,.32)", cursor: "pointer", padding: "9px 16px", borderRadius: 2 }}>
-                      Close ✕
-                    </button>
-                  </div>
+                  {/* Brass retaining rod across the top of the drawer interior */}
+                  <div style={{ height: 7, background: "linear-gradient(180deg,#E8CF93 0%,#C2A35E 45%,#8F7233 100%)", borderRadius: "3px 3px 0 0", boxShadow: "0 2px 4px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.5)", border: "1px solid #6b5220", borderBottom: "none" }} />
                 </div>
-                <div style={{ background: "repeating-linear-gradient(90deg,#3a2618,#3a2618 2px,#412b1b 2px,#412b1b 22px)", padding: "30px 26px 34px" }}>
-                  {openBooks.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "26px 10px", fontFamily: FONT.read, fontStyle: "italic", fontSize: 17, color: "rgba(251,246,232,.7)" }}>
-                      This drawer is empty. File a book card here to fill it.
-                    </div>
-                  ) : (
-                    <>
-                      <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 8, alignItems: "stretch" }}>
-                        {openBooks.map((book, i) => (
-                          <IndexCard key={book.id} book={book} delay={i * 50} onOpen={() => setSelectedBook(book)} onDelete={(b) => setDeleteTarget(b)} onRate={(r) => handleRateBook(book, r)} />
-                        ))}
+
+                {/* Drawer interior — the box you're looking down into */}
+                <div style={{ position: "relative", background: "linear-gradient(180deg,#2A1608 0%,#1E0F04 100%)", border: "2px solid #3a200a", borderTop: "none", borderRadius: "0 0 4px 4px", boxShadow: "0 20px 50px rgba(0,0,0,.5), inset 0 4px 18px rgba(0,0,0,.6)" }}>
+                  {/* Left interior wall */}
+                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 20, background: "linear-gradient(90deg,#5C3418,#3A1F0A)", borderRight: "1px solid #1a0d03", zIndex: 2, borderRadius: "0 0 0 4px" }} />
+                  {/* Right interior wall */}
+                  <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 20, background: "linear-gradient(270deg,#5C3418,#3A1F0A)", borderLeft: "1px solid #1a0d03", zIndex: 2, borderRadius: "0 0 4px 0" }} />
+                  {/* Interior floor — horizontal wood-grain lines like card catalog rails */}
+                  <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(180deg,transparent,transparent 11px,rgba(0,0,0,.18) 11px,rgba(0,0,0,.18) 12px)", pointerEvents: "none", zIndex: 1 }} />
+
+                  <div style={{ position: "relative", zIndex: 3, padding: "22px 28px 28px" }}>
+                    {openBooks.length === 0 ? (
+                      <div style={{ textAlign: "center", padding: "26px 10px", fontFamily: FONT.read, fontStyle: "italic", fontSize: 16, color: "rgba(251,246,232,.5)" }}>
+                        This drawer is empty — file a book here to fill it.
                       </div>
-                      <div style={{ fontFamily: FONT.body, fontSize: 11.5, letterSpacing: ".06em", color: "rgba(251,246,232,.55)", marginTop: 16, textAlign: "center" }}>
-                        Scroll the rail · tap a card to open it
-                      </div>
-                    </>
-                  )}
+                    ) : (
+                      <>
+                        <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 10, alignItems: "flex-start",
+                          scrollbarWidth: "thin", scrollbarColor: "#5C3418 #1E0F04" }}>
+                          {openBooks.map((book, i) => (
+                            <IndexCard key={book.id} book={book} delay={i * 30} onOpen={() => setSelectedBook(book)} onDelete={(b) => setDeleteTarget(b)} onRate={(r) => handleRateBook(book, r)} />
+                          ))}
+                        </div>
+                        <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".08em", color: "rgba(251,246,232,.38)", marginTop: 14, textAlign: "center" }}>
+                          {openBooks.length} {openBooks.length === 1 ? "card" : "cards"} filed · scroll to browse · click to open
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

@@ -90,6 +90,25 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
         </div>
       )}
 
+      {/* How it works — compact guide strip */}
+      <div style={{ background: BRAND.paper, borderBottom: `1px solid ${BRAND.line}` }}>
+        <div style={{ maxWidth: 1220, margin: "0 auto", padding: "18px 30px", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: "0" }}>
+          {[
+            { icon: "📖", label: "Now Reading", desc: "Open a book → click 'Track my reading' → log your page here each day. Set a goal date and we'll tell you how many pages you need daily to finish on time." },
+            { icon: "🏆", label: "Reading Challenge", desc: "Set a yearly goal — e.g. 24 books in 2026. Mark a book as read in the catalogue and it counts automatically. Compare progress with friends." },
+            { icon: "🗂", label: "Card Catalogue", desc: "Pull a drawer to browse your shelf. Click a card to open it — log notes, quotes, and mark your reading status. Hover a card to rate it." },
+          ].map(({ icon, label, desc }, i) => (
+            <div key={i} style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: "14px 20px", borderLeft: i > 0 ? `1px solid ${BRAND.line}` : "none" }}>
+              <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0, marginTop: 2 }}>{icon}</span>
+              <div>
+                <div style={{ fontFamily: FONT.body, fontWeight: 500, fontSize: 13, color: BRAND.ink, marginBottom: 4 }}>{label}</div>
+                <div style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.55, color: BRAND.muted }}>{desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div style={{ maxWidth: 1220, margin: "0 auto", padding: "34px 30px 40px" }}>
         <div style={{ marginBottom: 26 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 10, fontFamily: FONT.body, fontSize: 11.5, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.terracotta, marginBottom: 14 }}>
