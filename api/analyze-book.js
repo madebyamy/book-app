@@ -108,7 +108,7 @@ Return only the JSON object.`;
   try {
     analysis = JSON.parse(jsonText);
   } catch {
-    return res.status(502).json({ error: "Could not parse JSON from Gemini response", raw });
+    return res.status(502).json({ error: "Could not parse JSON from Gemini response", detail: jsonText.slice(0, 400) });
   }
 
   return res.status(200).json({ ...analysis, description });
