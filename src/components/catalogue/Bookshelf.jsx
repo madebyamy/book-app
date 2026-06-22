@@ -60,7 +60,26 @@ function CatalogueDeleteModal({ book, onRemoveFromMarginalia, onDeleteAll, onCan
   );
 }
 
-function IndexCard({ book, delay, onOpen, onDelete }) {
+function StarRating({ rating, onRate }) {
+  const [hoverStar, setHoverStar] = useState(0);
+  const displayed = hoverStar || rating || 0;
+  return (
+    <div style={{ display: "flex", gap: 2 }}
+      onMouseLeave={() => setHoverStar(0)}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button key={n}
+          onClick={(e) => { e.stopPropagation(); onRate(rating === n ? 0 : n); }}
+          onMouseEnter={() => setHoverStar(n)}
+          title={`${n} star${n !== 1 ? "s" : ""}`}
+          style={{ background: "none", border: "none", padding: "1px 0", cursor: "pointer", fontSize: 14, lineHeight: 1, color: n <= displayed ? "#C2A35E" : "#C9B79A", transition: "color .12s, transform .12s", transform: hoverStar === n ? "scale(1.25)" : "scale(1)" }}>
+          {n <= displayed ? "★" : "☆"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function IndexCard({ book, delay, onOpen, onDelete, onRate }) {
   const [hovered, setHovered] = useState(false);
   const [trashHovered, setTrashHovered] = useState(false);
   const tabTitle = book.title.length > 14 ? book.title.slice(0, 13) + "…" : book.title;
@@ -86,7 +105,7 @@ function IndexCard({ book, delay, onOpen, onDelete }) {
               </div>
             )}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontFamily: FONT.type, fontSize: 9.5, color: "#8a7a68" }}>{book.pages ? `${book.pages} pp` : ""}</span>
+              <StarRating rating={book.rating || 0} onRate={onRate} />
               <span style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.coral }}>Read card →</span>
             </div>
           </div>
@@ -261,6 +280,11 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
     setOpenDrawer(targetDrawer);
   };
 
+  const handleRateBook = async (book, rating) => {
+    const updated = allBooks.map((b) => b.id === book.id ? { ...b, rating } : b);
+    await updateBooks(updated);
+  };
+
   const handleToggleMarginalia = async (book) => {
     const updated = allBooks.map((b) => b.id === book.id ? { ...b, inMarginalia: !b.inMarginalia } : b);
     await updateBooks(updated);
@@ -421,7 +445,7 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
                     <>
                       <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 8, alignItems: "stretch" }}>
                         {openBooks.map((book, i) => (
-                          <IndexCard key={book.id} book={book} delay={i * 50} onOpen={() => setSelectedBook(book)} onDelete={(b) => setDeleteTarget(b)} />
+                          <IndexCard key={book.id} book={book} delay={i * 50} onOpen={() => setSelectedBook(book)} onDelete={(b) => setDeleteTarget(b)} onRate={(r) => handleRateBook(book, r)} />
                         ))}
                       </div>
                       <div style={{ fontFamily: FONT.body, fontSize: 11.5, letterSpacing: ".06em", color: "rgba(251,246,232,.55)", marginTop: 16, textAlign: "center" }}>
