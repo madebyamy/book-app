@@ -34,7 +34,6 @@ export function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack,
             <button onClick={onBack} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.04em", background: "none", border: `1px solid rgba(242,239,235,.3)`, color: "rgba(242,239,235,.7)", padding: "8px 14px", borderRadius: 2, cursor: "pointer" }}>← Back</button>
             <button onClick={onLogout} style={{ fontFamily: FONT.body, fontSize: 13, color: "rgba(242,239,235,.45)", background: "none", border: "none", cursor: "pointer" }}>Sign out</button>
           </div>
-          <div style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.tan, marginBottom: 12 }}>The card catalogue</div>
           <h1 style={{ fontFamily: FONT.display, fontWeight: 500, fontSize: "clamp(34px,5vw,60px)", lineHeight: 1.03, letterSpacing: "-0.01em", color: BRAND.cream, margin: "0 0 18px" }}>
             {USERS[userId].name}'s Marginalia
           </h1>
