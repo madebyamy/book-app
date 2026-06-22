@@ -35,12 +35,22 @@ export function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack,
             <button onClick={onLogout} style={{ fontFamily: FONT.body, fontSize: 13, color: "rgba(242,239,235,.45)", background: "none", border: "none", cursor: "pointer" }}>Sign out</button>
           </div>
           <div style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.tan, marginBottom: 12 }}>The card catalogue</div>
-          <h1 style={{ fontFamily: FONT.display, fontWeight: 500, fontSize: "clamp(34px,5vw,60px)", lineHeight: 1.03, letterSpacing: "-0.01em", color: BRAND.cream, margin: "0 0 14px" }}>
+          <h1 style={{ fontFamily: FONT.display, fontWeight: 500, fontSize: "clamp(34px,5vw,60px)", lineHeight: 1.03, letterSpacing: "-0.01em", color: BRAND.cream, margin: "0 0 18px" }}>
             {USERS[userId].name}'s Marginalia
           </h1>
-          <p style={{ fontFamily: FONT.read, fontSize: "clamp(15px,1.3vw,17px)", lineHeight: 1.6, color: "rgba(242,239,235,.62)", margin: 0, maxWidth: "40em" }}>
-            Full summaries — key ideas, highlighted stories, quotes, and reading trackers.
-          </p>
+          <div style={{ marginBottom: 20, paddingLeft: 2 }}>
+            <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "0.5rem", marginBottom: 6 }}>
+              <span style={{ fontFamily: FONT.display, fontWeight: 500, fontSize: "clamp(16px,1.6vw,20px)", color: "rgba(242,239,235,.9)", letterSpacing: "0.01em" }}>mar·gi·na·li·a</span>
+              <span style={{ fontFamily: FONT.read, fontSize: "clamp(13px,1.1vw,15px)", color: BRAND.tan, fontStyle: "italic", letterSpacing: "0.02em" }}>/ˌmärjəˈnālēə/</span>
+              <span style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(242,239,235,.35)" }}>n. plural</span>
+            </div>
+            <p style={{ fontFamily: FONT.read, fontSize: "clamp(14px,1.2vw,16px)", lineHeight: 1.65, color: "rgba(242,239,235,.58)", margin: "0 0 4px", maxWidth: "42em" }}>
+              Notes, annotations, and markings written in the margins of a book — the private record of a reader's encounter with a text.
+            </p>
+            <p style={{ fontFamily: FONT.read, fontSize: "clamp(12px,1vw,13px)", lineHeight: 1.5, color: "rgba(242,239,235,.32)", margin: 0, fontStyle: "italic" }}>
+              From Latin <em style={{ fontStyle: "normal", color: "rgba(242,239,235,.45)" }}>marginalis</em>, of the margin. First recorded in English use, 1819.
+            </p>
+          </div>
         </div>
       </div>
 
