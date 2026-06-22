@@ -3599,7 +3599,10 @@ export default function App() {
   }
 
   let content;
-  if (activeBook && activeUser) {
+  if (activeBookId && !activeBook) {
+    // Book id is set but not yet in allUserBooks — wait for async reload to complete
+    content = null;
+  } else if (activeBook && activeUser) {
     content = <BookDashboard userId={activeUser.id} book={activeBook} onBack={goUserHome} onLogout={handleLogout} />;
   } else if (screen === "myBooks" && activeUser) {
     content = <MyBooksHome userId={activeUser.id} userAccent={activeUser.accent} staticBooks={staticBooks} onSelect={(id) => navigate("userHome", id)} onBack={goUserHome} onLogout={handleLogout} onBooksChanged={() => setBooksVersion((v) => v + 1)} />;
