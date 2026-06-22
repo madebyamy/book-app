@@ -1844,7 +1844,7 @@ function BookModal({ book, drawers, currentDrawer, onMove, onClose, onToggleMarg
   );
 }
 
-function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged }) {
+function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged, inline = false }) {
   const [allBooks, setAllBooks] = useState([]);
   const [drawers, setDrawers] = useState(() => {
     try { const s = localStorage.getItem(CC_DRAWER_STORE(userId)); return s ? JSON.parse(s) : DEFAULT_DRAWERS; } catch { return DEFAULT_DRAWERS; }
@@ -1967,24 +1967,26 @@ function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged }) {
   const openDrawerName = drawers.find((d) => d.id === openDrawer)?.name || "";
 
   return (
-    <div style={{ minHeight: "100vh", background: BRAND.cream, overflowX: "hidden" }}>
-      {/* Header */}
-      <div style={{ background: BRAND.espresso, borderBottom: "1px solid rgba(217,162,130,.18)", padding: "clamp(24px,4vw,44px) 28px clamp(20px,3vw,32px)" }}>
-        <div style={{ maxWidth: 1040, margin: "0 auto" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-            <button onClick={onBack} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: "none", border: "1px solid rgba(242,239,235,.3)", color: "rgba(242,239,235,.7)", padding: "8px 14px", borderRadius: 2, cursor: "pointer" }}>← Back</button>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setShowAddBook(true)} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", textTransform: "uppercase", background: BRAND.coral, border: `1px solid ${BRAND.coral}`, color: "#fff", padding: "8px 16px", borderRadius: 2, cursor: "pointer" }}>+ Add book</button>
-              <button onClick={onLogout} style={{ fontFamily: FONT.body, fontSize: 13, color: "rgba(242,239,235,.45)", background: "none", border: "none", cursor: "pointer" }}>Sign out</button>
+    <div style={{ background: BRAND.cream, overflowX: "hidden", ...(inline ? {} : { minHeight: "100vh" }) }}>
+      {/* Header — standalone page only */}
+      {!inline && (
+        <div style={{ background: BRAND.espresso, borderBottom: "1px solid rgba(217,162,130,.18)", padding: "clamp(24px,4vw,44px) 28px clamp(20px,3vw,32px)" }}>
+          <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+              <button onClick={onBack} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: "none", border: "1px solid rgba(242,239,235,.3)", color: "rgba(242,239,235,.7)", padding: "8px 14px", borderRadius: 2, cursor: "pointer" }}>← Back</button>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setShowAddBook(true)} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", textTransform: "uppercase", background: BRAND.coral, border: `1px solid ${BRAND.coral}`, color: "#fff", padding: "8px 16px", borderRadius: 2, cursor: "pointer" }}>+ Add book</button>
+                <button onClick={onLogout} style={{ fontFamily: FONT.body, fontSize: 13, color: "rgba(242,239,235,.45)", background: "none", border: "none", cursor: "pointer" }}>Sign out</button>
+              </div>
             </div>
+            <div style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: ".28em", textTransform: "uppercase", color: BRAND.tan, marginBottom: 10 }}>The card catalogue</div>
+            <h1 style={{ fontFamily: FONT.display, fontWeight: 500, fontSize: "clamp(30px,4.5vw,52px)", lineHeight: 1.03, letterSpacing: "-.01em", color: BRAND.cream, margin: "0 0 10px" }}>
+              Pull a drawer. Find a book. <span style={{ fontStyle: "italic", color: BRAND.coral }}>Open the card.</span>
+            </h1>
+            <p style={{ fontFamily: FONT.read, fontSize: "clamp(14px,1.2vw,16px)", lineHeight: 1.6, color: "rgba(242,239,235,.62)", margin: 0 }}>Your shelves, filed the old-fashioned way.</p>
           </div>
-          <div style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: ".28em", textTransform: "uppercase", color: BRAND.tan, marginBottom: 10 }}>The card catalogue</div>
-          <h1 style={{ fontFamily: FONT.display, fontWeight: 500, fontSize: "clamp(30px,4.5vw,52px)", lineHeight: 1.03, letterSpacing: "-.01em", color: BRAND.cream, margin: "0 0 10px" }}>
-            Pull a drawer. Find a book. <span style={{ fontStyle: "italic", color: BRAND.coral }}>Open the card.</span>
-          </h1>
-          <p style={{ fontFamily: FONT.read, fontSize: "clamp(14px,1.2vw,16px)", lineHeight: 1.6, color: "rgba(242,239,235,.62)", margin: 0 }}>Your shelves, filed the old-fashioned way.</p>
         </div>
-      </div>
+      )}
 
       {/* Add book modal */}
       {showAddBook && <AddBookModal drawers={drawers} onAdd={handleAddBook} onClose={() => setShowAddBook(false)} />}
@@ -2951,7 +2953,7 @@ function AdminPanel({ onClose, dynamicUsers, dynamicPasswords, onUserCreated, to
 // ---------------------------------------------------------------------------
 // USER HOME
 // ---------------------------------------------------------------------------
-function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dynamicPasswords, onUserCreated, tooltips, onTooltipsChanged }) {
+function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynamicUsers, dynamicPasswords, onUserCreated, tooltips, onTooltipsChanged }) {
   const currentYear = new Date().getFullYear();
   const [connections, setConnections] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
@@ -3021,32 +3023,16 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dy
     <div style={{ minHeight: "100vh", background: BRAND.cream, color: BRAND.ink, fontFamily: FONT.body, overflowX: "hidden" }}>
       {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} dynamicUsers={dynamicUsers} dynamicPasswords={dynamicPasswords} onUserCreated={onUserCreated} tooltips={tooltips} onTooltipsChanged={onTooltipsChanged} />}
 
-      {/* Sticky nav — matches design: M tile + Marginalia wordmark, center links, user avatar */}
-      <header style={{ position: "sticky", top: 0, zIndex: 40, background: "rgba(242,239,235,.92)", backdropFilter: "saturate(180%) blur(14px)", WebkitBackdropFilter: "saturate(180%) blur(14px)", borderBottom: `1px solid ${BRAND.line}` }}>
-        <nav style={{ maxWidth: 1220, margin: "0 auto", padding: "15px 30px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-            <span style={{ width: 34, height: 34, borderRadius: 3, background: BRAND.coral, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.display, fontWeight: 600, fontSize: 21, color: BRAND.cream }}>M</span>
-            <span style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 22, color: BRAND.ink }}>Marginalia</span>
-          </div>
-          <div style={{ display: "none", gap: 28, fontFamily: FONT.body, fontSize: 13.5, letterSpacing: "0.02em", "@media(minWidth:860px)": { display: "flex" } }} className="mg-center-nav">
-            <span style={{ color: BRAND.coral, fontWeight: 500 }}>Dashboard</span>
-            <button onClick={onOpenMyBooks} style={{ color: BRAND.ink, background: "none", border: "none", cursor: "pointer", opacity: 0.8, fontFamily: FONT.body, fontSize: 13.5 }}>The Library</button>
-            <button onClick={onOpenMyBooks} style={{ color: BRAND.ink, background: "none", border: "none", cursor: "pointer", opacity: 0.8, fontFamily: FONT.body, fontSize: 13.5 }}>Card Catalogue</button>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            {isAdmin && (
-              <button onClick={() => setShowAdmin(true)} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.04em", textTransform: "uppercase", background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "7px 13px", borderRadius: 2, cursor: "pointer" }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = BRAND.coral; e.currentTarget.style.borderColor = BRAND.coral; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = BRAND.muted; e.currentTarget.style.borderColor = BRAND.line2; }}>
-                ⚙ Admin
-              </button>
-            )}
-            <div style={{ width: 34, height: 34, borderRadius: "50%", background: user.accent || BRAND.terracotta, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.display, fontWeight: 600, fontSize: 17, color: "#fff", cursor: "pointer" }} title={`Signed in as ${user.name} · click to sign out`} onClick={onLogout}>
-              {user.name?.[0]?.toUpperCase() || "?"}
-            </div>
-          </div>
-        </nav>
-      </header>
+      {/* Admin button — TopNav handles main nav; keep admin access here */}
+      {isAdmin && (
+        <div style={{ maxWidth: 1220, margin: "0 auto", padding: "10px 30px 0", display: "flex", justifyContent: "flex-end" }}>
+          <button onClick={() => setShowAdmin(true)} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.04em", textTransform: "uppercase", background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "7px 13px", borderRadius: 2, cursor: "pointer" }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = BRAND.coral; e.currentTarget.style.borderColor = BRAND.coral; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = BRAND.muted; e.currentTarget.style.borderColor = BRAND.line2; }}>
+            ⚙ Admin
+          </button>
+        </div>
+      )}
 
       {/* Main content */}
       <div style={{ maxWidth: 1220, margin: "0 auto", padding: "34px 30px 40px" }}>
@@ -3156,51 +3142,19 @@ function UserHome({ user, onOpenMyBooks, onOpenShelf, onLogout, dynamicUsers, dy
 
           {/* Add tracker */}
           <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid rgba(217,162,130,.16)" }}>
-            <button onClick={onOpenShelf} style={{ display: "inline-flex", alignItems: "center", gap: 9, fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.03em", cursor: "pointer", padding: "10px 16px", borderRadius: 2, border: "1px dashed rgba(217,162,130,.5)", background: "transparent", color: "#FBF6E8" }}>
-              <span style={{ fontSize: 16, color: BRAND.tan }}>+</span> Add a tracker
+            <button onClick={() => document.getElementById("card-catalogue")?.scrollIntoView({ behavior: "smooth" })} style={{ display: "inline-flex", alignItems: "center", gap: 9, fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.03em", cursor: "pointer", padding: "10px 16px", borderRadius: 2, border: "1px dashed rgba(217,162,130,.5)", background: "transparent", color: "#FBF6E8" }}>
+              <span style={{ fontSize: 16, color: BRAND.tan }}>+</span> Add a book to your shelf ↓
             </button>
           </div>
         </section>
 
-        {/* ===== Two category cards (1fr 1fr) ===== */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,280px),1fr))", gap: 20, marginBottom: 8 }}>
-          {/* Card Catalogue / Marginalia */}
-          <button onClick={onOpenMyBooks} style={{ textDecoration: "none", background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 5, padding: 26, boxShadow: "0 1px 2px rgba(20,30,50,.06)", transition: "box-shadow .24s,border-color .24s,transform .24s", textAlign: "left", cursor: "pointer", color: BRAND.ink }}
-            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(20,30,50,.10)"; e.currentTarget.style.borderColor = BRAND.tan; e.currentTarget.style.transform = "translateY(-2px)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 1px 2px rgba(20,30,50,.06)"; e.currentTarget.style.borderColor = BRAND.line; e.currentTarget.style.transform = "none"; }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-              <span style={{ width: 36, height: 36, borderRadius: 3, background: "rgba(242,92,92,.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={BRAND.coral} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                </svg>
-              </span>
-              <span style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: BRAND.terracotta, display: "flex", alignItems: "center", gap: 6 }}>
-                Card Catalogue <TooltipIcon text={tooltips?.myBooks} color={BRAND.terracotta} />
-              </span>
-            </div>
-            <h2 style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: "clamp(21px,2.4vw,28px)", margin: "0 0 10px", color: BRAND.ink, lineHeight: 1.1 }}>{user.name}'s Marginalia</h2>
-            <p style={{ fontFamily: FONT.body, fontWeight: 300, fontSize: 14.5, lineHeight: 1.65, color: BRAND.muted, margin: "0 0 18px" }}>Full summaries, key ideas, quotes, and reading notes — all filed in one place.</p>
-            <span style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.coral, letterSpacing: "0.04em" }}>Open the drawers →</span>
-          </button>
-
-          {/* Reading List / Bookshelf */}
-          <button onClick={onOpenShelf} style={{ textDecoration: "none", background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 5, padding: 26, boxShadow: "0 1px 2px rgba(20,30,50,.06)", transition: "box-shadow .24s,border-color .24s,transform .24s", textAlign: "left", cursor: "pointer", color: BRAND.ink }}
-            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(20,30,50,.10)"; e.currentTarget.style.borderColor = BRAND.tan; e.currentTarget.style.transform = "translateY(-2px)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 1px 2px rgba(20,30,50,.06)"; e.currentTarget.style.borderColor = BRAND.line; e.currentTarget.style.transform = "none"; }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-              <span style={{ width: 36, height: 36, borderRadius: 3, background: "rgba(191,117,90,.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={BRAND.terracotta} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                </svg>
-              </span>
-              <span style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: BRAND.terracotta, display: "flex", alignItems: "center", gap: 6 }}>
-                Reading List <TooltipIcon text={tooltips?.shelf} color={BRAND.terracotta} />
-              </span>
-            </div>
-            <h2 style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: "clamp(21px,2.4vw,28px)", margin: "0 0 10px", color: BRAND.ink, lineHeight: 1.1 }}>{user.name}'s Bookshelf</h2>
-            <p style={{ fontFamily: FONT.body, fontWeight: 300, fontSize: 14.5, lineHeight: 1.65, color: BRAND.muted, margin: "0 0 18px" }}>Books on deck — covers, page counts, read-time estimates, and shelf tracking.</p>
-            <span style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.terracotta, letterSpacing: "0.04em" }}>Browse the shelf →</span>
-          </button>
+        {/* ===== Card Catalogue (inline) ===== */}
+        <div id="card-catalogue">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.terracotta }}>Card Catalogue</div>
+            <button onClick={onOpenMyBooks} style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.coral, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.03em" }}>Marginalia →</button>
+          </div>
+          <Bookshelf userId={user.id} userAccent={user.accent} onBooksChanged={onBooksChanged} inline />
         </div>
 
         {/* Reading challenge — compact strip below cards */}
@@ -3431,7 +3385,6 @@ function TopNav({ screen, activeBook, onNavigate, onLogout, userName }) {
   const items = [
     { label: "Home",       key: "userHome" },
     { label: "Marginalia", key: "myBooks"  },
-    { label: "Book Shelf", key: "shelf"    },
   ];
 
   const activeKey = activeBook ? null : screen;
@@ -3503,7 +3456,6 @@ function parseLocation(userId) {
   if (!userId) return { screen: "userHome", activeBookId: null };
   const base = `/${userId}`;
   if (path === `${base}/marginalia`) return { screen: "myBooks", activeBookId: null };
-  if (path === `${base}/shelf`) return { screen: "shelf", activeBookId: null };
   const bookMatch = path.match(new RegExp(`^${base}/book/(.+)$`));
   if (bookMatch) return { screen: "userHome", activeBookId: bookMatch[1] };
   return { screen: "userHome", activeBookId: null };
@@ -3606,10 +3558,8 @@ export default function App() {
     content = <BookDashboard userId={activeUser.id} book={activeBook} onBack={goUserHome} onLogout={handleLogout} />;
   } else if (screen === "myBooks" && activeUser) {
     content = <MyBooksHome userId={activeUser.id} userAccent={activeUser.accent} staticBooks={staticBooks} onSelect={(id) => navigate("userHome", id)} onBack={goUserHome} onLogout={handleLogout} onBooksChanged={() => setBooksVersion((v) => v + 1)} />;
-  } else if (screen === "shelf" && activeUser) {
-    content = <Bookshelf userId={activeUser.id} userAccent={activeUser.accent} onBack={goUserHome} onLogout={handleLogout} onBooksChanged={() => setBooksVersion((v) => v + 1)} />;
   } else if (activeUser) {
-    content = <UserHome user={activeUser} onOpenMyBooks={() => navigate("myBooks")} onOpenShelf={() => navigate("shelf")} onLogout={handleLogout} dynamicUsers={dynamicUsers} dynamicPasswords={dynamicPasswords} onUserCreated={handleUserCreated} tooltips={tooltips} onTooltipsChanged={setTooltips} />;
+    content = <UserHome user={activeUser} onOpenMyBooks={() => navigate("myBooks")} onLogout={handleLogout} onBooksChanged={() => setBooksVersion((v) => v + 1)} dynamicUsers={dynamicUsers} dynamicPasswords={dynamicPasswords} onUserCreated={handleUserCreated} tooltips={tooltips} onTooltipsChanged={setTooltips} />;
   }
 
   return (
