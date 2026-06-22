@@ -223,11 +223,9 @@ async function loadProgress(userId, bookId) {
 async function saveProgress(userId, bookId, data) {
   try { const result = await storage.set(progressKey(userId, bookId), JSON.stringify(data)); return !!result; } catch (e) { return false; }
 }
+// loadShelfBooks / saveShelfBooks — legacy store, read-only for migration in loadBooks()
 async function loadShelfBooks(userId) {
   try { const res = await storage.get(shelfKey(userId)); return res ? JSON.parse(res.value) : []; } catch (e) { return []; }
-}
-async function saveShelfBooks(userId, list) {
-  try { const result = await storage.set(shelfKey(userId), JSON.stringify(list)); return !!result; } catch (e) { return false; }
 }
 async function loadStatus(userId, id) {
   try { const res = await storage.get(statusKey(userId, id)); return res ? res.value : null; } catch (e) { return null; }
@@ -235,11 +233,9 @@ async function loadStatus(userId, id) {
 async function saveStatus(userId, id, status) {
   try { const result = await storage.set(statusKey(userId, id), status); return !!result; } catch (e) { return false; }
 }
+// loadCustomBooks / saveCustomBooks — legacy store, read-only for migration in loadBooks()
 async function loadCustomBooks(userId) {
   try { const res = await storage.get(customBooksKey(userId)); return res ? JSON.parse(res.value) : []; } catch (e) { return []; }
-}
-async function saveCustomBooks(userId, list) {
-  try { const result = await storage.set(customBooksKey(userId), JSON.stringify(list)); return !!result; } catch (e) { return false; }
 }
 
 // ---------------------------------------------------------------------------
@@ -797,7 +793,6 @@ function BookEditorPanel({ userId, book, theme, onSaved }) {
 
   const handleSave = async () => {
     setSaving(true);
-    const existing = await loadCustomBooks(userId);
     const cleanNodes = nodes.filter((n) => n.title.trim()).map((n) => ({
       tag: n.tag.trim(), title: n.title.trim(), dek: n.dek.trim(),
       points: n.points.filter((p) => p.trim()),
@@ -818,12 +813,12 @@ function BookEditorPanel({ userId, book, theme, onSaved }) {
       nodes: cleanNodes,
       caseFile: hasCaseFile ? { tag: cfTag.trim(), meta: cfMeta.trim(), title: cfTitle.trim(), story: cfStory.filter((s) => s.trim()), argument: cfArgument.trim() } : null,
     };
-    // Save as custom override — replaces or appends; deduplication in MyBooksHome handles the rest
-    const alreadyInCustom = existing.some((b) => b.id === book.id);
-    const updatedCustom = alreadyInCustom ? existing.map((b) => b.id === book.id ? updatedBook : b) : [...existing, updatedBook];
-    const shelfExisting = await loadShelfBooks(userId);
-    const updatedShelf = shelfExisting.map((b) => b.id === book.id ? updatedBook : b);
-    await Promise.all([saveCustomBooks(userId, updatedCustom), saveShelfBooks(userId, updatedShelf)]);
+    const allBooks = await loadBooks(userId);
+    const exists = allBooks.some((b) => b.id === book.id);
+    const updated = exists
+      ? allBooks.map((b) => b.id === book.id ? updatedBook : b)
+      : [...allBooks, { ...updatedBook, inMarginalia: false, shared: false, drawerId: "want" }];
+    await saveBooks(userId, updated);
     setSaving(false); setSaved(true);
     setTimeout(() => setSaved(false), 2500);
     onSaved(updatedBook);
@@ -1242,85 +1237,6 @@ function BookSearchInput({ onSelect, userAccent, inputStyle: extraStyle = {} }) 
   );
 }
 
-function AddBookToMyBooks({ userId, userAccent, onAdded }) {
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState(null);
-  const [title, setTitle] = useState("");
-  const [author, setAuthor] = useState("");
-  const [year, setYear] = useState("");
-  const [pages, setPages] = useState("");
-  const [cover, setCover] = useState("");
-  const [tagline, setTagline] = useState("");
-
-  const handleSelect = (r) => {
-    setSelected(r);
-    setTitle(r.title); setAuthor(r.author);
-    setYear(r.year || ""); setPages(r.pages ? String(r.pages) : "");
-    setCover(r.cover || "");
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!title.trim() || !author.trim()) return;
-    const id = `custom-${userId}-${Date.now().toString(36)}`;
-    const newBook = {
-      id, title: title.trim(), subtitle: "", author: author.trim(),
-      year: year.trim() || new Date().getFullYear().toString(),
-      pages: pages ? parseInt(pages, 10) : null,
-      format: "simple", accent: userAccent, theme: { ...DEFAULT_THEME, headerBg: userAccent, headerInk: "#F4EFE4" },
-      cover: cover.trim(), tagline: tagline.trim(), nodes: [], caseFile: null, keyLines: [], thread: "",
-    };
-    const existing = await loadCustomBooks(userId);
-    await saveCustomBooks(userId, [...existing, newBook]);
-    setTitle(""); setAuthor(""); setYear(""); setPages(""); setCover(""); setTagline(""); setSelected(null); setOpen(false);
-    onAdded();
-  };
-
-  const iStyle = { background: BRAND.paper, border: `1px solid ${BRAND.line2}`, color: BRAND.ink, fontFamily: FONT.body, fontSize: 14, padding: "10px 13px", borderRadius: 2, width: "100%", outline: "none" };
-
-  if (!open) return (
-    <button onClick={() => setOpen(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", width: "100%", background: "transparent", color: BRAND.muted, border: `1px dashed ${BRAND.line2}`, borderRadius: 2, padding: "18px 24px", fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase", transition: "border-color .15s,color .15s" }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = BRAND.terracotta; e.currentTarget.style.color = BRAND.terracotta; }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = BRAND.line2; e.currentTarget.style.color = BRAND.muted; }}>
-      <span style={{ fontSize: 18 }}>+</span><span>Add a book to your catalogue</span>
-    </button>
-  );
-
-  return (
-    <form onSubmit={handleSubmit} style={{ background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 4, padding: "clamp(18px,3vw,28px)", display: "flex", flexDirection: "column", gap: 10, boxShadow: "0 1px 2px rgba(20,30,50,.06)" }}>
-      <div style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: BRAND.terracotta, marginBottom: 4 }}>Add a book</div>
-      {!selected ? (
-        <BookSearchInput onSelect={handleSelect} userAccent={userAccent} />
-      ) : (
-        <>
-          <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-            {cover && <img src={cover} alt={title} style={{ width: 48, height: 68, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} onError={(e) => e.target.style.display = "none"} />}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" required style={iStyle} />
-              <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Author" required style={iStyle} />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" style={iStyle} />
-                <input value={pages} onChange={(e) => setPages(e.target.value)} placeholder="Pages" type="number" style={iStyle} />
-              </div>
-              <input value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="Tagline (optional)" style={iStyle} />
-            </div>
-          </div>
-          <button type="button" onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: BRAND.muted, fontFamily: FONT.body, fontSize: 12, cursor: "pointer", textAlign: "left", padding: 0, textDecoration: "underline" }}>← Search again</button>
-        </>
-      )}
-      {selected && (
-        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-          <button type="submit" style={{ flex: 1, background: BRAND.coral, border: "none", color: "#fff", fontFamily: FONT.body, fontSize: 13, letterSpacing: "0.04em", textTransform: "uppercase", padding: "12px", borderRadius: 2, cursor: "pointer", fontWeight: 500 }}
-            onMouseEnter={(e) => e.currentTarget.style.background = BRAND.coralDeep}
-            onMouseLeave={(e) => e.currentTarget.style.background = BRAND.coral}>
-            File this card →
-          </button>
-          <button type="button" onClick={() => { setOpen(false); setSelected(null); }} style={{ background: "none", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, fontFamily: FONT.body, fontSize: 13, padding: "12px 16px", borderRadius: 2, cursor: "pointer" }}>Cancel</button>
-        </div>
-      )}
-    </form>
-  );
-}
 
 function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack, onLogout, onBooksChanged }) {
   const [userBooks, setUserBooks] = useState([]);
@@ -2377,15 +2293,16 @@ function FriendChallenge({ friendId, year }) {
   useEffect(() => {
     let active = true;
     (async () => {
-      const [savedGoal, customBooks, shelfBooks] = await Promise.all([
+      const [savedGoal, unifiedBooks] = await Promise.all([
         loadChallengeGoal(friendId, year),
-        loadCustomBooks(friendId),
-        loadShelfBooks(friendId),
+        loadBooks(friendId),
       ]);
       if (!active) return;
       setGoal(savedGoal);
 
-      const allBooks = [...friend.books, ...customBooks, ...shelfBooks];
+      const staticBooks = friend.books || [];
+      const unifiedIds = new Set(unifiedBooks.map((b) => b.id));
+      const allBooks = [...staticBooks.filter((b) => !unifiedIds.has(b.id)), ...unifiedBooks];
       const seen = new Set();
       const unique = allBooks.filter((b) => { if (seen.has(b.id)) return false; seen.add(b.id); return true; });
 
@@ -2473,23 +2390,18 @@ function BookChallenge({ userId, userAccent, friends, tooltipText }) {
     let active = true;
     setLoaded(false);
     (async () => {
-      const [savedGoal, customBooks, shelfBooks] = await Promise.all([
+      const [savedGoal, unifiedBooks] = await Promise.all([
         loadChallengeGoal(userId, year),
-        loadCustomBooks(userId),
-        loadShelfBooks(userId),
+        loadBooks(userId),
       ]);
       if (!active) return;
 
       setGoal(savedGoal);
       setGoalDraft(savedGoal ? String(savedGoal) : "");
 
-      // Gather all books from all sources
-      const staticBooks = USERS[userId].books;
-      const allBooks = [...staticBooks, ...customBooks, ...shelfBooks];
-
-      // Deduplicate by id
-      const seen = new Set();
-      const unique = allBooks.filter((b) => { if (seen.has(b.id)) return false; seen.add(b.id); return true; });
+      const staticBooks = USERS[userId]?.books || [];
+      const unifiedIds = new Set(unifiedBooks.map((b) => b.id));
+      const unique = [...staticBooks.filter((b) => !unifiedIds.has(b.id)), ...unifiedBooks];
 
       // For each book, check status + date
       const withData = await Promise.all(unique.map(async (b) => {
@@ -2645,11 +2557,10 @@ function SharedBookshelf({ viewerId, friends, tooltipText }) {
       const participantIds = [viewerId, ...friendIds];
 
       const allUserBooks = await Promise.all(participantIds.map(async (uid) => {
-        const [customBooks, shelfBooks] = await Promise.all([
-          loadCustomBooks(uid),
-          loadShelfBooks(uid),
-        ]);
-        const allBooks = [...USERS[uid].books, ...customBooks, ...shelfBooks];
+        const unifiedBooks = await loadBooks(uid);
+        const staticBooks = USERS[uid]?.books || [];
+        const unifiedIds = new Set(unifiedBooks.map((b) => b.id));
+        const allBooks = [...staticBooks.filter((b) => !unifiedIds.has(b.id)), ...unifiedBooks];
         const withStatus = await Promise.all(
           allBooks.map(async (b) => ({ ...b, status: await loadStatus(uid, b.id) }))
         );
@@ -2736,11 +2647,10 @@ function FriendReadingCard({ friend, tooltipText }) {
   useEffect(() => {
     let active = true;
     (async () => {
-      const [customBooks, shelfBooks] = await Promise.all([
-        loadCustomBooks(friend.id),
-        loadShelfBooks(friend.id),
-      ]);
-      const allBooks = [...friend.books, ...customBooks, ...shelfBooks];
+      const unifiedBooks = await loadBooks(friend.id);
+      const staticBooks = friend.books || [];
+      const unifiedIds = new Set(unifiedBooks.map((b) => b.id));
+      const allBooks = [...staticBooks.filter((b) => !unifiedIds.has(b.id)), ...unifiedBooks];
       const withStatus = await Promise.all(
         allBooks.map(async (b) => ({ ...b, status: await loadStatus(friend.id, b.id) }))
       );
@@ -3545,7 +3455,6 @@ export default function App() {
     let path = `/${userId}`;
     if (nextBookId) path = `/${userId}/book/${nextBookId}`;
     else if (nextScreen === "myBooks") path = `/${userId}/marginalia`;
-    else if (nextScreen === "shelf") path = `/${userId}/shelf`;
     window.history.pushState({ screen: nextScreen, activeBookId: nextBookId, userId }, "", path);
     setScreen(nextScreen);
     setActiveBookId(nextBookId);
