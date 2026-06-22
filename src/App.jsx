@@ -1765,12 +1765,51 @@ function AddBookModal({ drawers, onAdd, onClose }) {
   );
 }
 
-function BookModal({ book, drawers, currentDrawer, onMove, onClose, onToggleMarginalia }) {
+function BookModal({ userId, book, drawers, currentDrawer, onMove, onClose, onToggleMarginalia, onBooksChanged }) {
   const spine = spineColor(book);
   const callNo = book.call || `${book.year || "????"} · ${(book.author || "").split(" ").pop().slice(0, 3).toUpperCase()}`;
   const readHours = estimateReadTime(book.pages);
   const [coverFailed, setCoverFailed] = useState(false);
   const showCover = book.cover && !coverFailed;
+
+  // Reading tracker state
+  const [prog, setProg] = useState(null);
+  const [startDate, setStartDate] = useState("");
+  const [projEndDate, setProjEndDate] = useState("");
+  const [finishedDate, setFinishedDate] = useState("");
+  const [trackerSaved, setTrackerSaved] = useState(false);
+
+  useEffect(() => {
+    if (!userId) return;
+    loadProgress(userId, book.id).then((p) => {
+      setProg(p);
+      setStartDate(p?.startDate || "");
+      setProjEndDate(p?.finishDate || "");
+      setFinishedDate(p?.dateFinished || "");
+      if (p?.tracking === true) setTrackerSaved(true);
+    });
+  }, [userId, book.id]);
+
+  const handleAddToTracker = async () => {
+    const next = { ...(prog || {}), tracking: true, pagesRead: prog?.pagesRead || 0, startDate, finishDate: projEndDate };
+    await saveProgress(userId, book.id, next);
+    setProg(next);
+    setTrackerSaved(true);
+    // Move to Reading drawer if not already there
+    if (currentDrawer !== "reading") onMove("reading");
+    if (onBooksChanged) onBooksChanged();
+  };
+
+  const handleFinishedDate = async (date) => {
+    setFinishedDate(date);
+    if (!date) return;
+    const next = { ...(prog || {}), dateFinished: date, tracking: false };
+    await saveProgress(userId, book.id, next);
+    setProg(next);
+    await saveStatus(userId, book.id, "read");
+    onMove("read");
+    if (onBooksChanged) onBooksChanged();
+  };
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(38,32,32,.62)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "cc-fade .2s cubic-bezier(.16,1,.3,1)" }}>
       <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(820px,100%)", maxHeight: "88vh", overflowY: "auto", display: "grid", gridTemplateColumns: "min(280px,40%) 1fr", background: BRAND.paper, borderRadius: 6, border: `1px solid ${BRAND.line}`, boxShadow: "0 16px 40px rgba(20,30,50,.16)", animation: "cc-pop .26s cubic-bezier(.16,1,.3,1)" }}>
@@ -1819,6 +1858,46 @@ function BookModal({ book, drawers, currentDrawer, onMove, onClose, onToggleMarg
               Filed in the "{drawers.find((d) => d.id === currentDrawer)?.name}" drawer.
             </div>
           )}
+          {/* Reading Dates & Tracker */}
+          {userId && (
+            <div style={{ marginTop: 24, paddingTop: 20, borderTop: `1px solid ${BRAND.line}` }}>
+              <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: BRAND.muted, marginBottom: 14 }}>Reading Dates</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  <span style={{ fontFamily: FONT.body, fontSize: 11.5, color: BRAND.muted }}>Start date</span>
+                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+                    style={{ fontFamily: FONT.body, fontSize: 13, background: BRAND.cream, border: `1px solid ${BRAND.line2}`, color: BRAND.ink, padding: "8px 10px", borderRadius: 3, outline: "none" }} />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  <span style={{ fontFamily: FONT.body, fontSize: 11.5, color: BRAND.muted }}>Projected end</span>
+                  <input type="date" value={projEndDate} onChange={(e) => setProjEndDate(e.target.value)}
+                    style={{ fontFamily: FONT.body, fontSize: 13, background: BRAND.cream, border: `1px solid ${BRAND.line2}`, color: BRAND.ink, padding: "8px 10px", borderRadius: 3, outline: "none" }} />
+                </label>
+              </div>
+              {trackerSaved ? (
+                <div style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.terracotta, background: "rgba(191,117,90,.08)", border: `1px solid rgba(191,117,90,.3)`, borderRadius: 3, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+                  ✓ On your reading tracker
+                </div>
+              ) : (
+                <button onClick={handleAddToTracker} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".03em", background: BRAND.espresso, border: "none", color: BRAND.cream, padding: "11px 18px", borderRadius: 3, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 15 }}>📌</span> Add to Book Tracker
+                </button>
+              )}
+              <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${BRAND.line}` }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  <span style={{ fontFamily: FONT.body, fontSize: 11.5, color: BRAND.muted }}>Finished date <span style={{ fontStyle: "italic", opacity: .7 }}>— fills in when you complete the book</span></span>
+                  <input type="date" value={finishedDate} onChange={(e) => handleFinishedDate(e.target.value)}
+                    style={{ fontFamily: FONT.body, fontSize: 13, background: BRAND.cream, border: `1px solid ${BRAND.line2}`, color: BRAND.ink, padding: "8px 10px", borderRadius: 3, outline: "none", maxWidth: 200 }} />
+                </label>
+                {finishedDate && (
+                  <div style={{ marginTop: 8, fontFamily: FONT.read, fontStyle: "italic", fontSize: 13, color: BRAND.terracotta }}>
+                    Moved to your Read drawer ✓
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Marginalia toggle */}
           <div style={{ marginTop: 28, paddingTop: 20, borderTop: `1px solid ${BRAND.line}` }}>
             <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: BRAND.muted, marginBottom: 11 }}>Marginalia</div>
@@ -1994,12 +2073,14 @@ function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged, inlin
       {/* Book card modal */}
       {selectedBook && (
         <BookModal
+          userId={userId}
           book={allBooks.find((b) => b.id === selectedBook.id) || selectedBook}
           drawers={drawers}
           currentDrawer={(allBooks.find((b) => b.id === selectedBook.id) || selectedBook).drawerId || "want"}
           onMove={(drawerId) => moveBook(selectedBook, drawerId)}
           onClose={() => setSelectedBook(null)}
           onToggleMarginalia={() => handleToggleMarginalia(selectedBook)}
+          onBooksChanged={onBooksChanged}
         />
       )}
 
@@ -2989,8 +3070,8 @@ function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynamicUsers,
         return { ...b, prog, status, dateAdded };
       })
     );
-    const trackers = withProgress.filter((b) => b.prog && b.prog.pagesRead > 0 && !b.prog.tracking === false && b.pages && b.prog.pagesRead < b.pages);
-    setNowReading(trackers.map((b) => ({ ...b, pagesRead: b.prog.pagesRead })));
+    const trackers = withProgress.filter((b) => b.prog?.tracking === true && b.pages && (b.prog.pagesRead || 0) < b.pages);
+    setNowReading(trackers.map((b) => ({ ...b, pagesRead: b.prog.pagesRead || 0 })));
     const readThisYear = withProgress.filter((b) => {
       if (b.status !== "read") return false;
       const date = b.prog?.dateFinished || b.dateAdded;
