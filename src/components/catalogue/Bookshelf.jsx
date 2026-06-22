@@ -372,17 +372,6 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
         )}
       </section>
 
-      <div style={{ background: BRAND.ink, overflow: "hidden", whiteSpace: "nowrap", padding: "16px 0", borderTop: `1px solid ${BRAND.espresso2}` }}>
-        <div style={{ display: "flex", width: "max-content", animation: "mg-marquee 32s linear infinite" }}>
-          {[0, 1].map((k) => (
-            <span key={k} style={{ display: "flex", alignItems: "center", gap: 28, paddingRight: 28, fontFamily: FONT.display, fontStyle: "italic", fontWeight: 500, fontSize: "clamp(22px,3vw,38px)", color: BRAND.cream }}>
-              <span>File it</span><span style={{ color: BRAND.coral, fontStyle: "normal" }}>✦</span>
-              <span style={{ color: BRAND.tan }}>Find it</span><span style={{ color: BRAND.coral, fontStyle: "normal" }}>✦</span>
-              <span>Keep it forever</span><span style={{ color: BRAND.coral, fontStyle: "normal" }}>✦</span>
-            </span>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

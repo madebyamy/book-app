@@ -136,6 +136,23 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
               const spineColors = ["#BF755A","#F25C5C","#D9A282","#9a6a3f","#6B4A3A","#3E7C57","#3a6ea5"];
               const spine = book.accent || spineColors[Math.abs((book.id || "").charCodeAt(0)) % spineColors.length];
               const isLogging = logBookId === book.id;
+
+              // Pages-per-day needed to hit goal date
+              let paceLabel = null;
+              const finishDate = book.prog?.finishDate;
+              if (finishDate && book.pages) {
+                const today = new Date(); today.setHours(0,0,0,0);
+                const goal = new Date(finishDate + "T00:00:00");
+                const daysLeft = Math.ceil((goal - today) / 86400000);
+                const pagesLeft = book.pages - (book.pagesRead || 0);
+                if (daysLeft > 0 && pagesLeft > 0) {
+                  const ppd = Math.ceil(pagesLeft / daysLeft);
+                  paceLabel = { ppd, daysLeft, onTrack: ppd <= 50 };
+                } else if (daysLeft <= 0 && pagesLeft > 0) {
+                  paceLabel = { overdue: true };
+                }
+              }
+
               return (
                 <div key={book.id} style={{ display: "flex", alignItems: "center", gap: 18, background: "rgba(255,255,255,.04)", border: "1px solid rgba(217,162,130,.18)", borderRadius: 5, padding: "16px 18px" }}>
                   <div style={{ position: "relative", width: 46, height: 66, flexShrink: 0, borderRadius: "2px 3px 3px 2px", background: spine, boxShadow: "inset -6px 0 0 rgba(0,0,0,.16),0 4px 12px rgba(20,30,50,.10)" }}>
@@ -157,6 +174,13 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
                     <div style={{ height: 7, width: "100%", background: "rgba(255,255,255,.1)", borderRadius: 99, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${pct}%`, background: BRAND.coral, borderRadius: 99 }} />
                     </div>
+                    {paceLabel && (
+                      <div style={{ marginTop: 7, fontFamily: FONT.body, fontSize: 12, color: paceLabel.overdue ? BRAND.coral : "rgba(251,246,232,.6)" }}>
+                        {paceLabel.overdue
+                          ? "Past goal date — update your finish date to keep tracking."
+                          : <><span style={{ color: "#FBF6E8", fontWeight: 500 }}>{paceLabel.ppd} pages/day</span> to finish in {paceLabel.daysLeft} day{paceLabel.daysLeft !== 1 ? "s" : ""}</>}
+                      </div>
+                    )}
                     {isLogging && (
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
                         <input type="number" min={0} max={book.pages || 9999} value={logPageInput} onChange={(e) => setLogPageInput(e.target.value)}
