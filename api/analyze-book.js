@@ -99,8 +99,10 @@ Return only the JSON object.`;
   const geminiData = await geminiRes.json();
   const raw = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-  // Strip markdown fences if Gemini wrapped the JSON
-  const jsonText = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/m, "").trim();
+  // Extract JSON — find the outermost { ... } regardless of surrounding text/fences
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  const jsonText = start !== -1 && end > start ? raw.slice(start, end + 1) : raw;
 
   let analysis;
   try {
