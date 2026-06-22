@@ -20,8 +20,8 @@ const TAG_COLORS = {
   connection:  "#3a6ea5",
 };
 
-export function YourNotations({ userId, book }) {
-  const theme = book.theme;
+export function YourNotations({ userId, book, theme }) {
+  theme = theme || book.theme || {};
   const [items, setItems] = useState([]);
   const [text, setText] = useState("");
   const [page, setPage] = useState("");

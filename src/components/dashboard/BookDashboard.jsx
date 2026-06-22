@@ -87,8 +87,8 @@ export function BookDashboard({ userId, book: initialBook, onBack, onLogout }) {
         <PageTracker userId={userId} book={book} />
         <BookEditorPanel userId={userId} book={book} theme={theme} onSaved={setBook} />
         {hasAcademic && <AcademicSections book={book} theme={theme} openNode={openNode} setOpenNode={setOpenNode} />}
-        <YourQuotes userId={userId} book={book} />
-        <YourNotations userId={userId} book={book} />
+        <YourQuotes userId={userId} book={book} theme={theme} />
+        <YourNotations userId={userId} book={book} theme={theme} />
 
         {/* Share toggle — only for user-added books in Marginalia */}
         {isUserBook && (

@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { USERS } from '../../constants.js';
 import { loadQuotes, saveQuotes } from '../../lib/books.js';
 
-export function YourQuotes({ userId, book }) {
-  const theme = book.theme;
+export function YourQuotes({ userId, book, theme }) {
+  theme = theme || book.theme || {};
   const [quotes, setQuotes] = useState([]);
   const [text, setText] = useState("");
   const [page, setPage] = useState("");
