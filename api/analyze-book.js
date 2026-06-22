@@ -74,21 +74,39 @@ ${description ? `\nPublisher description:\n${description}` : ""}
 
 Return only the JSON object.`;
 
-  let geminiRes;
-  try {
-    geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.4, maxOutputTokens: 2048 },
-        }),
-      }
-    );
-  } catch (err) {
-    return res.status(502).json({ error: "Failed to reach Gemini API", detail: String(err) });
+  // Try free-tier models in order until one responds successfully
+  const MODELS = [
+    "v1beta/models/gemini-2.0-flash-lite",
+    "v1beta/models/gemini-2.0-flash-exp",
+    "v1beta/models/gemini-2.0-flash",
+    "v1/models/gemini-1.5-flash-001",
+    "v1beta/models/gemini-1.5-flash-latest",
+    "v1beta/models/gemini-pro",
+  ];
+
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.4, maxOutputTokens: 2048 },
+  });
+
+  let geminiRes = null;
+  let lastErr = "";
+  for (const model of MODELS) {
+    try {
+      const r = await fetch(
+        `https://generativelanguage.googleapis.com/${model}:generateContent?key=${apiKey}`,
+        { method: "POST", headers: { "content-type": "application/json" }, body }
+      );
+      if (r.status === 404 || r.status === 400) continue; // model not available, try next
+      geminiRes = r;
+      break;
+    } catch (err) {
+      lastErr = String(err);
+    }
+  }
+
+  if (!geminiRes) {
+    return res.status(502).json({ error: "Failed to reach Gemini API", detail: lastErr || "All models unavailable" });
   }
 
   if (!geminiRes.ok) {
