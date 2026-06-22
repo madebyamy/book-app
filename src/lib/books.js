@@ -4,6 +4,7 @@ import { storage } from '../storage.js';
 // STORAGE KEY HELPERS — all namespaced by userId
 // ---------------------------------------------------------------------------
 export function quotesKey(userId, bookId) { return `${userId}:quotes:${bookId}`; }
+export function notationsKey(userId, bookId) { return `${userId}:notations:${bookId}`; }
 export function chatKey(userId, bookId) { return `${userId}:chat:${bookId}`; }
 export function dateAddedKey(userId, bookId) { return `${userId}:dateAdded:${bookId}`; }
 export function progressKey(userId, bookId) { return `${userId}:progress:${bookId}`; }
@@ -16,6 +17,12 @@ export async function loadQuotes(userId, bookId) {
 }
 export async function saveQuotes(userId, bookId, items) {
   try { await storage.set(quotesKey(userId, bookId), JSON.stringify(items)); } catch (e) {}
+}
+export async function loadNotations(userId, bookId) {
+  try { const res = await storage.get(notationsKey(userId, bookId)); return res ? JSON.parse(res.value) : []; } catch (e) { return []; }
+}
+export async function saveNotations(userId, bookId, items) {
+  try { await storage.set(notationsKey(userId, bookId), JSON.stringify(items)); } catch (e) {}
 }
 export async function loadChat(userId, bookId) {
   try { const res = await storage.get(chatKey(userId, bookId)); return res ? JSON.parse(res.value) : []; } catch (e) { return []; }

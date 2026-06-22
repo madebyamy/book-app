@@ -6,6 +6,7 @@ import { PageTracker } from './PageTracker.jsx';
 import { BookEditorPanel } from './BookEditorPanel.jsx';
 import { AcademicSections } from './AcademicSections.jsx';
 import { YourQuotes } from './YourQuotes.jsx';
+import { YourNotations } from './YourNotations.jsx';
 import { FriendsReadingThis } from './FriendsReadingThis.jsx';
 import { BookChat } from './BookChat.jsx';
 
@@ -87,6 +88,7 @@ export function BookDashboard({ userId, book: initialBook, onBack, onLogout }) {
         <BookEditorPanel userId={userId} book={book} theme={theme} onSaved={setBook} />
         {hasAcademic && <AcademicSections book={book} theme={theme} openNode={openNode} setOpenNode={setOpenNode} />}
         <YourQuotes userId={userId} book={book} />
+        <YourNotations userId={userId} book={book} />
 
         {/* Share toggle — only for user-added books in Marginalia */}
         {isUserBook && (

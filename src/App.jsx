@@ -26,6 +26,7 @@ export default function App() {
   const [booksVersion, setBooksVersion] = useState(0);
   const [allUserBooks, setAllUserBooks] = useState([]);
   const [booksReady, setBooksReady] = useState(false);
+  const [prevScreen, setPrevScreen] = useState("userHome");
   const [dynamicUsers, setDynamicUsers] = useState([]);
   const [dynamicPasswords, setDynamicPasswords] = useState({});
   const [usersLoaded, setUsersLoaded] = useState(false);
@@ -37,10 +38,10 @@ export default function App() {
     if (nextBookId) path = `/${userId}/book/${nextBookId}`;
     else if (nextScreen === "myBooks") path = `/${userId}/marginalia`;
     window.history.pushState({ screen: nextScreen, activeBookId: nextBookId, userId }, "", path);
+    if (nextBookId) setPrevScreen(screen);
     setScreen(nextScreen);
     setActiveBookId(nextBookId);
-    if (nextBookId) setBooksVersion((v) => v + 1);
-  }, [loggedInUserId]);
+  }, [loggedInUserId, screen]);
 
   useEffect(() => {
     const onPop = (e) => {
@@ -68,6 +69,7 @@ export default function App() {
 
   useEffect(() => {
     if (!loggedInUserId) { setAllUserBooks([]); setBooksReady(false); return; }
+    setBooksReady(false);
     loadBooks(loggedInUserId).then((books) => { setAllUserBooks(books); setBooksReady(true); });
   }, [loggedInUserId, booksVersion]);
 
@@ -110,7 +112,7 @@ export default function App() {
   if (activeBookId && !activeBook) {
     content = null;
   } else if (activeBook && activeUser) {
-    content = <BookDashboard userId={activeUser.id} book={activeBook} onBack={() => navigate("userHome", null)} onLogout={handleLogout} />;
+    content = <BookDashboard userId={activeUser.id} book={activeBook} onBack={() => navigate(prevScreen, null)} onLogout={handleLogout} />;
   } else if (screen === "myBooks" && activeUser) {
     content = <MyBooksHome userId={activeUser.id} userAccent={activeUser.accent} staticBooks={staticBooks}
       onSelect={(id) => navigate("userHome", id)} onBack={() => navigate("userHome", null)} onLogout={handleLogout}
