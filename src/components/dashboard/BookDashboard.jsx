@@ -10,8 +10,8 @@ import { YourNotations } from './YourNotations.jsx';
 import { FriendsReadingThis } from './FriendsReadingThis.jsx';
 import { BookChat } from './BookChat.jsx';
 
-function DateAddedInverted({ userId, book }) {
-  const theme = book.theme;
+function DateAddedInverted({ userId, book, theme }) {
+  theme = theme || book.theme || {};
   const [date, setDate] = useState(null);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -68,7 +68,7 @@ export function BookDashboard({ userId, book: initialBook, onBack, onLogout }) {
         <button onClick={onBack} style={{ background: "none", border: `1px solid ${theme.headerInk}55`, color: theme.headerInk, fontFamily: theme.mono, fontSize: "0.75rem", padding: "0.5rem 0.9rem", borderRadius: 3, cursor: "pointer" }}>← All books</button>
         <span style={{ fontFamily: theme.mono, fontSize: "0.72rem", color: `${theme.headerInk}99` }}>{book.author} · {book.year}</span>
         <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "1.2rem" }}>
-          <DateAddedInverted userId={userId} book={book} />
+          <DateAddedInverted userId={userId} book={book} theme={theme} />
           <button onClick={onLogout} style={{ background: "none", border: `1px solid ${theme.headerInk}33`, color: `${theme.headerInk}88`, fontFamily: theme.mono, fontSize: "0.65rem", padding: "0.3rem 0.65rem", borderRadius: 3, cursor: "pointer" }}>Log out</button>
         </span>
       </div>

@@ -17,9 +17,6 @@ export function ReadingRoom({ user, friends, tooltips }) {
   const fireGlowRef = useRef(null);
   const ember1Ref   = useRef(null);
   const ember2Ref   = useRef(null);
-  const audioCtxRef = useRef(null);
-  const stopRef     = useRef(false);
-
   // ── Rain canvas ────────────────────────────────────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -101,69 +98,6 @@ export function ReadingRoom({ user, friends, tooltips }) {
     }
     tick();
     return () => cancelAnimationFrame(fireRafRef.current);
-  }, [ambientOn]);
-
-  // ── Ambient audio: rain + fire ─────────────────────────────────────────────
-  useEffect(() => {
-    if (!ambientOn) return;
-    stopRef.current = false;
-    let ctx, rainSrc, fireSrc;
-
-    try {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-      audioCtxRef.current = ctx;
-
-      // Rain — bandpass white noise, stereo width
-      const rBuf = ctx.createBuffer(2, 3 * ctx.sampleRate, ctx.sampleRate);
-      for (let ch = 0; ch < 2; ch++) {
-        const d = rBuf.getChannelData(ch);
-        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-      }
-      rainSrc = ctx.createBufferSource(); rainSrc.buffer = rBuf; rainSrc.loop = true;
-      const rBP = ctx.createBiquadFilter(); rBP.type = 'bandpass'; rBP.frequency.value = 900; rBP.Q.value = 0.3;
-      const rHP = ctx.createBiquadFilter(); rHP.type = 'highpass'; rHP.frequency.value = 450;
-      const rG  = ctx.createGain(); rG.gain.value = 0.28;
-      rainSrc.connect(rBP); rBP.connect(rHP); rHP.connect(rG); rG.connect(ctx.destination);
-      rainSrc.start();
-
-      // Fire — low-pass rumble
-      const fBuf = ctx.createBuffer(1, 3 * ctx.sampleRate, ctx.sampleRate);
-      const fd = fBuf.getChannelData(0);
-      for (let i = 0; i < fd.length; i++) fd[i] = Math.random() * 2 - 1;
-      fireSrc = ctx.createBufferSource(); fireSrc.buffer = fBuf; fireSrc.loop = true;
-      const fLP = ctx.createBiquadFilter(); fLP.type = 'lowpass'; fLP.frequency.value = 280;
-      const fG  = ctx.createGain(); fG.gain.value = 0.14;
-      fireSrc.connect(fLP); fLP.connect(fG); fG.connect(ctx.destination);
-      fireSrc.start();
-
-      // Crackling pops — random sawtooth bursts
-      function crackle() {
-        if (stopRef.current || !ctx || ctx.state === 'closed') return;
-        const when = ctx.currentTime;
-        try {
-          const pop = ctx.createOscillator();
-          const pg  = ctx.createGain();
-          pop.type = 'sawtooth';
-          pop.frequency.setValueAtTime(120 + Math.random() * 280, when);
-          pop.frequency.exponentialRampToValueAtTime(50, when + 0.055);
-          pg.gain.setValueAtTime(0.14 + Math.random() * 0.14, when);
-          pg.gain.exponentialRampToValueAtTime(0.001, when + 0.07);
-          pop.connect(pg); pg.connect(ctx.destination);
-          pop.start(when); pop.stop(when + 0.08);
-        } catch {}
-        setTimeout(crackle, 500 + Math.random() * 3000);
-      }
-      setTimeout(crackle, 800);
-
-    } catch {}
-
-    return () => {
-      stopRef.current = true;
-      try { rainSrc?.stop(); } catch {}
-      try { fireSrc?.stop(); } catch {}
-      try { ctx?.close(); } catch {}
-      audioCtxRef.current = null;
-    };
   }, [ambientOn]);
 
   const toggle = () => {

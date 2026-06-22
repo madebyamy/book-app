@@ -14,6 +14,7 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
   const [fetchedPreview, setFetchedPreview] = useState(null);
   const [fetchError, setFetchError] = useState("");
   const [workId, setWorkId] = useState(null);
+  const [addToMarginalia, setAddToMarginalia] = useState(true);
 
   const fetchBookInfo = async () => {
     if (!title.trim()) return;
@@ -120,7 +121,7 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
       } catch {}
       setFetching(false);
     }
-    onAdd({ title: title.trim(), author: author.trim(), pages: finalPages, summary: finalSummary, cover: finalCover, year: finalYear, drawerId, workId: workId || null });
+    onAdd({ title: title.trim(), author: author.trim(), pages: finalPages, summary: finalSummary, cover: finalCover, year: finalYear, drawerId, workId: workId || null, inMarginalia: addToMarginalia });
   };
 
   const inputStyle = { width: "100%", fontFamily: FONT.body, fontSize: 14, color: BRAND.ink, background: BRAND.cream, border: `1px solid ${BRAND.line2}`, borderRadius: 3, padding: "10px 12px", outline: "none", boxSizing: "border-box" };
@@ -192,6 +193,13 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
             <textarea value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="A brief description of the book — appears on the index card." rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.55 }} />
           </div>
           {error && <div style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.coral }}>{error}</div>}
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", padding: "12px 14px", background: addToMarginalia ? "rgba(191,117,90,.08)" : BRAND.cream, border: `1px solid ${addToMarginalia ? "rgba(191,117,90,.3)" : BRAND.line2}`, borderRadius: 4, transition: "all .2s" }}>
+            <input type="checkbox" checked={addToMarginalia} onChange={(e) => setAddToMarginalia(e.target.checked)} style={{ marginTop: 2, flexShrink: 0, accentColor: BRAND.terracotta }} />
+            <div>
+              <div style={{ fontFamily: FONT.body, fontWeight: 500, fontSize: 13.5, color: BRAND.ink, marginBottom: 2 }}>📖 Add to Marginalia</div>
+              <div style={{ fontFamily: FONT.read, fontSize: 12.5, color: BRAND.muted, lineHeight: 1.5 }}>Opens the full detail view — notes, quotes, reading tracker, and AI-powered book analysis.</div>
+            </div>
+          </label>
           <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
             <button type="button" onClick={onClose} style={{ flex: 1, fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "12px", borderRadius: 3, cursor: "pointer" }}>Cancel</button>
             <button type="submit" style={{ flex: 2, fontFamily: FONT.body, fontSize: 13, letterSpacing: ".06em", textTransform: "uppercase", background: BRAND.coral, border: "none", color: "#fff", padding: "12px", borderRadius: 3, cursor: "pointer", fontWeight: 500 }}>Add book to catalogue</button>

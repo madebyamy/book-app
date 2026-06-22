@@ -262,10 +262,10 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
     if (openDrawer === id) setOpenDrawer(null);
   };
 
-  const handleAddBook = async ({ title, author, pages, summary, cover, year, drawerId, workId }) => {
+  const handleAddBook = async ({ title, author, pages, summary, cover, year, drawerId, workId, inMarginalia }) => {
     const id = `book-${userId}-${Date.now().toString(36)}`;
     const targetDrawer = drawerId || openDrawer || "want";
-    const newBook = { id, title, author, pages: pages || null, summary: summary || null, cover: cover || null, year: year || null, accent: userAccent, drawerId: targetDrawer, inMarginalia: false, shared: false, workId: workId || null, nodes: [], theme: null };
+    const newBook = { id, title, author, pages: pages || null, summary: summary || null, cover: cover || null, year: year || null, accent: userAccent, drawerId: targetDrawer, inMarginalia: inMarginalia !== false, shared: false, workId: workId || null, nodes: [], theme: null };
     const updated = [...allBooks, newBook];
     await updateBooks(updated);
     await saveStatus(userId, id, DRAWER_TO_STATUS[targetDrawer] || "to-read");

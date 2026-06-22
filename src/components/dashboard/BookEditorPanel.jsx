@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { loadBooks, saveBooks } from '../../lib/books.js';
 
 export function BookEditorPanel({ userId, book, theme, onSaved }) {
@@ -7,6 +7,7 @@ export function BookEditorPanel({ userId, book, theme, onSaved }) {
   const [saved, setSaved] = useState(false);
   const [filling, setFilling] = useState(false);
   const [fillError, setFillError] = useState("");
+  const [fillDone, setFillDone] = useState(false);
 
   const [title, setTitle]     = useState(book.title || "");
   const [subtitle, setSubtitle] = useState(book.subtitle || "");
@@ -27,6 +28,18 @@ export function BookEditorPanel({ userId, book, theme, onSaved }) {
   const [cfTitle, setCfTitle]     = useState(book.caseFile?.title || "");
   const [cfStory, setCfStory]     = useState(book.caseFile?.story && book.caseFile.story.length ? book.caseFile.story : [""]);
   const [cfArgument, setCfArgument] = useState(book.caseFile?.argument || "");
+
+  const autoFilledRef = useRef(false);
+  const isNewBook = !book.tagline && !book.thread && !(book.nodes?.length);
+  const isUserBook = book.theme === null;
+
+  useEffect(() => {
+    if (isUserBook && isNewBook && !autoFilledRef.current) {
+      autoFilledRef.current = true;
+      setOpen(true);
+      handleAutoFill();
+    }
+  }, []);
 
   const iStyle = { background: `${theme.bg}`, border: `1px solid ${theme.border}`, color: theme.ink, fontFamily: theme.body, fontSize: "0.85rem", padding: "0.5rem 0.75rem", borderRadius: 3, width: "100%", boxSizing: "border-box" };
   const taStyle = { ...iStyle, resize: "vertical", minHeight: 68 };
@@ -68,6 +81,7 @@ export function BookEditorPanel({ userId, book, theme, onSaved }) {
       setFillError(String(err.message || err));
     }
     setFilling(false);
+    setFillDone(true);
   };
 
   const handleSave = async () => {
@@ -96,7 +110,7 @@ export function BookEditorPanel({ userId, book, theme, onSaved }) {
     const exists = allBooks.some((b) => b.id === book.id);
     const updated = exists
       ? allBooks.map((b) => b.id === book.id ? updatedBook : b)
-      : [...allBooks, { ...updatedBook, inMarginalia: false, shared: false, drawerId: "want" }];
+      : [...allBooks, { ...updatedBook, inMarginalia: true, shared: false, drawerId: book.drawerId || "want" }];
     await saveBooks(userId, updated);
     setSaving(false); setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -127,6 +141,9 @@ export function BookEditorPanel({ userId, book, theme, onSaved }) {
                 style={{ background: accent, border: "none", color: theme.headerInk || "#fff", fontFamily: theme.mono, fontSize: "0.72rem", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 700, padding: "0.6rem 1.2rem", borderRadius: 3, cursor: filling ? "default" : "pointer", opacity: filling ? 0.7 : 1, transition: "opacity .2s" }}>
                 {filling ? "Fetching & analysing…" : "✨ Auto-fill fields"}
               </button>
+              {fillDone && !fillError && (
+                <span style={{ fontFamily: theme.mono, fontSize: "0.68rem", color: accent }}>✓ Fields filled — review below and click Save</span>
+              )}
               {fillError && (
                 <span style={{ fontFamily: theme.mono, fontSize: "0.68rem", color: "#c0392b" }}>⚠ {fillError}</span>
               )}
