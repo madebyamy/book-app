@@ -8,6 +8,7 @@ export function BookChat({ userId, book, theme }) {
   const [loaded, setLoaded] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
+  const [expanded, setExpanded] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -62,12 +63,15 @@ export function BookChat({ userId, book, theme }) {
     <div style={{ marginTop: "3.2rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "0.8rem", marginBottom: "1.2rem" }}>
         <h3 style={{ fontFamily: theme.display, fontWeight: theme.displayWeight, fontSize: "1.3rem", margin: 0, color: theme.ink }}>Down the rabbit hole</h3>
-        {messages.length > 0 && (
-          <button onClick={handleClear} style={{ background: "none", border: `1px solid ${theme.border}`, color: theme.inkSoft, fontFamily: theme.mono, fontSize: "0.68rem", letterSpacing: "0.05em", textTransform: "uppercase", padding: "0.35rem 0.7rem", borderRadius: 3, cursor: "pointer" }}>Clear chat</button>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+          {messages.length > 0 && (
+            <button onClick={handleClear} style={{ background: "none", border: `1px solid ${theme.border}`, color: theme.inkSoft, fontFamily: theme.mono, fontSize: "0.68rem", letterSpacing: "0.05em", textTransform: "uppercase", padding: "0.35rem 0.7rem", borderRadius: 3, cursor: "pointer" }}>Clear chat</button>
+          )}
+          <button onClick={() => setExpanded(e => !e)} style={{ background: "none", border: `1px solid ${theme.border}`, color: theme.inkSoft, fontFamily: theme.mono, fontSize: "0.68rem", letterSpacing: "0.05em", textTransform: "uppercase", padding: "0.35rem 0.7rem", borderRadius: 3, cursor: "pointer" }}>{expanded ? "↙ Collapse" : "↗ Expand"}</button>
+        </div>
       </div>
       <div style={{ background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 4, overflow: "hidden" }}>
-        <div ref={scrollRef} style={{ maxHeight: 420, minHeight: 140, overflowY: "auto", padding: "1.4rem 1.6rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div ref={scrollRef} style={{ maxHeight: expanded ? "70vh" : 420, minHeight: 140, overflowY: "auto", padding: "1.4rem 1.6rem", display: "flex", flexDirection: "column", gap: "1rem", transition: "max-height 0.3s ease" }}>
           {!loaded ? (
             <div style={{ fontFamily: theme.mono, fontSize: "0.8rem", color: theme.inkFaint }}>Loading conversation…</div>
           ) : messages.length === 0 ? (
