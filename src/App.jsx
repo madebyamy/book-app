@@ -3051,15 +3051,14 @@ function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynamicUsers,
   }, [showAdmin]);
 
   const loadTrackers = async () => {
-    const [customBooks, goal] = await Promise.all([
-      loadCustomBooks(user.id),
+    const [unifiedBooks, goal] = await Promise.all([
+      loadBooks(user.id),
       loadChallengeGoal(user.id, challengeYear),
     ]);
     setChallengeGoal(goal);
-    const customIds = new Set(customBooks.map((b) => b.id));
     const userStaticBooks = USERS[user.id]?.books || [];
-    const shelfBooks = await loadShelfBooks(user.id);
-    const allBooks = [...userStaticBooks.filter((b) => !customIds.has(b.id)), ...customBooks, ...shelfBooks.filter((b) => !customIds.has(b.id) && !userStaticBooks.some((s) => s.id === b.id))];
+    const unifiedIds = new Set(unifiedBooks.map((b) => b.id));
+    const allBooks = [...userStaticBooks.filter((b) => !unifiedIds.has(b.id)), ...unifiedBooks];
     const withProgress = await Promise.all(
       allBooks.map(async (b) => {
         const [prog, status, dateAdded] = await Promise.all([
@@ -3534,6 +3533,7 @@ export default function App() {
   const [activeBookId, setActiveBookId] = useState(() => parseLocation(localStorage.getItem(SESSION_KEY) || null).activeBookId);
   const [booksVersion, setBooksVersion] = useState(0);
   const [allUserBooks, setAllUserBooks] = useState([]);
+  const [booksReady, setBooksReady] = useState(false);
   const [dynamicUsers, setDynamicUsers] = useState([]);
   const [dynamicPasswords, setDynamicPasswords] = useState({});
   const [usersLoaded, setUsersLoaded] = useState(false);
@@ -3583,8 +3583,11 @@ export default function App() {
   const activeUser = loggedInUserId ? USERS[loggedInUserId] : null;
 
   useEffect(() => {
-    if (!loggedInUserId) { setAllUserBooks([]); return; }
-    loadBooks(loggedInUserId).then(setAllUserBooks);
+    if (!loggedInUserId) { setAllUserBooks([]); setBooksReady(false); return; }
+    loadBooks(loggedInUserId).then((books) => {
+      setAllUserBooks(books);
+      setBooksReady(true);
+    });
   }, [loggedInUserId, booksVersion]);
 
   const staticBooks = activeUser ? activeUser.books : [];
@@ -3617,9 +3620,19 @@ export default function App() {
     return <LoginScreen onLogin={handleLogin} allPasswords={allPasswords} />;
   }
 
+  // Once books are loaded: if the active book ID isn't found, clear it and go home
+  useEffect(() => {
+    if (!booksReady || !activeBookId) return;
+    const found = [...(activeUser?.books || []), ...allUserBooks].find((b) => b.id === activeBookId);
+    if (!found) {
+      setActiveBookId(null);
+      setScreen("userHome");
+    }
+  }, [booksReady, allUserBooks, activeBookId]);
+
   let content;
   if (activeBookId && !activeBook) {
-    // Book id is set but not yet in allUserBooks — wait for async reload to complete
+    // Book id is set but not yet loaded — wait (booksReady effect will recover if never found)
     content = null;
   } else if (activeBook && activeUser) {
     content = <BookDashboard userId={activeUser.id} book={activeBook} onBack={goUserHome} onLogout={handleLogout} />;
