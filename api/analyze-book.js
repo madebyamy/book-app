@@ -83,7 +83,7 @@ Return only the JSON object.`;
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.4, maxOutputTokens: 2048 },
+          generationConfig: { temperature: 0.4, maxOutputTokens: 8192 },
         }),
       }
     );
