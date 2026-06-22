@@ -84,7 +84,7 @@ export function BookDashboard({ userId, book: initialBook, onBack, onLogout }) {
             {book.tagline && <p style={{ fontSize: "1rem", color: theme.inkSoft, margin: 0, maxWidth: "60ch", lineHeight: 1.5 }}>{book.tagline}</p>}
           </div>
         </div>
-        <PageTracker userId={userId} book={book} />
+        <PageTracker userId={userId} book={book} theme={theme} />
         <BookEditorPanel userId={userId} book={book} theme={theme} onSaved={setBook} />
         {hasAcademic && <AcademicSections book={book} theme={theme} openNode={openNode} setOpenNode={setOpenNode} />}
         <YourQuotes userId={userId} book={book} theme={theme} />
@@ -105,8 +105,8 @@ export function BookDashboard({ userId, book: initialBook, onBack, onLogout }) {
           </div>
         )}
 
-        <FriendsReadingThis userId={userId} book={book} />
-        <BookChat userId={userId} book={book} />
+        <FriendsReadingThis userId={userId} book={book} theme={theme} />
+        <BookChat userId={userId} book={book} theme={theme} />
       </div>
     </div>
   );

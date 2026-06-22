@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { loadChat, saveChat } from '../../lib/books.js';
 
-export function BookChat({ userId, book }) {
-  const theme = book.theme;
+export function BookChat({ userId, book, theme }) {
+  theme = theme || book.theme || {};
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loaded, setLoaded] = useState(false);

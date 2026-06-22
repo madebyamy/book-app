@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { loadProgress, saveProgress } from '../../lib/books.js';
 import { todayISO, formatCatalogDate, daysBetween } from '../../lib/helpers.js';
 
-export function PageTracker({ userId, book }) {
-  const theme = book.theme;
+export function PageTracker({ userId, book, theme }) {
+  theme = theme || book.theme || {};
   const accent = book.accent;
   const [loaded, setLoaded] = useState(false);
   const [saved, setSaved] = useState({ totalPages: 300, currentPage: 0, finishDate: "", dateFinished: "" });
