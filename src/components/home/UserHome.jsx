@@ -7,9 +7,7 @@ import { TooltipIcon } from '../common/TooltipIcon.jsx';
 import { AdminPanel } from './AdminPanel.jsx';
 import { Bookshelf } from '../catalogue/Bookshelf.jsx';
 import { BookChallenge } from './BookChallenge.jsx';
-import { FriendReading } from './FriendReading.jsx';
-import { SharedBookshelf } from './SharedBookshelf.jsx';
-import { SharedChat } from './SharedChat.jsx';
+import { ReadingRoom } from './ReadingRoom.jsx';
 
 export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynamicUsers, dynamicPasswords, onUserCreated, tooltips, onTooltipsChanged }) {
   const currentYear = new Date().getFullYear();
@@ -246,16 +244,7 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
       </div>
 
       {friends.length > 0 && (
-        <section style={{ background: BRAND.espresso, padding: "clamp(40px,6vw,64px) 0" }}>
-          <div style={{ maxWidth: 1220, margin: "0 auto", padding: "0 30px" }}>
-            <div style={{ fontFamily: FONT.body, fontSize: 12.5, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.tan, marginBottom: 26 }}>Reading room</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,280px),1fr))", gap: 16, marginBottom: 22 }}>
-              <FriendReading friends={friends} tooltipText={tooltips?.friendReading} />
-              <SharedBookshelf viewerId={user.id} friends={friends} tooltipText={tooltips?.sharedBooks} />
-            </div>
-            <SharedChat activeUser={user} friends={friends} tooltipText={tooltips?.chat} />
-          </div>
-        </section>
+        <ReadingRoom user={user} friends={friends} tooltips={tooltips} />
       )}
 
       <footer style={{ background: BRAND.espresso2, padding: "28px 30px", borderTop: "1px solid rgba(217,162,130,.14)" }}>
