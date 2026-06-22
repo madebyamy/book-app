@@ -3593,6 +3593,16 @@ export default function App() {
   const staticBooks = activeUser ? activeUser.books : [];
   const activeBook = [...staticBooks, ...allUserBooks].find((b) => b.id === activeBookId);
 
+  // Once books are loaded: if the active book ID isn't found, clear it and go home
+  useEffect(() => {
+    if (!booksReady || !activeBookId) return;
+    const found = [...(activeUser?.books || []), ...allUserBooks].find((b) => b.id === activeBookId);
+    if (!found) {
+      setActiveBookId(null);
+      setScreen("userHome");
+    }
+  }, [booksReady, allUserBooks, activeBookId]);
+
   const handleLogin = (userId) => {
     setLoggedInUserId(userId);
     const path = `/${userId}`;
@@ -3619,16 +3629,6 @@ export default function App() {
   if (!loggedInUserId) {
     return <LoginScreen onLogin={handleLogin} allPasswords={allPasswords} />;
   }
-
-  // Once books are loaded: if the active book ID isn't found, clear it and go home
-  useEffect(() => {
-    if (!booksReady || !activeBookId) return;
-    const found = [...(activeUser?.books || []), ...allUserBooks].find((b) => b.id === activeBookId);
-    if (!found) {
-      setActiveBookId(null);
-      setScreen("userHome");
-    }
-  }, [booksReady, allUserBooks, activeBookId]);
 
   let content;
   if (activeBookId && !activeBook) {
