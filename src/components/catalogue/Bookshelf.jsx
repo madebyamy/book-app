@@ -67,7 +67,7 @@ function IndexCard({ book, delay, onOpen, onDelete }) {
   const callNo = book.call || `${book.year || "????"} · ${(book.author || "").split(" ").pop().slice(0, 3).toUpperCase()}`;
   const summary = book.summary || book.tagline || null;
   return (
-    <div style={{ flexShrink: 0, width: 220, position: "relative", animation: `cc-pop .4s cubic-bezier(.16,1,.3,1) ${delay}ms both` }}
+    <div style={{ flexShrink: 0, width: 220, position: "relative", animation: `card-fly .55s cubic-bezier(.16,1,.3,1) ${delay}ms both` }}
       onMouseEnter={() => setHovered(true)} onMouseLeave={() => { setHovered(false); setTrashHovered(false); }}>
       <div style={{ position: "relative", transition: "transform .26s cubic-bezier(.16,1,.3,1),box-shadow .26s cubic-bezier(.16,1,.3,1)", transform: hovered && !trashHovered ? "translateY(-8px)" : "none", boxShadow: hovered ? "0 16px 40px rgba(20,30,50,.16)" : "0 4px 12px rgba(20,30,50,.10)" }}>
         <div style={{ marginLeft: 18, width: 118, height: 26, background: "#F6EEDD", border: "1px solid #E2D4BC", borderBottom: "none", borderRadius: "5px 5px 0 0", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 8px", overflow: "hidden" }}>
@@ -106,12 +106,61 @@ function IndexCard({ book, delay, onOpen, onDelete }) {
   );
 }
 
+const SFX_KEY = "bookbrain:sfx";
+
+function playDrawerSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Low wooden thud — initial pull
+    const thud = ctx.createOscillator();
+    const thudGain = ctx.createGain();
+    thud.type = "sine";
+    thud.frequency.setValueAtTime(90, ctx.currentTime);
+    thud.frequency.exponentialRampToValueAtTime(38, ctx.currentTime + 0.14);
+    thudGain.gain.setValueAtTime(0.9, ctx.currentTime);
+    thudGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+    thud.connect(thudGain); thudGain.connect(ctx.destination);
+    thud.start(); thud.stop(ctx.currentTime + 0.2);
+
+    // Wooden slide noise
+    const bufLen = Math.floor(ctx.sampleRate * 0.32);
+    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.value = 320;
+    filter.Q.value = 0.6;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0, ctx.currentTime + 0.04);
+    noiseGain.gain.linearRampToValueAtTime(0.28, ctx.currentTime + 0.1);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.38);
+    noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(ctx.destination);
+    noise.start(ctx.currentTime + 0.04); noise.stop(ctx.currentTime + 0.38);
+
+    // Final stop thud
+    const stop = ctx.createOscillator();
+    const stopGain = ctx.createGain();
+    stop.type = "sine";
+    stop.frequency.setValueAtTime(110, ctx.currentTime + 0.32);
+    stop.frequency.exponentialRampToValueAtTime(55, ctx.currentTime + 0.44);
+    stopGain.gain.setValueAtTime(0.7, ctx.currentTime + 0.32);
+    stopGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.48);
+    stop.connect(stopGain); stopGain.connect(ctx.destination);
+    stop.start(ctx.currentTime + 0.32); stop.stop(ctx.currentTime + 0.48);
+  } catch {}
+}
+
 export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged, inline = false }) {
   const [allBooks, setAllBooks] = useState([]);
   const [drawers, setDrawers] = useState(() => {
     try { const s = localStorage.getItem(CC_DRAWER_STORE(userId)); return s ? JSON.parse(s) : DEFAULT_DRAWERS; } catch { return DEFAULT_DRAWERS; }
   });
   const [openDrawer, setOpenDrawer] = useState(null);
+  const [openingDrawer, setOpeningDrawer] = useState(null);
   const [selectedBook, setSelectedBook] = useState(null);
   const [editing, setEditing] = useState(null);
   const [draft, setDraft] = useState("");
@@ -119,6 +168,9 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
   const [showAddBook, setShowAddBook] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    try { return localStorage.getItem(SFX_KEY) !== "off"; } catch { return true; }
+  });
 
   useEffect(() => {
     let active = true;
@@ -149,9 +201,23 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
     await saveStatus(userId, book.id, DRAWER_TO_STATUS[drawerId] || "to-read");
   };
 
+  const toggleSfx = () => {
+    setSoundEnabled((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(SFX_KEY, next ? "on" : "off"); } catch {}
+      return next;
+    });
+  };
+
   const toggleDrawer = (id) => {
     if (editing) { commitEdit(); return; }
-    setOpenDrawer((prev) => (prev === id ? null : id));
+    setOpenDrawer((prev) => {
+      if (prev === id) return null;
+      if (soundEnabled) playDrawerSound();
+      setOpeningDrawer(id);
+      setTimeout(() => setOpeningDrawer(null), 500);
+      return id;
+    });
   };
 
   const startEdit = (e, id, name) => { e.stopPropagation(); setEditing(id); setDraft(name); };
@@ -273,11 +339,15 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
         ) : (
           <>
             <div style={{ padding: 14, borderRadius: 5, background: "linear-gradient(180deg,#6E4422,#4A2C16)", boxShadow: "0 16px 40px rgba(20,30,50,.16),inset 0 1px 0 rgba(255,255,255,.14)", border: "2px solid #3a230f" }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                 <button onClick={() => setShowAddBook(true)} style={{ background: BRASS_GRAD, border: BRASS_BORDER, borderRadius: 2, padding: "5px 22px", boxShadow: "0 1px 2px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.5)", fontFamily: FONT.body, fontSize: 11, letterSpacing: ".34em", textTransform: "uppercase", color: "#3a2c12", cursor: "pointer", transition: "filter .18s", outline: "none" }}
                   onMouseEnter={(e) => e.currentTarget.style.filter = "brightness(1.08)"}
                   onMouseLeave={(e) => e.currentTarget.style.filter = ""}>
                   + Add a Book
+                </button>
+                <button onClick={toggleSfx} title={soundEnabled ? "Mute drawer sound" : "Enable drawer sound"}
+                  style={{ background: "rgba(0,0,0,.28)", border: BRASS_BORDER, borderRadius: 2, padding: "5px 10px", boxShadow: "0 1px 2px rgba(0,0,0,.4)", fontFamily: FONT.body, fontSize: 14, color: soundEnabled ? "#E8CF93" : "rgba(251,246,232,.35)", cursor: "pointer", lineHeight: 1, transition: "color .2s", outline: "none" }}>
+                  {soundEnabled ? "🔊" : "🔇"}
                 </button>
               </div>
 
@@ -291,7 +361,7 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
                     <div key={dr.id} onClick={() => toggleDrawer(dr.id)}
                       onMouseEnter={() => setHoveredDrawer(dr.id)}
                       onMouseLeave={() => setHoveredDrawer(null)}
-                      style={{ position: "relative", height: 166, cursor: "pointer", borderRadius: 3, border: "1px solid #4A2C16", background: OAK_FACE, boxShadow: isOpen ? "inset 0 3px 6px rgba(0,0,0,.35),0 1px 2px rgba(0,0,0,.3)" : "0 2px 4px rgba(0,0,0,.3)", transform: isHovered && !isOpen ? "translateY(2px)" : isOpen ? "translateY(3px)" : "none", transition: "transform .26s cubic-bezier(.16,1,.3,1),box-shadow .26s cubic-bezier(.16,1,.3,1)" }}>
+                      style={{ position: "relative", height: 166, cursor: "pointer", borderRadius: 3, border: "1px solid #4A2C16", background: OAK_FACE, boxShadow: isOpen ? "inset 0 3px 6px rgba(0,0,0,.35),0 1px 2px rgba(0,0,0,.3)" : "0 2px 4px rgba(0,0,0,.3)", transform: isHovered && !isOpen ? "translateY(2px)" : isOpen ? "translateY(3px)" : "none", transition: openingDrawer === dr.id ? "none" : "transform .26s cubic-bezier(.16,1,.3,1),box-shadow .26s cubic-bezier(.16,1,.3,1)", animation: openingDrawer === dr.id ? "drawer-pull .48s cubic-bezier(.16,1,.3,1) forwards" : "none" }}>
                       {isHovered && (
                         <>
                           <button onClick={(e) => startEdit(e, dr.id, dr.name)} aria-label="Rename"
