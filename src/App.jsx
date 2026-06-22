@@ -242,6 +242,34 @@ async function saveCustomBooks(userId, list) {
   try { const result = await storage.set(customBooksKey(userId), JSON.stringify(list)); return !!result; } catch (e) { return false; }
 }
 
+// ---------------------------------------------------------------------------
+// UNIFIED BOOK STORE — single source of truth for all user-added books
+// ---------------------------------------------------------------------------
+function unifiedBooksKey(userId) { return `${userId}:books:v2`; }
+
+async function loadBooks(userId) {
+  try {
+    const res = await storage.get(unifiedBooksKey(userId));
+    if (res) return JSON.parse(res.value);
+    // First run: migrate from old separate stores
+    const [shelf, custom] = await Promise.all([loadShelfBooks(userId), loadCustomBooks(userId)]);
+    const customIds = new Set(custom.map((b) => b.id));
+    const seen = new Set();
+    const merged = [];
+    for (const b of [...custom, ...shelf]) {
+      if (seen.has(b.id)) continue;
+      seen.add(b.id);
+      merged.push({ ...b, inMarginalia: customIds.has(b.id), drawerId: b.drawerId || null, nodes: b.nodes || [], theme: b.theme || null });
+    }
+    if (merged.length > 0) await saveBooks(userId, merged);
+    return merged;
+  } catch { return []; }
+}
+
+async function saveBooks(userId, list) {
+  try { await storage.set(unifiedBooksKey(userId), JSON.stringify(list)); return true; } catch { return false; }
+}
+
 function todayISO() {
   const d = new Date();
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -1179,31 +1207,29 @@ function AddBookToMyBooks({ userId, userAccent, onAdded }) {
   );
 }
 
-function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack, onLogout }) {
-  const [customBooks, setCustomBooks] = useState([]);
+function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack, onLogout, onBooksChanged }) {
+  const [userBooks, setUserBooks] = useState([]);
   const [loaded, setLoaded] = useState(false);
-  const [version, setVersion] = useState(0);
+  const [removeConfirm, setRemoveConfirm] = useState(null); // bookId to confirm removal
 
   useEffect(() => {
     let active = true;
-    loadCustomBooks(userId).then((list) => { if (active) { setCustomBooks(list); setLoaded(true); } });
+    loadBooks(userId).then((list) => { if (active) { setUserBooks(list); setLoaded(true); } });
     return () => { active = false; };
-  }, [userId, version]);
+  }, [userId]);
 
-  const customIds = new Set(customBooks.map((b) => b.id));
-  const allBooks = [...staticBooks.filter((b) => !customIds.has(b.id)), ...customBooks];
+  // Static books always shown; user books filtered to inMarginalia:true
+  const userMarginalia = userBooks.filter((b) => b.inMarginalia);
+  const staticIds = new Set(staticBooks.map((b) => b.id));
+  const allBooks = [...staticBooks, ...userMarginalia.filter((b) => !staticIds.has(b.id))];
 
-  const handleDelete = async (bookId) => {
-    // Remove from custom books if present
-    const updated = customBooks.filter((b) => b.id !== bookId);
-    await saveCustomBooks(userId, updated);
-    setCustomBooks(updated);
-    // Also purge all associated data
-    await Promise.all([
-      storage.delete(`${userId}:progress:${bookId}`),
-      storage.delete(`${userId}:status:${bookId}`),
-      storage.delete(`${userId}:dateAdded:${bookId}`),
-    ]);
+  // Remove from Marginalia view (toggle off) — data stays in unified store
+  const handleRemoveFromMarginalia = async (bookId) => {
+    const updated = userBooks.map((b) => b.id === bookId ? { ...b, inMarginalia: false } : b);
+    await saveBooks(userId, updated);
+    setUserBooks(updated);
+    setRemoveConfirm(null);
+    if (onBooksChanged) onBooksChanged();
   };
 
   return (
@@ -1235,13 +1261,37 @@ function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack, onLogo
           <div style={{ fontFamily: FONT.body, fontSize: 14, color: BRAND.muted, padding: "1.5rem 0" }}>Loading…</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {allBooks.map((book) => (<CatalogCard key={book.id} userId={userId} book={book} onSelect={onSelect} onDelete={customIds.has(book.id) ? handleDelete : undefined} />))}
+            {allBooks.map((book) => (
+              <CatalogCard key={book.id} userId={userId} book={book} onSelect={onSelect}
+                onDelete={userMarginalia.some((b) => b.id === book.id) ? () => setRemoveConfirm(book.id) : undefined} />
+            ))}
           </div>
         )}
-        <div style={{ marginTop: 20 }}>
-          <AddBookToMyBooks userId={userId} userAccent={userAccent} onAdded={() => setVersion((v) => v + 1)} />
-        </div>
       </div>
+
+      {/* Remove from Marginalia confirmation */}
+      {removeConfirm && (() => {
+        const book = userBooks.find((b) => b.id === removeConfirm);
+        return book ? (
+          <div onClick={() => setRemoveConfirm(null)} style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(38,32,32,.68)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 6, width: "min(420px,100%)", boxShadow: "0 20px 50px rgba(20,30,50,.22)", animation: "cc-pop .22s cubic-bezier(.16,1,.3,1)" }}>
+              <div style={{ background: BRAND.espresso, padding: "18px 24px 14px", borderRadius: "6px 6px 0 0" }}>
+                <div style={{ fontFamily: FONT.body, fontSize: 10, letterSpacing: ".2em", textTransform: "uppercase", color: BRAND.tan, marginBottom: 4 }}>Remove from Marginalia</div>
+                <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 18, color: BRAND.cream }}>{book.title}</div>
+              </div>
+              <div style={{ padding: "20px 24px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
+                <p style={{ fontFamily: FONT.read, fontSize: 14, lineHeight: 1.6, color: BRAND.muted, margin: 0 }}>
+                  This removes <em>{book.title}</em> from your Marginalia page. All your notes, highlights, and progress are <strong style={{ color: BRAND.ink }}>saved</strong> — the book stays in your Card Catalogue and can be re-added to Marginalia anytime.
+                </p>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => setRemoveConfirm(null)} style={{ flex: 1, fontFamily: FONT.body, fontSize: 13, background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "11px", borderRadius: 3, cursor: "pointer" }}>Cancel</button>
+                  <button onClick={() => handleRemoveFromMarginalia(removeConfirm)} style={{ flex: 2, fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: BRAND.coral, border: "none", color: "#fff", padding: "11px", borderRadius: 3, cursor: "pointer" }}>Remove from Marginalia</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null;
+      })()}
     </div>
   );
 }
@@ -1305,11 +1355,10 @@ function BrassLabelHolder({ name, isEditing, draft, onInput, onKey, onCommit }) 
   );
 }
 
-function CatalogueDeleteModal({ book, hasMarginalia, onDeleteShelfOnly, onDeleteAll, onCancel }) {
+function CatalogueDeleteModal({ book, onRemoveFromMarginalia, onDeleteAll, onCancel }) {
   return (
     <div onClick={onCancel} style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(38,32,32,.68)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 6, width: "min(480px,100%)", boxShadow: "0 20px 50px rgba(20,30,50,.22)", animation: "cc-pop .22s cubic-bezier(.16,1,.3,1)" }}>
-        {/* Header */}
         <div style={{ background: BRAND.espresso, padding: "20px 26px 16px", borderRadius: "6px 6px 0 0", display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(242,92,92,.2)", border: "1px solid rgba(242,92,92,.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>🗑</div>
           <div>
@@ -1318,42 +1367,22 @@ function CatalogueDeleteModal({ book, hasMarginalia, onDeleteShelfOnly, onDelete
           </div>
         </div>
         <div style={{ padding: "22px 26px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
-          {hasMarginalia ? (
-            <>
-              <p style={{ fontFamily: FONT.read, fontSize: 14.5, lineHeight: 1.6, color: BRAND.muted, margin: 0 }}>
-                This book is linked to your <strong style={{ color: BRAND.ink }}>Marginalia</strong> page. How would you like to remove it?
-              </p>
-              {/* Option A */}
-              <button onClick={onDeleteShelfOnly} style={{ textAlign: "left", background: BRAND.cream, border: `1px solid ${BRAND.line}`, borderRadius: 4, padding: "14px 16px", cursor: "pointer", display: "flex", gap: 13, alignItems: "flex-start" }}>
-                <span style={{ fontSize: 20, marginTop: 1 }}>📋</span>
-                <div>
-                  <div style={{ fontFamily: FONT.body, fontWeight: 500, fontSize: 14, color: BRAND.ink, marginBottom: 3 }}>Remove from Card Catalogue only</div>
-                  <div style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.5, color: BRAND.muted }}>Removes the card from this catalogue. Your Marginalia entry stays intact — and will now show a delete option if you want to remove it later.</div>
-                </div>
-              </button>
-              {/* Option B */}
-              <button onClick={onDeleteAll} style={{ textAlign: "left", background: "rgba(242,92,92,.05)", border: `1px solid rgba(242,92,92,.3)`, borderRadius: 4, padding: "14px 16px", cursor: "pointer", display: "flex", gap: 13, alignItems: "flex-start" }}>
-                <span style={{ fontSize: 20, marginTop: 1 }}>🗑</span>
-                <div>
-                  <div style={{ fontFamily: FONT.body, fontWeight: 500, fontSize: 14, color: BRAND.coral, marginBottom: 3 }}>Delete everything</div>
-                  <div style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.5, color: BRAND.muted }}>Permanently removes this card <em>and</em> the Marginalia entry, including all reading progress, notes, and quotes.</div>
-                </div>
-              </button>
-            </>
-          ) : (
-            <>
-              <p style={{ fontFamily: FONT.read, fontSize: 14.5, lineHeight: 1.6, color: BRAND.muted, margin: 0 }}>
-                Remove <em>"{book.title}"</em> from the Card Catalogue? This will also delete its reading data.
-              </p>
-              <button onClick={onDeleteAll} style={{ textAlign: "left", background: "rgba(242,92,92,.05)", border: `1px solid rgba(242,92,92,.3)`, borderRadius: 4, padding: "14px 16px", cursor: "pointer", display: "flex", gap: 13, alignItems: "flex-start" }}>
-                <span style={{ fontSize: 20, marginTop: 1 }}>🗑</span>
-                <div>
-                  <div style={{ fontFamily: FONT.body, fontWeight: 500, fontSize: 14, color: BRAND.coral, marginBottom: 3 }}>Delete from Card Catalogue</div>
-                  <div style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.5, color: BRAND.muted }}>Permanently removes this card and all associated data.</div>
-                </div>
-              </button>
-            </>
+          {book.inMarginalia && (
+            <button onClick={onRemoveFromMarginalia} style={{ textAlign: "left", background: BRAND.cream, border: `1px solid ${BRAND.line}`, borderRadius: 4, padding: "14px 16px", cursor: "pointer", display: "flex", gap: 13, alignItems: "flex-start" }}>
+              <span style={{ fontSize: 20, marginTop: 1 }}>📖</span>
+              <div>
+                <div style={{ fontFamily: FONT.body, fontWeight: 500, fontSize: 14, color: BRAND.ink, marginBottom: 3 }}>Remove from Marginalia only</div>
+                <div style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.5, color: BRAND.muted }}>Hides this book from your Marginalia page. All your notes and progress are kept — you can re-add it to Marginalia anytime from the Card Catalogue.</div>
+              </div>
+            </button>
           )}
+          <button onClick={onDeleteAll} style={{ textAlign: "left", background: "rgba(242,92,92,.05)", border: `1px solid rgba(242,92,92,.3)`, borderRadius: 4, padding: "14px 16px", cursor: "pointer", display: "flex", gap: 13, alignItems: "flex-start" }}>
+            <span style={{ fontSize: 20, marginTop: 1 }}>🗑</span>
+            <div>
+              <div style={{ fontFamily: FONT.body, fontWeight: 500, fontSize: 14, color: BRAND.coral, marginBottom: 3 }}>Delete book entirely</div>
+              <div style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.5, color: BRAND.muted }}>Permanently removes this book from the Card Catalogue and Marginalia, including all notes, progress, and quotes.</div>
+            </div>
+          </button>
           <button onClick={onCancel} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "11px", borderRadius: 3, cursor: "pointer", marginTop: 4 }}>Cancel</button>
         </div>
       </div>
@@ -1618,7 +1647,7 @@ function AddBookModal({ drawers, onAdd, onClose }) {
   );
 }
 
-function BookModal({ book, drawers, currentDrawer, onMove, onClose, onSendToMarginalia, sentToMarginalia }) {
+function BookModal({ book, drawers, currentDrawer, onMove, onClose, onToggleMarginalia }) {
   const spine = spineColor(book);
   const callNo = book.call || `${book.year || "????"} · ${(book.author || "").split(" ").pop().slice(0, 3).toUpperCase()}`;
   const readHours = estimateReadTime(book.pages);
@@ -1672,20 +1701,21 @@ function BookModal({ book, drawers, currentDrawer, onMove, onClose, onSendToMarg
               Filed in the "{drawers.find((d) => d.id === currentDrawer)?.name}" drawer.
             </div>
           )}
-          {/* Send to Marginalia */}
+          {/* Marginalia toggle */}
           <div style={{ marginTop: 28, paddingTop: 20, borderTop: `1px solid ${BRAND.line}` }}>
             <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: BRAND.muted, marginBottom: 11 }}>Marginalia</div>
-            {sentToMarginalia ? (
-              <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 14, color: BRAND.terracotta }}>
-                ✓ Added to your Marginalia page.
+            {book.inMarginalia ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "rgba(191,117,90,.08)", border: `1px solid rgba(191,117,90,.3)`, borderRadius: 4, padding: "12px 14px" }}>
+                <div style={{ fontFamily: FONT.read, fontSize: 14, color: BRAND.terracotta }}>✓ In your Marginalia</div>
+                <button onClick={onToggleMarginalia} style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: ".04em", background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "6px 12px", borderRadius: 3, cursor: "pointer", whiteSpace: "nowrap" }}>Remove</button>
               </div>
             ) : (
               <>
                 <p style={{ fontFamily: FONT.read, fontSize: 13.5, lineHeight: 1.55, color: BRAND.muted, margin: "0 0 12px" }}>
-                  Send this book to your Marginalia page to track notes, highlights, and reading progress.
+                  Add this book to your Marginalia page to track notes, highlights, and reading progress.
                 </p>
-                <button onClick={onSendToMarginalia} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: BRAND.espresso, border: "none", color: BRAND.cream, padding: "11px 20px", borderRadius: 3, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 15 }}>📖</span> Send to Marginalia
+                <button onClick={onToggleMarginalia} style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: BRAND.espresso, border: "none", color: BRAND.cream, padding: "11px 20px", borderRadius: 3, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 15 }}>📖</span> Add to Marginalia
                 </button>
               </>
             )}
@@ -1696,9 +1726,8 @@ function BookModal({ book, drawers, currentDrawer, onMove, onClose, onSendToMarg
   );
 }
 
-function Bookshelf({ userId, userAccent, onBack, onLogout }) {
+function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged }) {
   const [allBooks, setAllBooks] = useState([]);
-  const [assign, setAssign] = useState({});  // bookId → drawerId
   const [drawers, setDrawers] = useState(() => {
     try { const s = localStorage.getItem(CC_DRAWER_STORE(userId)); return s ? JSON.parse(s) : DEFAULT_DRAWERS; } catch { return DEFAULT_DRAWERS; }
   });
@@ -1709,54 +1738,40 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
   const [hoveredDrawer, setHoveredDrawer] = useState(null);
   const [showAddBook, setShowAddBook] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [sentToMarginalia, setSentToMarginalia] = useState(new Set());
-  const [customBookIds, setCustomBookIds] = useState(new Set());
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  // Load all books + statuses
+  // Load all user-added books from unified store
   useEffect(() => {
     let active = true;
-    (async () => {
-      const [customBooks, shelfBooks] = await Promise.all([loadCustomBooks(userId), loadShelfBooks(userId)]);
-      const userStatic = USERS[userId]?.books || [];
-      const seen = new Set();
-      const merged = [...userStatic, ...customBooks, ...shelfBooks].filter((b) => {
-        if (seen.has(b.id)) return false; seen.add(b.id); return true;
-      });
+    loadBooks(userId).then((list) => {
       if (!active) return;
-      setAllBooks(merged);
-      setCustomBookIds(new Set(customBooks.map((b) => b.id)));
-
-      // Load saved assignment or fall back to status
-      let saved = {};
-      try { const r = localStorage.getItem(CC_ASSIGN_STORE(userId)); if (r) saved = JSON.parse(r); } catch {}
-      const assigned = { ...saved };
-      await Promise.all(merged.map(async (b) => {
-        if (!assigned[b.id]) {
-          const status = await loadStatus(userId, b.id);
-          assigned[b.id] = STATUS_TO_DRAWER[status] || "want";
-        }
+      // Migrate drawer assignments from old localStorage if needed
+      const oldAssign = (() => { try { const r = localStorage.getItem(CC_ASSIGN_STORE(userId)); return r ? JSON.parse(r) : {}; } catch { return {}; } })();
+      const migrated = list.map((b) => ({
+        ...b,
+        drawerId: b.drawerId || oldAssign[b.id] || "want",
       }));
-      if (!active) return;
-      setAssign(assigned);
+      setAllBooks(migrated);
       setLoaded(true);
-    })();
+    });
     return () => { active = false; };
   }, [userId]);
 
-  const persist = (nextAssign, nextDrawers) => {
-    try {
-      localStorage.setItem(CC_ASSIGN_STORE(userId), JSON.stringify(nextAssign));
-      localStorage.setItem(CC_DRAWER_STORE(userId), JSON.stringify(nextDrawers));
-    } catch {}
+  const persistDrawers = (nextDrawers) => {
+    try { localStorage.setItem(CC_DRAWER_STORE(userId), JSON.stringify(nextDrawers)); } catch {}
+  };
+
+  const updateBooks = async (updated) => {
+    setAllBooks(updated);
+    await saveBooks(userId, updated);
+    if (onBooksChanged) onBooksChanged();
   };
 
   const moveBook = async (book, drawerId) => {
-    const next = { ...assign, [book.id]: drawerId };
-    setAssign(next);
-    persist(next, drawers);
+    const updated = allBooks.map((b) => b.id === book.id ? { ...b, drawerId } : b);
+    await updateBooks(updated);
+    setSelectedBook((prev) => prev?.id === book.id ? { ...prev, drawerId } : prev);
     await saveStatus(userId, book.id, DRAWER_TO_STATUS[drawerId] || "to-read");
-    setSelectedBook((prev) => prev?.id === book.id ? { ...book, _drawer: drawerId } : prev);
   };
 
   const toggleDrawer = (id) => {
@@ -1770,7 +1785,7 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
     const name = draft.trim() || "Untitled";
     const next = drawers.map((d) => d.id === editing ? { ...d, name } : d);
     setDrawers(next);
-    persist(assign, next);
+    persistDrawers(next);
     setEditing(null); setDraft("");
   };
 
@@ -1778,7 +1793,7 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
     const id = "d" + Date.now();
     const next = [...drawers, { id, name: "New Shelf", removable: true }];
     setDrawers(next);
-    persist(assign, next);
+    persistDrawers(next);
     setEditing(id); setDraft("New Shelf");
   };
 
@@ -1787,68 +1802,49 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
     if (drawers.length <= 1) return;
     const nextDrawers = drawers.filter((d) => d.id !== id);
     const fallback = nextDrawers[0].id;
-    const nextAssign = { ...assign };
-    Object.keys(nextAssign).forEach((b) => { if (nextAssign[b] === id) nextAssign[b] = fallback; });
+    const updated = allBooks.map((b) => b.drawerId === id ? { ...b, drawerId: fallback } : b);
     setDrawers(nextDrawers);
-    setAssign(nextAssign);
-    persist(nextAssign, nextDrawers);
+    persistDrawers(nextDrawers);
+    updateBooks(updated);
     if (openDrawer === id) setOpenDrawer(null);
   };
 
   const handleAddBook = async ({ title, author, pages, summary, cover, year, drawerId }) => {
-    const id = `shelf-${userId}-${Date.now().toString(36)}`;
-    const newBook = { id, title, author, pages: pages || null, summary: summary || null, cover: cover || null, year: year || null, accent: userAccent };
-    const existing = await loadShelfBooks(userId);
-    await saveShelfBooks(userId, [...existing, newBook]);
-    setAllBooks((prev) => [...prev, newBook]);
-    const next = { ...assign, [id]: drawerId || "want" };
-    setAssign(next);
-    persist(next, drawers);
-    await saveStatus(userId, id, DRAWER_TO_STATUS[drawerId] || "to-read");
+    const id = `book-${userId}-${Date.now().toString(36)}`;
+    const targetDrawer = drawerId || openDrawer || "want";
+    const newBook = { id, title, author, pages: pages || null, summary: summary || null, cover: cover || null, year: year || null, accent: userAccent, drawerId: targetDrawer, inMarginalia: false, nodes: [], theme: null };
+    const updated = [...allBooks, newBook];
+    await updateBooks(updated);
+    await saveStatus(userId, id, DRAWER_TO_STATUS[targetDrawer] || "to-read");
     setShowAddBook(false);
-    setOpenDrawer(drawerId || "want");
+    setOpenDrawer(targetDrawer);
   };
 
-  const handleSendToMarginalia = async (book) => {
-    const existing = await loadCustomBooks(userId);
-    const alreadyThere = existing.some((b) => b.id === book.id || b.title.toLowerCase() === book.title.toLowerCase());
-    if (!alreadyThere) {
-      const customBook = { id: book.id, title: book.title, author: book.author, pages: book.pages || null, year: book.year || null, cover: book.cover || null, accent: book.accent || userAccent, tagline: book.summary || book.tagline || null, summary: book.summary || book.tagline || null, nodes: [], theme: null };
-      await saveCustomBooks(userId, [...existing, customBook]);
-    }
-    setSentToMarginalia((prev) => new Set([...prev, book.id]));
+  const handleToggleMarginalia = async (book) => {
+    const updated = allBooks.map((b) => b.id === book.id ? { ...b, inMarginalia: !b.inMarginalia } : b);
+    await updateBooks(updated);
+    // Update selectedBook so the modal reflects the change immediately
+    setSelectedBook((prev) => prev?.id === book.id ? { ...prev, inMarginalia: !prev.inMarginalia } : prev);
   };
 
-  const handleDeleteFromShelf = async (book) => {
-    const existing = await loadShelfBooks(userId);
-    await saveShelfBooks(userId, existing.filter((b) => b.id !== book.id));
-    setAllBooks((prev) => prev.filter((b) => b.id !== book.id));
-    const nextAssign = { ...assign };
-    delete nextAssign[book.id];
-    setAssign(nextAssign);
-    persist(nextAssign, drawers);
+  const handleRemoveFromMarginalia = async (book) => {
+    const updated = allBooks.map((b) => b.id === book.id ? { ...b, inMarginalia: false } : b);
+    await updateBooks(updated);
     setDeleteTarget(null);
   };
 
-  const handleDeleteAll = async (book) => {
-    const [existingShelf, existingCustom] = await Promise.all([loadShelfBooks(userId), loadCustomBooks(userId)]);
+  const handleDeleteBook = async (book) => {
+    const updated = allBooks.filter((b) => b.id !== book.id);
+    await updateBooks(updated);
     await Promise.all([
-      saveShelfBooks(userId, existingShelf.filter((b) => b.id !== book.id)),
-      saveCustomBooks(userId, existingCustom.filter((b) => b.id !== book.id)),
       storage.delete(`${userId}:progress:${book.id}`),
       storage.delete(`${userId}:status:${book.id}`),
       storage.delete(`${userId}:dateAdded:${book.id}`),
     ]);
-    setAllBooks((prev) => prev.filter((b) => b.id !== book.id));
-    setCustomBookIds((prev) => { const s = new Set(prev); s.delete(book.id); return s; });
-    const nextAssign = { ...assign };
-    delete nextAssign[book.id];
-    setAssign(nextAssign);
-    persist(nextAssign, drawers);
     setDeleteTarget(null);
   };
 
-  const booksInDrawer = (id) => allBooks.filter((b) => assign[b.id] === id);
+  const booksInDrawer = (id) => allBooks.filter((b) => (b.drawerId || "want") === id);
   const openBooks = openDrawer ? booksInDrawer(openDrawer) : [];
   const openDrawerName = drawers.find((d) => d.id === openDrawer)?.name || "";
 
@@ -1875,13 +1871,24 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
       {/* Add book modal */}
       {showAddBook && <AddBookModal drawers={drawers} onAdd={handleAddBook} onClose={() => setShowAddBook(false)} />}
 
+      {/* Book card modal */}
+      {selectedBook && (
+        <BookModal
+          book={allBooks.find((b) => b.id === selectedBook.id) || selectedBook}
+          drawers={drawers}
+          currentDrawer={(allBooks.find((b) => b.id === selectedBook.id) || selectedBook).drawerId || "want"}
+          onMove={(drawerId) => moveBook(selectedBook, drawerId)}
+          onClose={() => setSelectedBook(null)}
+          onToggleMarginalia={() => handleToggleMarginalia(selectedBook)}
+        />
+      )}
+
       {/* Delete confirmation modal */}
       {deleteTarget && (
         <CatalogueDeleteModal
           book={deleteTarget}
-          hasMarginalia={customBookIds.has(deleteTarget.id)}
-          onDeleteShelfOnly={() => handleDeleteFromShelf(deleteTarget)}
-          onDeleteAll={() => handleDeleteAll(deleteTarget)}
+          onRemoveFromMarginalia={() => handleRemoveFromMarginalia(deleteTarget)}
+          onDeleteAll={() => handleDeleteBook(deleteTarget)}
           onCancel={() => setDeleteTarget(null)}
         />
       )}
@@ -2015,18 +2022,6 @@ function Bookshelf({ userId, userAccent, onBack, onLogout }) {
         </div>
       </div>
 
-      {/* Book modal */}
-      {selectedBook && (
-        <BookModal
-          book={selectedBook}
-          drawers={drawers}
-          currentDrawer={assign[selectedBook.id]}
-          onMove={(drawerId) => moveBook(selectedBook, drawerId)}
-          onClose={() => setSelectedBook(null)}
-          onSendToMarginalia={() => handleSendToMarginalia(selectedBook)}
-          sentToMarginalia={sentToMarginalia.has(selectedBook.id)}
-        />
-      )}
     </div>
   );
 }
@@ -3330,8 +3325,8 @@ export default function App() {
   const [loggedInUserId, setLoggedInUserId] = useState(() => localStorage.getItem(SESSION_KEY) || null);
   const [screen, setScreen] = useState(() => parseLocation(localStorage.getItem(SESSION_KEY) || null).screen);
   const [activeBookId, setActiveBookId] = useState(() => parseLocation(localStorage.getItem(SESSION_KEY) || null).activeBookId);
-  const [customBooksVersion, setCustomBooksVersion] = useState(0);
-  const [allCustomBooks, setAllCustomBooks] = useState([]);
+  const [booksVersion, setBooksVersion] = useState(0);
+  const [allUserBooks, setAllUserBooks] = useState([]);
   const [dynamicUsers, setDynamicUsers] = useState([]);
   const [dynamicPasswords, setDynamicPasswords] = useState({});
   const [usersLoaded, setUsersLoaded] = useState(false);
@@ -3347,8 +3342,7 @@ export default function App() {
     window.history.pushState({ screen: nextScreen, activeBookId: nextBookId, userId }, "", path);
     setScreen(nextScreen);
     setActiveBookId(nextBookId);
-    // Always refresh custom books when navigating so newly-sent shelf books are found
-    if (nextBookId) setCustomBooksVersion((v) => v + 1);
+    if (nextBookId) setBooksVersion((v) => v + 1);
   }, [loggedInUserId]);
 
   // Sync back/forward browser navigation
@@ -3382,12 +3376,12 @@ export default function App() {
   const activeUser = loggedInUserId ? USERS[loggedInUserId] : null;
 
   useEffect(() => {
-    if (!loggedInUserId) { setAllCustomBooks([]); return; }
-    loadCustomBooks(loggedInUserId).then(setAllCustomBooks);
-  }, [loggedInUserId, customBooksVersion]);
+    if (!loggedInUserId) { setAllUserBooks([]); return; }
+    loadBooks(loggedInUserId).then(setAllUserBooks);
+  }, [loggedInUserId, booksVersion]);
 
   const staticBooks = activeUser ? activeUser.books : [];
-  const activeBook = [...staticBooks, ...allCustomBooks].find((b) => b.id === activeBookId);
+  const activeBook = [...staticBooks, ...allUserBooks].find((b) => b.id === activeBookId);
 
   const handleLogin = (userId) => {
     setLoggedInUserId(userId);
@@ -3420,9 +3414,9 @@ export default function App() {
   if (activeBook && activeUser) {
     content = <BookDashboard userId={activeUser.id} book={activeBook} onBack={goUserHome} onLogout={handleLogout} />;
   } else if (screen === "myBooks" && activeUser) {
-    content = <MyBooksHome userId={activeUser.id} userAccent={activeUser.accent} staticBooks={staticBooks} onSelect={(id) => navigate("userHome", id)} onBack={goUserHome} onLogout={handleLogout} />;
+    content = <MyBooksHome userId={activeUser.id} userAccent={activeUser.accent} staticBooks={staticBooks} onSelect={(id) => navigate("userHome", id)} onBack={goUserHome} onLogout={handleLogout} onBooksChanged={() => setBooksVersion((v) => v + 1)} />;
   } else if (screen === "shelf" && activeUser) {
-    content = <Bookshelf userId={activeUser.id} userAccent={activeUser.accent} onBack={goUserHome} onLogout={handleLogout} />;
+    content = <Bookshelf userId={activeUser.id} userAccent={activeUser.accent} onBack={goUserHome} onLogout={handleLogout} onBooksChanged={() => setBooksVersion((v) => v + 1)} />;
   } else if (activeUser) {
     content = <UserHome user={activeUser} onOpenMyBooks={() => navigate("myBooks")} onOpenShelf={() => navigate("shelf")} onLogout={handleLogout} dynamicUsers={dynamicUsers} dynamicPasswords={dynamicPasswords} onUserCreated={handleUserCreated} tooltips={tooltips} onTooltipsChanged={setTooltips} />;
   }
