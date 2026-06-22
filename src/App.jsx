@@ -3232,20 +3232,6 @@ function LoginScreen({ onLogin, allPasswords }) {
   return (
     <div style={{ minHeight: "100vh", background: BRAND.cream, color: BRAND.ink, fontFamily: FONT.body, overflowX: "hidden" }}>
 
-      {/* Announcement ticker */}
-      <div style={{ background: BRAND.espresso, color: BRAND.tan, fontSize: 12, letterSpacing: "0.22em", textTransform: "uppercase", overflow: "hidden", whiteSpace: "nowrap", borderBottom: `1px solid rgba(217,162,130,.16)` }}>
-        <div style={{ display: "flex", width: "max-content", animation: "mg-marquee 36s linear infinite" }}>
-          {[0,1].map(k => (
-            <span key={k} style={{ display: "flex", gap: 40, padding: "9px 20px 9px 0" }}>
-              <span>Your library, beautifully kept</span><span style={{ color: BRAND.coral }}>·</span>
-              <span>Track every page you've ever read</span><span style={{ color: BRAND.coral }}>·</span>
-              <span>Share shelves with friends</span><span style={{ color: BRAND.coral }}>·</span>
-              <span>Turn the page</span><span style={{ color: BRAND.coral }}>·</span>
-            </span>
-          ))}
-        </div>
-      </div>
-
       {/* Nav */}
       <header style={{ position: "sticky", top: 0, zIndex: 40, background: "rgba(242,239,235,.88)", backdropFilter: "saturate(180%) blur(12px)", WebkitBackdropFilter: "saturate(180%) blur(12px)", borderBottom: `1px solid ${BRAND.line}` }}>
         <nav style={{ maxWidth: 1220, margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24 }}>
