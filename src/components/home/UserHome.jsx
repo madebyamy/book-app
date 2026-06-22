@@ -90,25 +90,6 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
         </div>
       )}
 
-      {/* How it works — compact guide strip */}
-      <div style={{ background: BRAND.paper, borderBottom: `1px solid ${BRAND.line}` }}>
-        <div style={{ maxWidth: 1220, margin: "0 auto", padding: "18px 30px", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: "0" }}>
-          {[
-            { icon: "📖", label: "Now Reading", desc: "Open a book → click 'Track my reading' → log your page here each day. Set a goal date and we'll tell you how many pages you need daily to finish on time." },
-            { icon: "🏆", label: "Reading Challenge", desc: "Set a yearly goal — e.g. 24 books in 2026. Mark a book as read in the catalogue and it counts automatically. Compare progress with friends." },
-            { icon: "🗂", label: "Card Catalogue", desc: "Pull a drawer to browse your shelf. Click a card to open it — log notes, quotes, and mark your reading status. Hover a card to rate it." },
-          ].map(({ icon, label, desc }, i) => (
-            <div key={i} style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: "14px 20px", borderLeft: i > 0 ? `1px solid ${BRAND.line}` : "none" }}>
-              <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0, marginTop: 2 }}>{icon}</span>
-              <div>
-                <div style={{ fontFamily: FONT.body, fontWeight: 500, fontSize: 13, color: BRAND.ink, marginBottom: 4 }}>{label}</div>
-                <div style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.55, color: BRAND.muted }}>{desc}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       <div style={{ maxWidth: 1220, margin: "0 auto", padding: "34px 30px 40px" }}>
         <div style={{ marginBottom: 26 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 10, fontFamily: FONT.body, fontSize: 11.5, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.terracotta, marginBottom: 14 }}>
@@ -122,6 +103,11 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
         </div>
 
         {/* Now Reading Tracker */}
+        <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
+          <span style={{ fontFamily: FONT.display, fontStyle: "italic", fontSize: 17, color: BRAND.terracotta }}>Now Reading</span>
+          <span style={{ flex: 1, height: 1, background: BRAND.line, display: "block", alignSelf: "center" }} />
+          <span style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13.5, color: BRAND.muted }}>Open a book in the catalogue → click <em style={{ color: BRAND.ink }}>"Track my reading"</em> → log your page here each day.</span>
+        </div>
         <section style={{ background: BRAND.espresso, borderRadius: 6, padding: "26px 28px 28px", boxShadow: "0 4px 12px rgba(20,30,50,.10)", marginBottom: 22 }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 22 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -235,12 +221,22 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
           </div>
         </section>
 
-        <section style={{ marginTop: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10, marginTop: 30 }}>
+          <span style={{ fontFamily: FONT.display, fontStyle: "italic", fontSize: 17, color: BRAND.terracotta, whiteSpace: "nowrap" }}>Reading Challenge</span>
+          <span style={{ flex: 1, height: 1, background: BRAND.line, display: "block" }} />
+          <span style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13.5, color: BRAND.muted, textAlign: "right" }}>Set a yearly goal. Books you mark <em style={{ color: BRAND.ink }}>"read"</em> count automatically. Compare with friends.</span>
+        </div>
+        <section style={{ marginTop: 0 }}>
           <BookChallenge userId={user.id} userAccent={user.accent} friends={friends} tooltipText={tooltips?.challenge} />
         </section>
 
         {/* Card Catalogue inline */}
-        <div id="card-catalogue" style={{ marginTop: 22 }}>
+        <div id="card-catalogue" style={{ marginTop: 30 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+            <span style={{ fontFamily: FONT.display, fontStyle: "italic", fontSize: 17, color: BRAND.terracotta, whiteSpace: "nowrap" }}>Card Catalogue</span>
+            <span style={{ flex: 1, height: 1, background: BRAND.line, display: "block" }} />
+            <span style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13.5, color: BRAND.muted, textAlign: "right" }}>Pull a drawer to browse. Click a card to open notes, quotes & status. <em style={{ color: BRAND.ink }}>Hover a card to rate it with stars.</em></span>
+          </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.terracotta }}>Card Catalogue</div>
             <button onClick={onOpenMyBooks} style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.coral, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.03em" }}>Marginalia →</button>

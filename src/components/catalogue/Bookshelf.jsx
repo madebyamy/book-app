@@ -127,77 +127,38 @@ function IndexCard({ book, delay, onOpen, onDelete, onRate }) {
 
 const SFX_KEY = "bookbrain:sfx";
 
-function playDrawerCloseSound() {
+// Load drawer audio once; split at midpoint for open vs close
+let _actx = null;
+let _drawerBuf = null;
+
+async function _loadDrawerAudio() {
+  if (_drawerBuf) return;
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // Short slide back
-    const bufLen = Math.floor(ctx.sampleRate * 0.22);
-    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
-    const noise = ctx.createBufferSource(); noise.buffer = buf;
-    const filter = ctx.createBiquadFilter(); filter.type = "bandpass"; filter.frequency.value = 420; filter.Q.value = 0.7;
-    const ng = ctx.createGain();
-    ng.gain.setValueAtTime(0.22, ctx.currentTime);
-    ng.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
-    noise.connect(filter); filter.connect(ng); ng.connect(ctx.destination);
-    noise.start(); noise.stop(ctx.currentTime + 0.22);
-    // Hard stop thud
-    const osc = ctx.createOscillator(); const og = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(160, ctx.currentTime + 0.18);
-    osc.frequency.exponentialRampToValueAtTime(55, ctx.currentTime + 0.3);
-    og.gain.setValueAtTime(0.85, ctx.currentTime + 0.18);
-    og.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.34);
-    osc.connect(og); og.connect(ctx.destination);
-    osc.start(ctx.currentTime + 0.18); osc.stop(ctx.currentTime + 0.34);
+    _actx = new (window.AudioContext || window.webkitAudioContext)();
+    const res = await fetch("/drawer-sound.mp3");
+    const ab = await res.arrayBuffer();
+    _drawerBuf = await _actx.decodeAudioData(ab);
   } catch {}
 }
 
+function _playSegment(start, duration) {
+  if (!_drawerBuf || !_actx) return;
+  if (_actx.state === "suspended") _actx.resume();
+  const src = _actx.createBufferSource();
+  src.buffer = _drawerBuf;
+  src.connect(_actx.destination);
+  src.start(0, start, duration);
+}
+
 function playDrawerSound() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!_drawerBuf) return;
+  _playSegment(0, _drawerBuf.duration / 2);
+}
 
-    // Low wooden thud — initial pull
-    const thud = ctx.createOscillator();
-    const thudGain = ctx.createGain();
-    thud.type = "sine";
-    thud.frequency.setValueAtTime(90, ctx.currentTime);
-    thud.frequency.exponentialRampToValueAtTime(38, ctx.currentTime + 0.14);
-    thudGain.gain.setValueAtTime(0.9, ctx.currentTime);
-    thudGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-    thud.connect(thudGain); thudGain.connect(ctx.destination);
-    thud.start(); thud.stop(ctx.currentTime + 0.2);
-
-    // Wooden slide noise
-    const bufLen = Math.floor(ctx.sampleRate * 0.32);
-    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
-    const noise = ctx.createBufferSource();
-    noise.buffer = buf;
-    const filter = ctx.createBiquadFilter();
-    filter.type = "bandpass";
-    filter.frequency.value = 320;
-    filter.Q.value = 0.6;
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(0, ctx.currentTime + 0.04);
-    noiseGain.gain.linearRampToValueAtTime(0.28, ctx.currentTime + 0.1);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.38);
-    noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(ctx.destination);
-    noise.start(ctx.currentTime + 0.04); noise.stop(ctx.currentTime + 0.38);
-
-    // Final stop thud
-    const stop = ctx.createOscillator();
-    const stopGain = ctx.createGain();
-    stop.type = "sine";
-    stop.frequency.setValueAtTime(110, ctx.currentTime + 0.32);
-    stop.frequency.exponentialRampToValueAtTime(55, ctx.currentTime + 0.44);
-    stopGain.gain.setValueAtTime(0.7, ctx.currentTime + 0.32);
-    stopGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.48);
-    stop.connect(stopGain); stopGain.connect(ctx.destination);
-    stop.start(ctx.currentTime + 0.32); stop.stop(ctx.currentTime + 0.48);
-  } catch {}
+function playDrawerCloseSound() {
+  if (!_drawerBuf) return;
+  const half = _drawerBuf.duration / 2;
+  _playSegment(half, _drawerBuf.duration - half);
 }
 
 export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged, inline = false }) {
@@ -217,6 +178,8 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
   const [soundEnabled, setSoundEnabled] = useState(() => {
     try { return localStorage.getItem(SFX_KEY) !== "off"; } catch { return true; }
   });
+
+  useEffect(() => { _loadDrawerAudio(); }, []);
 
   useEffect(() => {
     let active = true;
