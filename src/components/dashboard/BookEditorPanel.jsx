@@ -5,6 +5,8 @@ export function BookEditorPanel({ userId, book, theme, onSaved }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [filling, setFilling] = useState(false);
+  const [fillError, setFillError] = useState("");
 
   const [title, setTitle]     = useState(book.title || "");
   const [subtitle, setSubtitle] = useState(book.subtitle || "");
@@ -29,6 +31,44 @@ export function BookEditorPanel({ userId, book, theme, onSaved }) {
   const iStyle = { background: `${theme.bg}`, border: `1px solid ${theme.border}`, color: theme.ink, fontFamily: theme.body, fontSize: "0.85rem", padding: "0.5rem 0.75rem", borderRadius: 3, width: "100%", boxSizing: "border-box" };
   const taStyle = { ...iStyle, resize: "vertical", minHeight: 68 };
   const labelStyle = { fontFamily: theme.mono, fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: book.accent, display: "block", marginBottom: "0.3rem", marginTop: "0.8rem" };
+
+  const handleAutoFill = async () => {
+    setFilling(true);
+    setFillError("");
+    try {
+      const res = await fetch("/api/analyze-book", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title: book.title, author: book.author }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      if (data.tagline)  setTagline(data.tagline);
+      if (data.thread)   setThread(data.thread);
+      if (data.keyLines?.length)  setKeyLines(data.keyLines);
+      if (data.nodes?.length) {
+        setNodes(data.nodes.map((n) => ({
+          tag: n.tag || "",
+          title: n.title || "",
+          dek: n.dek || "",
+          points: n.points?.length ? n.points : [""],
+        })));
+      }
+      if (data.caseFile?.title) {
+        setCfTag(data.caseFile.tag || "");
+        setCfMeta(data.caseFile.meta || "");
+        setCfTitle(data.caseFile.title || "");
+        setCfStory(data.caseFile.story?.length ? data.caseFile.story : [""]);
+        setCfArgument(data.caseFile.argument || "");
+      }
+    } catch (err) {
+      setFillError(String(err.message || err));
+    }
+    setFilling(false);
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -73,6 +113,26 @@ export function BookEditorPanel({ userId, book, theme, onSaved }) {
       </button>
       {open && (
         <div style={{ padding: "1.2rem 1.4rem", background: theme.card, display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+
+          {/* Auto-fill from AI */}
+          <div style={{ marginBottom: "1rem", padding: "0.9rem 1rem", background: `${accent}10`, border: `1px solid ${accent}30`, borderRadius: 5 }}>
+            <div style={{ fontFamily: theme.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: accent, marginBottom: "0.4rem" }}>✨ Auto-fill from online</div>
+            <p style={{ fontFamily: theme.mono, fontSize: "0.68rem", color: theme.inkFaint, margin: "0 0 0.7rem", lineHeight: 1.5 }}>
+              Fetches a description from Google Books, then uses AI to generate the tagline, argument, key ideas, key lines, and highlighted story. Review before saving.
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", flexWrap: "wrap" }}>
+              <button
+                onClick={handleAutoFill}
+                disabled={filling}
+                style={{ background: accent, border: "none", color: theme.headerInk || "#fff", fontFamily: theme.mono, fontSize: "0.72rem", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 700, padding: "0.6rem 1.2rem", borderRadius: 3, cursor: filling ? "default" : "pointer", opacity: filling ? 0.7 : 1, transition: "opacity .2s" }}>
+                {filling ? "Fetching & analysing…" : "✨ Auto-fill fields"}
+              </button>
+              {fillError && (
+                <span style={{ fontFamily: theme.mono, fontSize: "0.68rem", color: "#c0392b" }}>⚠ {fillError}</span>
+              )}
+            </div>
+          </div>
+
           <span style={labelStyle}>Basic Info</span>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginBottom: "0.4rem" }}>
             <div><label style={labelStyle}>Title</label><input value={title} onChange={(e) => setTitle(e.target.value)} style={iStyle} /></div>
