@@ -216,18 +216,18 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
           </div>
         </section>
 
+        <section style={{ marginTop: 8 }}>
+          <BookChallenge userId={user.id} userAccent={user.accent} friends={friends} tooltipText={tooltips?.challenge} />
+        </section>
+
         {/* Card Catalogue inline */}
-        <div id="card-catalogue">
+        <div id="card-catalogue" style={{ marginTop: 22 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.terracotta }}>Card Catalogue</div>
             <button onClick={onOpenMyBooks} style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.coral, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.03em" }}>Marginalia →</button>
           </div>
           <Bookshelf userId={user.id} userAccent={user.accent} onBooksChanged={onBooksChanged} inline />
         </div>
-
-        <section style={{ marginTop: 8 }}>
-          <BookChallenge userId={user.id} userAccent={user.accent} friends={friends} tooltipText={tooltips?.challenge} />
-        </section>
       </div>
 
       {friends.length > 0 && (
