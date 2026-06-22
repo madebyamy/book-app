@@ -270,6 +270,28 @@ async function saveBooks(userId, list) {
   try { await storage.set(unifiedBooksKey(userId), JSON.stringify(list)); return true; } catch { return false; }
 }
 
+// Returns true if two book records refer to the same work
+function booksMatch(a, b) {
+  if (a.workId && b.workId) return a.workId === b.workId;
+  const norm = (s) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  return norm(a.title) === norm(b.title) && norm(a.author) === norm(b.author);
+}
+
+// Load a friend's shared book that matches the given book, along with their quotes/progress
+async function loadFriendSharedData(friendId, myBook) {
+  try {
+    const friendBooks = await loadBooks(friendId);
+    const match = friendBooks.find((b) => b.shared && b.inMarginalia && booksMatch(b, myBook));
+    if (!match) return null;
+    const [quotes, progress, status] = await Promise.all([
+      loadQuotes(friendId, match.id),
+      loadProgress(friendId, match.id),
+      loadStatus(friendId, match.id),
+    ]);
+    return { book: match, quotes, progress, status };
+  } catch { return null; }
+}
+
 function todayISO() {
   const d = new Date();
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -916,11 +938,84 @@ const MARGINALIA_THEME = {
   displayWeight: 600, headerBg: BRAND.espresso, headerInk: BRAND.cream,
 };
 
+function FriendsReadingThis({ userId, book }) {
+  const [friendData, setFriendData] = useState([]); // [{friend, data}]
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const connections = await loadConnections();
+      const friends = getConnectedUsers(userId, connections);
+      const results = await Promise.all(friends.map(async (friend) => {
+        const data = await loadFriendSharedData(friend.id, book);
+        return data ? { friend, data } : null;
+      }));
+      if (active) { setFriendData(results.filter(Boolean)); setLoaded(true); }
+    })();
+    return () => { active = false; };
+  }, [userId, book.id, book.shared]);
+
+  if (!loaded || friendData.length === 0) return null;
+
+  return (
+    <div style={{ marginTop: "2.4rem", borderTop: `1px solid ${BRAND.line}`, paddingTop: "2rem" }}>
+      <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: BRAND.muted, marginBottom: "1.2rem" }}>Also reading this</div>
+      {friendData.map(({ friend, data }) => {
+        const pct = data.progress?.totalPages ? Math.round((data.progress.currentPage / data.progress.totalPages) * 100) : null;
+        return (
+          <div key={friend.id} style={{ background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 5, padding: "18px 20px", marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <div style={{ width: 34, height: 34, borderRadius: "50%", background: friend.accent || BRAND.terracotta, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.display, fontWeight: 600, fontSize: 15, color: "#fff", flexShrink: 0 }}>{friend.name[0]}</div>
+              <div>
+                <div style={{ fontFamily: FONT.body, fontWeight: 500, fontSize: 14, color: BRAND.ink }}>{friend.name}</div>
+                {pct !== null && (
+                  <div style={{ fontFamily: FONT.body, fontSize: 12, color: BRAND.muted, marginTop: 2 }}>{pct}% through · p.{data.progress.currentPage} of {data.progress.totalPages}</div>
+                )}
+              </div>
+              {data.status && (
+                <div style={{ marginLeft: "auto", fontFamily: FONT.body, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: BRAND.terracotta, background: "rgba(191,117,90,.1)", border: "1px solid rgba(191,117,90,.25)", borderRadius: 3, padding: "4px 9px" }}>{data.status.replace(/-/g, " ")}</div>
+              )}
+            </div>
+            {pct !== null && (
+              <div style={{ height: 4, borderRadius: 2, background: BRAND.line, marginBottom: 12, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${pct}%`, background: BRAND.terracotta, borderRadius: 2, transition: "width .4s" }} />
+              </div>
+            )}
+            {data.book.tagline && (
+              <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 14, lineHeight: 1.6, color: BRAND.ink, marginBottom: data.quotes?.length ? 12 : 0 }}>{data.book.tagline}</div>
+            )}
+            {data.quotes?.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ fontFamily: FONT.body, fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: BRAND.muted }}>Highlights</div>
+                {data.quotes.slice(0, 3).map((q) => (
+                  <div key={q.id} style={{ borderLeft: `2px solid ${BRAND.terracotta}`, paddingLeft: 12 }}>
+                    <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13.5, lineHeight: 1.55, color: BRAND.ink }}>"{q.text}"</div>
+                    {q.page && <div style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.muted, marginTop: 3 }}>p. {q.page}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function BookDashboard({ userId, book: initialBook, onBack, onLogout }) {
   const [book, setBook] = useState(initialBook);
   const theme = { ...(book.theme ? DEFAULT_THEME : MARGINALIA_THEME), ...(book.theme || {}) };
   const hasAcademic = !!(book.nodes && book.nodes.length && book.caseFile && book.keyLines && book.thread);
   const [openNode, setOpenNode] = useState(null);
+  const isUserBook = book.id.startsWith("book-") || book.id.startsWith("shelf-");
+
+  const handleToggleShared = async () => {
+    const allBooks = await loadBooks(userId);
+    const updated = allBooks.map((b) => b.id === book.id ? { ...b, shared: !b.shared } : b);
+    await saveBooks(userId, updated);
+    setBook((prev) => ({ ...prev, shared: !prev.shared }));
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: theme.bg, color: theme.ink }}>
@@ -948,6 +1043,23 @@ function BookDashboard({ userId, book: initialBook, onBack, onLogout }) {
         <BookEditorPanel userId={userId} book={book} theme={theme} onSaved={setBook} />
         {hasAcademic && <AcademicSections book={book} theme={theme} openNode={openNode} setOpenNode={setOpenNode} />}
         <YourQuotes userId={userId} book={book} />
+
+        {/* Share toggle — only for user-added books in Marginalia */}
+        {isUserBook && (
+          <div style={{ marginTop: "2.4rem", borderTop: `1px solid ${BRAND.line}`, paddingTop: "1.6rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+            <div>
+              <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: BRAND.muted, marginBottom: 4 }}>Share with connections</div>
+              <div style={{ fontFamily: FONT.read, fontSize: 13.5, color: BRAND.muted, lineHeight: 1.5 }}>
+                {book.shared ? "Your notes and highlights are visible to connected readers who also have this book." : "Share your notes and highlights with connected readers who have this book."}
+              </div>
+            </div>
+            <button onClick={handleToggleShared} style={{ flexShrink: 0, fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: book.shared ? BRAND.terracotta : "transparent", border: `1px solid ${book.shared ? BRAND.terracotta : BRAND.line2}`, color: book.shared ? "#fff" : BRAND.muted, padding: "9px 18px", borderRadius: 3, cursor: "pointer", transition: "all .2s", whiteSpace: "nowrap" }}>
+              {book.shared ? "✓ Shared" : "Share"}
+            </button>
+          </div>
+        )}
+
+        <FriendsReadingThis userId={userId} book={book} />
         <BookChat userId={userId} book={book} />
       </div>
     </div>
@@ -1055,7 +1167,10 @@ function CatalogCard({ userId, book, onSelect, onDelete }) {
               <div style={{ height: 1, background: BRAND.rule, opacity: 0.25 }} />
             </div>
             <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontFamily: FONT.type, fontSize: 9.5, color: BRAND.muted }}>{book.year}{book.pages ? ` · ${book.pages} pp` : ""}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                <span style={{ fontFamily: FONT.type, fontSize: 9.5, color: BRAND.muted }}>{book.year}{book.pages ? ` · ${book.pages} pp` : ""}</span>
+                {book.shared && <span style={{ fontFamily: FONT.body, fontSize: 9.5, letterSpacing: ".08em", textTransform: "uppercase", color: BRAND.terracotta, background: "rgba(191,117,90,.12)", border: "1px solid rgba(191,117,90,.3)", borderRadius: 3, padding: "1px 6px" }}>Shared</span>}
+              </div>
               <span style={{ fontFamily: FONT.body, fontSize: 11.5, color: BRAND.coral }}>{date ? formatCatalogDate(date) : ""} Read card →</span>
             </div>
           </div>
@@ -1451,6 +1566,7 @@ function AddBookModal({ drawers, onAdd, onClose }) {
   const [fetching, setFetching] = useState(false);
   const [fetchedPreview, setFetchedPreview] = useState(null);
   const [fetchError, setFetchError] = useState("");
+  const [workId, setWorkId] = useState(null);
 
   const fetchBookInfo = async () => {
     if (!title.trim()) return;
@@ -1517,12 +1633,14 @@ function AddBookModal({ drawers, onAdd, onClose }) {
         } catch {}
       }
 
+      const foundWorkId = olDoc?.key || null;
       if (desc) setSummary(desc);
       if (foundPages) setPages(String(foundPages));
       if (foundAuthor) setAuthor(foundAuthor);
       if (foundTitle) setTitle(foundTitle);
       if (foundYear) setYear(foundYear);
       if (foundCover) setCover(foundCover);
+      if (foundWorkId) setWorkId(foundWorkId);
       setFetchedPreview({ title: foundTitle, author: foundAuthor, cover: foundCover, desc, pages: foundPages });
     } catch (err) {
       setFetchError("Lookup failed. Check your connection and try again.");
@@ -1562,7 +1680,7 @@ function AddBookModal({ drawers, onAdd, onClose }) {
       } catch {}
       setFetching(false);
     }
-    onAdd({ title: title.trim(), author: author.trim(), pages: finalPages, summary: finalSummary, cover: finalCover, year: finalYear, drawerId });
+    onAdd({ title: title.trim(), author: author.trim(), pages: finalPages, summary: finalSummary, cover: finalCover, year: finalYear, drawerId, workId: workId || null });
   };
 
   const inputStyle = { width: "100%", fontFamily: FONT.body, fontSize: 14, color: BRAND.ink, background: BRAND.cream, border: `1px solid ${BRAND.line2}`, borderRadius: 3, padding: "10px 12px", outline: "none", boxSizing: "border-box" };
@@ -1809,10 +1927,10 @@ function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged }) {
     if (openDrawer === id) setOpenDrawer(null);
   };
 
-  const handleAddBook = async ({ title, author, pages, summary, cover, year, drawerId }) => {
+  const handleAddBook = async ({ title, author, pages, summary, cover, year, drawerId, workId }) => {
     const id = `book-${userId}-${Date.now().toString(36)}`;
     const targetDrawer = drawerId || openDrawer || "want";
-    const newBook = { id, title, author, pages: pages || null, summary: summary || null, cover: cover || null, year: year || null, accent: userAccent, drawerId: targetDrawer, inMarginalia: false, nodes: [], theme: null };
+    const newBook = { id, title, author, pages: pages || null, summary: summary || null, cover: cover || null, year: year || null, accent: userAccent, drawerId: targetDrawer, inMarginalia: false, shared: false, workId: workId || null, nodes: [], theme: null };
     const updated = [...allBooks, newBook];
     await updateBooks(updated);
     await saveStatus(userId, id, DRAWER_TO_STATUS[targetDrawer] || "to-read");
