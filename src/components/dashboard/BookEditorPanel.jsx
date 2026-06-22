@@ -56,7 +56,7 @@ export function BookEditorPanel({ userId, book, theme, onSaved }) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `HTTP ${res.status}`);
+        throw new Error(err.detail ? `${err.error}: ${err.detail}` : err.error || `HTTP ${res.status}`);
       }
       const data = await res.json();
       if (data.tagline)  setTagline(data.tagline);
