@@ -34,20 +34,19 @@ export function BookChat({ userId, book, theme }) {
     setInput("");
     setSending(true);
     try {
-      const CHAT_ENDPOINT = import.meta.env.VITE_CHAT_ENDPOINT;
-      if (!CHAT_ENDPOINT) throw new Error("NO_ENDPOINT_CONFIGURED");
-      const response = await fetch(CHAT_ENDPOINT, {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ system: systemPrompt, messages: updated.map(m => ({ role: m.role, content: m.content })) }),
       });
       const data = await response.json();
-      const replyText = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n\n").trim() || "I wasn't able to generate a response.";
+      if (!response.ok) throw new Error(data.error || "API error");
+      const replyText = data.reply || "I wasn't able to generate a response.";
       const final = [...updated, { role: "assistant", content: replyText }];
       setMessages(final);
       await saveChat(userId, book.id, final);
     } catch (err) {
-      setError(err.message === "NO_ENDPOINT_CONFIGURED" ? "Chat isn't wired up yet — set VITE_CHAT_ENDPOINT to your backend's chat route." : "Something went wrong. Try again.");
+      setError("Something went wrong. Try again.");
       setMessages(updated);
     } finally {
       setSending(false);
@@ -76,14 +75,14 @@ export function BookChat({ userId, book, theme }) {
           ) : (
             messages.map((m, i) => (
               <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: m.role === "user" ? "flex-end" : "flex-start" }}>
-                <span style={{ fontFamily: theme.mono, fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: m.role === "user" ? book.accent : theme.inkFaint, marginBottom: "0.35rem" }}>{m.role === "user" ? "You" : "Claude"}</span>
+                <span style={{ fontFamily: theme.mono, fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: m.role === "user" ? book.accent : theme.inkFaint, marginBottom: "0.35rem" }}>{m.role === "user" ? "You" : "Gemini"}</span>
                 <div style={{ maxWidth: "85%", background: m.role === "user" ? `${book.accent}14` : "transparent", border: m.role === "user" ? `1px solid ${book.accent}55` : "none", borderRadius: 3, padding: m.role === "user" ? "0.7rem 0.95rem" : 0, fontSize: "0.88rem", lineHeight: 1.6, color: theme.ink, whiteSpace: "pre-wrap" }}>{m.content}</div>
               </div>
             ))
           )}
           {sending && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-              <span style={{ fontFamily: theme.mono, fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: theme.inkFaint, marginBottom: "0.35rem" }}>Claude</span>
+              <span style={{ fontFamily: theme.mono, fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: theme.inkFaint, marginBottom: "0.35rem" }}>Gemini</span>
               <div style={{ fontSize: "0.85rem", color: theme.inkFaint, fontFamily: theme.mono }}>researching…</div>
             </div>
           )}
