@@ -44,8 +44,8 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
         return { ...b, prog, status, dateAdded };
       })
     );
-    const trackers = withProgress.filter((b) => b.prog?.tracking === true && b.pages && (b.prog.pagesRead || 0) < b.pages);
-    setNowReading(trackers.map((b) => ({ ...b, pagesRead: b.prog.pagesRead || 0 })));
+    const trackers = withProgress.filter((b) => b.prog?.tracking === true && b.pages && (b.prog.pagesRead ?? b.prog.currentPage ?? 0) < b.pages);
+    setNowReading(trackers.map((b) => ({ ...b, pagesRead: b.prog.pagesRead ?? b.prog.currentPage ?? 0 })));
     const readThisYear = withProgress.filter((b) => {
       if (b.status !== "read") return false;
       const date = b.prog?.dateFinished || b.dateAdded;

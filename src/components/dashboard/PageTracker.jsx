@@ -6,7 +6,7 @@ export function PageTracker({ userId, book, theme }) {
   theme = theme || book.theme || {};
   const accent = book.accent;
   const [loaded, setLoaded] = useState(false);
-  const [saved, setSaved] = useState({ totalPages: 300, currentPage: 0, finishDate: "", dateFinished: "", tracking: false });
+  const [saved, setSaved] = useState({ totalPages: 300, pagesRead: 0, finishDate: "", dateFinished: "", tracking: false });
   const [totalDraft, setTotalDraft] = useState("300");
   const [pageDraft, setPageDraft] = useState("0");
   const [finishDateDraft, setFinishDateDraft] = useState("");
@@ -24,14 +24,14 @@ export function PageTracker({ userId, book, theme }) {
       if (!active) return;
       const next = {
         totalPages: data?.totalPages ?? (book.pages || 300),
-        currentPage: data?.currentPage ?? 0,
+        pagesRead: data?.pagesRead ?? data?.currentPage ?? 0,
         finishDate: data?.finishDate ?? "",
         dateFinished: data?.dateFinished ?? "",
         tracking: data?.tracking ?? false,
       };
       setSaved(next);
       setTotalDraft(String(next.totalPages));
-      setPageDraft(String(next.currentPage));
+      setPageDraft(String(next.pagesRead));
       setFinishDateDraft(next.finishDate);
       setDateFinishedDraft(next.dateFinished);
       setLoaded(true);
@@ -39,19 +39,20 @@ export function PageTracker({ userId, book, theme }) {
     return () => { active = false; };
   }, [userId, book.id]);
 
-  const isDirty = totalDraft !== String(saved.totalPages) || pageDraft !== String(saved.currentPage) || finishDateDraft !== saved.finishDate || dateFinishedDraft !== saved.dateFinished;
+  const isDirty = totalDraft !== String(saved.totalPages) || pageDraft !== String(saved.pagesRead) || finishDateDraft !== saved.finishDate || dateFinishedDraft !== saved.dateFinished;
 
   const handleSave = async () => {
     setSaving(true); setSaveError(null);
     const total = Math.max(1, parseInt(totalDraft, 10) || 1);
     const current = Math.max(0, Math.min(total, parseInt(pageDraft, 10) || 0));
-    const justFinished = current >= total && saved.currentPage < saved.totalPages;
+    const justFinished = current >= total && saved.pagesRead < saved.totalPages;
     const dateFinishedFinal = dateFinishedDraft || (justFinished ? todayISO() : "");
-    const next = { ...saved, totalPages: total, currentPage: current, finishDate: finishDateDraft, dateFinished: dateFinishedFinal };
+    const next = { ...saved, totalPages: total, pagesRead: current, finishDate: finishDateDraft, dateFinished: dateFinishedFinal };
     const ok = await saveProgress(userId, book.id, next);
     if (!ok) { setSaving(false); setSaveError("Save failed — try again."); return; }
     setSaving(false);
     setSaved(next); setTotalDraft(String(total)); setPageDraft(String(current)); setDateFinishedDraft(dateFinishedFinal);
+
     setJustSaved(true); setTimeout(() => setJustSaved(false), 1800);
   };
 
@@ -69,7 +70,7 @@ export function PageTracker({ userId, book, theme }) {
 
   const handleLogPages = async () => {
     const current = Math.max(0, Math.min(saved.totalPages, parseInt(logDraft, 10) || 0));
-    const next = { ...saved, currentPage: current };
+    const next = { ...saved, pagesRead: current };
     await saveProgress(userId, book.id, next);
     setSaved(next);
     setPageDraft(String(current));
@@ -85,6 +86,7 @@ export function PageTracker({ userId, book, theme }) {
   const pct = totalPages > 0 ? Math.min(100, Math.round((currentPage / totalPages) * 100)) : 0;
   const pagesLeft = Math.max(0, totalPages - currentPage);
   const finished = currentPage >= totalPages && totalPages > 0;
+
   const stops = 10;
 
   let paceMessage = null;
@@ -127,7 +129,7 @@ export function PageTracker({ userId, book, theme }) {
               </>
             ) : (
               <>
-                <button onClick={() => { setLogDraft(String(saved.currentPage)); setLoggingPages(true); }}
+                <button onClick={() => { setLogDraft(String(saved.pagesRead)); setLoggingPages(true); }}
                   style={{ background: accent, border: "none", color: theme.headerInk, fontFamily: theme.mono, fontSize: "0.68rem", letterSpacing: "0.05em", textTransform: "uppercase", padding: "0.35rem 0.8rem", borderRadius: 3, cursor: "pointer", fontWeight: 700 }}>
                   + Log pages
                 </button>
