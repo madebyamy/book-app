@@ -8,7 +8,8 @@ export function BookChat({ userId, book, theme }) {
   const [loaded, setLoaded] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
-  const [expanded, setExpanded] = useState(false);
+  // "normal" | "expanded" | "collapsed"
+  const [openState, setOpenState] = useState("normal");
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -64,14 +65,17 @@ export function BookChat({ userId, book, theme }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "0.8rem", marginBottom: "1.2rem" }}>
         <h3 style={{ fontFamily: theme.display, fontWeight: theme.displayWeight, fontSize: "1.3rem", margin: 0, color: theme.ink }}>Down the rabbit hole</h3>
         <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-          {messages.length > 0 && (
+          {messages.length > 0 && openState !== "collapsed" && (
             <button onClick={handleClear} style={{ background: "none", border: `1px solid ${theme.border}`, color: theme.inkSoft, fontFamily: theme.mono, fontSize: "0.68rem", letterSpacing: "0.05em", textTransform: "uppercase", padding: "0.35rem 0.7rem", borderRadius: 3, cursor: "pointer" }}>Clear chat</button>
           )}
-          <button onClick={() => setExpanded(e => !e)} style={{ background: "none", border: `1px solid ${theme.border}`, color: theme.inkSoft, fontFamily: theme.mono, fontSize: "0.68rem", letterSpacing: "0.05em", textTransform: "uppercase", padding: "0.35rem 0.7rem", borderRadius: 3, cursor: "pointer" }}>{expanded ? "↙ Collapse" : "↗ Expand"}</button>
+          {openState !== "collapsed" && (
+            <button onClick={() => setOpenState(s => s === "expanded" ? "normal" : "expanded")} style={{ background: "none", border: `1px solid ${theme.border}`, color: theme.inkSoft, fontFamily: theme.mono, fontSize: "0.68rem", letterSpacing: "0.05em", textTransform: "uppercase", padding: "0.35rem 0.7rem", borderRadius: 3, cursor: "pointer" }}>{openState === "expanded" ? "↙ Shrink" : "↗ Expand"}</button>
+          )}
+          <button onClick={() => setOpenState(s => s === "collapsed" ? "normal" : "collapsed")} style={{ background: "none", border: `1px solid ${theme.border}`, color: theme.inkSoft, fontFamily: theme.mono, fontSize: "0.68rem", letterSpacing: "0.05em", textTransform: "uppercase", padding: "0.35rem 0.7rem", borderRadius: 3, cursor: "pointer" }}>{openState === "collapsed" ? "▼ Open" : "▲ Close"}</button>
         </div>
       </div>
-      <div style={{ background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 4, overflow: "hidden" }}>
-        <div ref={scrollRef} style={{ maxHeight: expanded ? "70vh" : 420, minHeight: 140, overflowY: "auto", padding: "1.4rem 1.6rem", display: "flex", flexDirection: "column", gap: "1rem", transition: "max-height 0.3s ease" }}>
+      {openState !== "collapsed" && <div style={{ background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 4, overflow: "hidden" }}>
+        <div ref={scrollRef} style={{ maxHeight: openState === "expanded" ? "70vh" : 420, minHeight: 140, overflowY: "auto", padding: "1.4rem 1.6rem", display: "flex", flexDirection: "column", gap: "1rem", transition: "max-height 0.3s ease" }}>
           {!loaded ? (
             <div style={{ fontFamily: theme.mono, fontSize: "0.8rem", color: theme.inkFaint }}>Loading conversation…</div>
           ) : messages.length === 0 ? (
@@ -96,7 +100,7 @@ export function BookChat({ userId, book, theme }) {
           <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask anything — start here or go wherever it leads…" disabled={sending} style={{ flex: 1, background: theme.bg, border: `1px solid ${theme.border}`, color: theme.ink, fontFamily: theme.body, fontSize: "0.88rem", padding: "0.65rem 0.9rem", borderRadius: 3 }} />
           <button type="submit" disabled={sending || !input.trim()} style={{ background: book.accent, border: "none", color: theme.headerInk, fontFamily: theme.mono, fontSize: "0.74rem", letterSpacing: "0.05em", textTransform: "uppercase", padding: "0.65rem 1.1rem", borderRadius: 3, cursor: sending ? "default" : "pointer", fontWeight: 600, opacity: sending || !input.trim() ? 0.5 : 1 }}>Send</button>
         </form>
-      </div>
+      </div>}
     </div>
   );
 }
