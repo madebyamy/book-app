@@ -44,8 +44,11 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
         return { ...b, prog, status, dateAdded };
       })
     );
-    const trackers = withProgress.filter((b) => b.prog?.tracking === true && b.pages && (b.prog.pagesRead ?? b.prog.currentPage ?? 0) < b.pages);
-    setNowReading(trackers.map((b) => ({ ...b, pagesRead: b.prog.pagesRead ?? b.prog.currentPage ?? 0 })));
+    const trackers = withProgress.filter((b) => {
+      const total = b.prog?.totalPages ?? b.pages;
+      return b.prog?.tracking === true && total && (b.prog.pagesRead ?? b.prog.currentPage ?? 0) < total;
+    });
+    setNowReading(trackers.map((b) => ({ ...b, pagesRead: b.prog.pagesRead ?? b.prog.currentPage ?? 0, totalPages: b.prog?.totalPages ?? b.pages })));
     const readThisYear = withProgress.filter((b) => {
       if (b.status !== "read") return false;
       const date = b.prog?.dateFinished || b.dateAdded;
@@ -60,7 +63,7 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
     const pages = parseInt(logPageInput, 10);
     if (!pages || pages < 0) { setLogBookId(null); return; }
     const existing = book.prog || {};
-    await saveProgress(user.id, book.id, { ...existing, pagesRead: Math.min(pages, book.pages || 9999) });
+    await saveProgress(user.id, book.id, { ...existing, pagesRead: Math.min(pages, existing.totalPages ?? book.pages ?? 9999) });
     setLogBookId(null);
     setLogPageInput("");
     loadTrackers();
@@ -135,7 +138,7 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
                 No trackers yet — open a book and log your page to start tracking.
               </div>
             ) : nowReading.map((book) => {
-              const pct = Math.min(100, Math.round((book.pagesRead / book.pages) * 100));
+              const pct = Math.min(100, Math.round((book.pagesRead / book.totalPages) * 100));
               const spineColors = ["#BF755A","#F25C5C","#D9A282","#9a6a3f","#6B4A3A","#3E7C57","#3a6ea5"];
               const spine = book.accent || spineColors[Math.abs((book.id || "").charCodeAt(0)) % spineColors.length];
               const isLogging = logBookId === book.id;
@@ -143,11 +146,11 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
               // Pages-per-day needed to hit goal date
               let paceLabel = null;
               const finishDate = book.prog?.finishDate;
-              if (finishDate && book.pages) {
+              if (finishDate && book.totalPages) {
                 const today = new Date(); today.setHours(0,0,0,0);
                 const goal = new Date(finishDate + "T00:00:00");
                 const daysLeft = Math.ceil((goal - today) / 86400000);
-                const pagesLeft = book.pages - (book.pagesRead || 0);
+                const pagesLeft = book.totalPages - (book.pagesRead || 0);
                 if (daysLeft > 0 && pagesLeft > 0) {
                   const ppd = Math.ceil(pagesLeft / daysLeft);
                   paceLabel = { ppd, daysLeft, onTrack: ppd <= 50 };
@@ -169,7 +172,7 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
                       </div>
                       <div style={{ textAlign: "right", flexShrink: 0 }}>
                         <div style={{ fontFamily: FONT.body, fontSize: 13, color: "#FBF6E8", fontWeight: 500, whiteSpace: "nowrap" }}>
-                          p. {book.pagesRead} <span style={{ color: "rgba(251,246,232,.5)" }}>/ {book.pages}</span>
+                          p. {book.pagesRead} <span style={{ color: "rgba(251,246,232,.5)" }}>/ {book.totalPages}</span>
                         </div>
                         <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.coral, marginTop: 2 }}>{pct}%</div>
                       </div>
@@ -186,9 +189,9 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
                     )}
                     {isLogging && (
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
-                        <input type="number" min={0} max={book.pages || 9999} value={logPageInput} onChange={(e) => setLogPageInput(e.target.value)}
+                        <input type="number" min={0} max={book.totalPages || 9999} value={logPageInput} onChange={(e) => setLogPageInput(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") handleLogPages(book); if (e.key === "Escape") { setLogBookId(null); setLogPageInput(""); } }}
-                          placeholder={`Current page (max ${book.pages})`} autoFocus
+                          placeholder={`Current page (max ${book.totalPages})`} autoFocus
                           style={{ fontFamily: FONT.body, fontSize: 13, background: "rgba(255,255,255,.1)", border: "1px solid rgba(217,162,130,.4)", borderRadius: 2, color: "#FBF6E8", padding: "6px 10px", width: 180, outline: "none" }} />
                         <button onClick={() => handleLogPages(book)} style={{ fontFamily: FONT.body, fontSize: 12, padding: "6px 13px", borderRadius: 2, border: "none", background: BRAND.coral, color: "#fff", cursor: "pointer" }}>Save</button>
                         <button onClick={() => { setLogBookId(null); setLogPageInput(""); }} style={{ fontFamily: FONT.body, fontSize: 12, padding: "6px 10px", borderRadius: 2, border: "1px solid rgba(251,246,232,.2)", background: "transparent", color: "rgba(251,246,232,.6)", cursor: "pointer" }}>Cancel</button>
