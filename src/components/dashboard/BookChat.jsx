@@ -41,13 +41,13 @@ export function BookChat({ userId, book, theme }) {
         body: JSON.stringify({ system: systemPrompt, messages: updated.map(m => ({ role: m.role, content: m.content })) }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "API error");
+      if (!response.ok) throw new Error(data.detail ? `${data.error}: ${data.detail}` : (data.error || "API error"));
       const replyText = data.reply || "I wasn't able to generate a response.";
       const final = [...updated, { role: "assistant", content: replyText }];
       setMessages(final);
       await saveChat(userId, book.id, final);
     } catch (err) {
-      setError("Something went wrong. Try again.");
+      setError(`Error: ${err.message}`);
       setMessages(updated);
     } finally {
       setSending(false);
