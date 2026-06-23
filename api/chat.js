@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
   });
 
-  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+  const models = ["gemini-2.5-flash", "gemini-1.5-flash"];
 
   for (const model of models) {
     let geminiRes;
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     }
 
     // On 503 (overloaded) or 429 (rate limit), try the next model
-    if (geminiRes.status === 503 || geminiRes.status === 429) continue;
+    if (geminiRes.status === 503 || geminiRes.status === 429 || geminiRes.status === 404) continue;
 
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
