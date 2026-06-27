@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BRAND, FONT } from '../../constants.js';
-import { loadProgress, saveProgress, saveStatus } from '../../lib/books.js';
+import { loadProgress, saveProgress, saveStatus, loadBooks, saveBooks } from '../../lib/books.js';
 
 function spineColor(book) {
   const SPINE_COLORS = ["#BF755A","#F25C5C","#2A201B","#D9A282","#9a6a3f","#6B4A3A","#3E7C57","#3a6ea5"];
@@ -18,6 +18,9 @@ export function BookModal({ userId, book, drawers, currentDrawer, onMove, onClos
   const readHours = estimateReadTime(book.pages);
   const [coverFailed, setCoverFailed] = useState(false);
   const showCover = book.cover && !coverFailed;
+  const [editingSummary, setEditingSummary] = useState(false);
+  const [summaryDraft, setSummaryDraft] = useState(book.summary || book.tagline || "");
+  const [savingSummary, setSavingSummary] = useState(false);
 
   const [prog, setProg] = useState(null);
   const [startDate, setStartDate] = useState("");
@@ -56,6 +59,16 @@ export function BookModal({ userId, book, drawers, currentDrawer, onMove, onClos
     if (onBooksChanged) onBooksChanged();
   };
 
+  const handleSaveSummary = async () => {
+    setSavingSummary(true);
+    const allBooks = await loadBooks(userId);
+    const updated = allBooks.map((b) => b.id === book.id ? { ...b, summary: summaryDraft.trim() } : b);
+    await saveBooks(userId, updated);
+    setSavingSummary(false);
+    setEditingSummary(false);
+    if (onBooksChanged) onBooksChanged();
+  };
+
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 75, background: "rgba(38,32,32,.62)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "cc-fade .2s cubic-bezier(.16,1,.3,1)" }}>
       <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(820px,100%)", maxHeight: "88vh", overflowY: "auto", display: "grid", gridTemplateColumns: "min(280px,40%) 1fr", background: BRAND.paper, borderRadius: 6, border: `1px solid ${BRAND.line}`, boxShadow: "0 16px 40px rgba(20,30,50,.16)", animation: "cc-pop .26s cubic-bezier(.16,1,.3,1)" }}>
@@ -84,9 +97,36 @@ export function BookModal({ userId, book, drawers, currentDrawer, onMove, onClos
           <h2 style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 30, lineHeight: 1.05, color: BRAND.ink, margin: "0 0 4px" }}>{book.title}</h2>
           {book.subtitle && <div style={{ fontFamily: FONT.read, fontSize: 14, color: BRAND.muted, marginBottom: 4 }}>{book.subtitle}</div>}
           <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 15, color: BRAND.muted, marginBottom: 18 }}>by {book.author}</div>
-          {(book.tagline || book.summary) && (
-            <p style={{ fontFamily: FONT.read, fontSize: 15, lineHeight: 1.65, color: BRAND.ink, margin: "0 0 24px" }}>{book.tagline || book.summary}</p>
-          )}
+          <div style={{ marginBottom: 24 }}>
+            {editingSummary ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <textarea value={summaryDraft} onChange={(e) => setSummaryDraft(e.target.value)} rows={5} autoFocus
+                  style={{ fontFamily: FONT.read, fontSize: 14, lineHeight: 1.65, color: BRAND.ink, background: BRAND.cream, border: `1px solid ${BRAND.line2}`, borderRadius: 3, padding: "10px 12px", resize: "vertical", width: "100%", boxSizing: "border-box", outline: "none" }} />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={handleSaveSummary} disabled={savingSummary}
+                    style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: ".04em", background: BRAND.espresso, border: "none", color: BRAND.cream, padding: "7px 16px", borderRadius: 3, cursor: "pointer" }}>
+                    {savingSummary ? "Saving…" : "Save"}
+                  </button>
+                  <button onClick={() => { setEditingSummary(false); setSummaryDraft(book.summary || book.tagline || ""); }}
+                    style={{ fontFamily: FONT.body, fontSize: 12, background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "7px 14px", borderRadius: 3, cursor: "pointer" }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ position: "relative", group: true }}>
+                {summaryDraft ? (
+                  <p style={{ fontFamily: FONT.read, fontSize: 15, lineHeight: 1.65, color: BRAND.ink, margin: 0 }}>{summaryDraft}</p>
+                ) : (
+                  <p style={{ fontFamily: FONT.read, fontSize: 14, fontStyle: "italic", color: BRAND.muted, margin: 0 }}>No description yet.</p>
+                )}
+                <button onClick={() => setEditingSummary(true)}
+                  style={{ marginTop: 6, background: "none", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, fontFamily: FONT.body, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", padding: "4px 10px", borderRadius: 3, cursor: "pointer" }}>
+                  ✎ Edit description
+                </button>
+              </div>
+            )}
+          </div>
           <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: BRAND.muted, marginBottom: 11 }}>File in a drawer</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {drawers.map((dr) => {
