@@ -230,50 +230,62 @@ export function BookJournal({ userId, onBack }) {
   const year = new Date().getFullYear();
   const [view, setView] = useState('cover');
   const [entries, setEntries] = useState([]);
-  const [spread, setSpread] = useState(0);
-  const [flipState, setFlipState] = useState(null); // { dir, fromSpread }
+  const [page, setPage] = useState(0); // single-page index on mobile; spread index on desktop
+  const [flipState, setFlipState] = useState(null);
   const [addNoteSpread, setAddNoteSpread] = useState(null);
   const [addNoteDraft, setAddNoteDraft] = useState('');
   const [addNoteSaving, setAddNoteSaving] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 680);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 680);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     loadJournalEntries(userId, year).then(e => {
       setEntries(e);
-      // Open to last spread
-      const last = Math.max(0, Math.floor(e.length / 2) * 2);
-      setSpread(last);
+      setPage(isMobile ? e.length : Math.max(0, Math.floor(e.length / 2)));
     });
   }, [userId, year]);
 
   const reload = () => {
     loadJournalEntries(userId, year).then(e => {
       setEntries(e);
-      // go to last spread (new entry is at end)
-      const last = Math.max(0, Math.floor(e.length / 2) * 2);
-      setSpread(last);
+      setPage(isMobile ? e.length : Math.max(0, Math.floor(e.length / 2)));
     });
   };
 
-  // Pad entries to even count so every spread has two slots
-  const padded = entries.length % 2 === 0 ? [...entries, null] : entries;
-  // Add an extra blank spread at the end for adding entries
-  const pages = [...padded, null];
+  // ── Mobile: one page at a time ────────────────────────────────────────────
+  // pages array = [...entries, null] (null = blank add-entry page)
+  const mobilePages = [...entries, null];
+  const totalMobilePages = mobilePages.length;
+  const mobileEntry = mobilePages[page] ?? null;
+  const mobilePageNum = page + 1;
+  const mobileCanNext = page < totalMobilePages - 1;
+  const mobileCanPrev = page > 0;
 
-  const totalSpreads = Math.ceil(pages.length / 2);
-  const leftEntry = pages[spread * 2] ?? null;
-  const rightEntry = pages[spread * 2 + 1] ?? null;
-  const canNext = spread < totalSpreads - 1;
-  const canPrev = spread > 0;
+  // ── Desktop: two pages (spread) ───────────────────────────────────────────
+  const padded = entries.length % 2 === 0 ? [...entries, null] : entries;
+  const spreadPages = [...padded, null];
+  const totalSpreads = Math.ceil(spreadPages.length / 2);
+  const leftEntry = spreadPages[page * 2] ?? null;
+  const rightEntry = spreadPages[page * 2 + 1] ?? null;
+  const canNext = page < totalSpreads - 1;
+  const canPrev = page > 0;
+  const leftPageNum = page * 2 + 1;
+  const rightPageNum = page * 2 + 2;
 
   const flip = (dir) => {
     if (flipState) return;
-    if (dir === 'next' && !canNext) return;
-    if (dir === 'prev' && !canPrev) return;
+    const canGo = isMobile ? (dir === 'next' ? mobileCanNext : mobileCanPrev) : (dir === 'next' ? canNext : canPrev);
+    if (!canGo) return;
     setFlipState({ dir });
     setTimeout(() => {
-      setSpread(s => dir === 'next' ? s + 1 : s - 1);
+      setPage(p => dir === 'next' ? p + 1 : p - 1);
       setFlipState(null);
-    }, 580);
+    }, 480);
   };
 
   const handleAddNoteFromPage = async () => {
@@ -285,9 +297,6 @@ export function BookJournal({ userId, onBack }) {
     setAddNoteSpread(null);
     reload();
   };
-
-  const leftPageNum = spread * 2 + 1;
-  const rightPageNum = spread * 2 + 2;
 
   if (view === 'cover') {
     return (
@@ -329,149 +338,167 @@ export function BookJournal({ userId, onBack }) {
       </div>
 
       {/* Book stage */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 120px)', padding: '30px 16px', gap: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 120px)', padding: isMobile ? '16px 8px' : '30px 16px', gap: isMobile ? 8 : 20 }}>
 
         {/* Prev arrow */}
-        <button
-          onClick={() => flip('prev')}
-          disabled={!canPrev || !!flipState}
-          style={{ width: 44, height: 44, borderRadius: '50%', background: canPrev ? 'rgba(194,163,94,.15)' : 'rgba(255,255,255,.04)', border: `1px solid ${canPrev ? `${GOLD}0.4)` : 'rgba(255,255,255,.08)'}`, color: canPrev ? `${GOLD}0.9)` : 'rgba(255,255,255,.15)', fontSize: 18, cursor: canPrev ? 'pointer' : 'default', transition: 'all .2s', flexShrink: 0 }}
-          aria-label="Previous page"
-        >‹</button>
+        {(() => {
+          const disabled = isMobile ? (!mobileCanPrev || !!flipState) : (!canPrev || !!flipState);
+          return (
+            <button onClick={() => flip('prev')} disabled={disabled}
+              style={{ width: 40, height: 40, borderRadius: '50%', background: !disabled ? 'rgba(194,163,94,.15)' : 'rgba(255,255,255,.04)', border: `1px solid ${!disabled ? `${GOLD}0.4)` : 'rgba(255,255,255,.08)'}`, color: !disabled ? `${GOLD}0.9)` : 'rgba(255,255,255,.15)', fontSize: 20, cursor: !disabled ? 'pointer' : 'default', transition: 'all .2s', flexShrink: 0 }}
+              aria-label="Previous page">‹</button>
+          );
+        })()}
 
-        {/* Open book */}
-        <div style={{ perspective: '1400px', flexShrink: 0 }}>
-          <div style={{
-            position: 'relative',
-            width: 'min(860px, calc(100vw - 140px))',
-            height: 'min(560px, 80vh)',
-            display: 'flex',
-            boxShadow: '0 20px 60px rgba(0,0,0,.7), 0 4px 12px rgba(0,0,0,.5)',
-            borderRadius: 2,
-          }}>
-
-            {/* Left page */}
+        {/* ── MOBILE: single page ─────────────────────────────────────── */}
+        {isMobile ? (
+          <div style={{ perspective: '900px', flexShrink: 0, flex: 1, maxWidth: 440 }}>
             <div style={{
-              width: '50%', height: '100%',
-              background: PAGE_BG,
-              borderRadius: '2px 0 0 2px',
-              boxShadow: 'inset -4px 0 12px rgba(0,0,0,.12)',
               position: 'relative',
+              width: '100%',
+              height: 'min(580px, 76vh)',
+              background: PAGE_BG,
+              borderRadius: 3,
+              boxShadow: '0 12px 40px rgba(0,0,0,.65), 4px 0 0 #8B4A28, 6px 0 0 #5A2810, 8px 0 0 #3A1A08',
               overflow: 'hidden',
             }}>
               <PageContent
-                entry={leftEntry}
-                pageNum={leftPageNum}
-                isRight={false}
-                userId={userId}
-                onAddNote={reload}
-              />
-            </div>
-
-            {/* Spine */}
-            <div style={{
-              width: 18, flexShrink: 0,
-              background: 'linear-gradient(90deg,#3A1A08 0%,#7A3F1A 35%,#8B4A28 50%,#7A3F1A 65%,#3A1A08 100%)',
-              boxShadow: '0 0 12px rgba(0,0,0,.5)',
-              zIndex: 2,
-            }} />
-
-            {/* Right page */}
-            <div style={{
-              width: '50%', height: '100%',
-              background: PAGE_BG,
-              borderRadius: '0 2px 2px 0',
-              boxShadow: 'inset 4px 0 12px rgba(0,0,0,.12)',
-              position: 'relative',
-              overflow: 'hidden',
-            }}>
-              <PageContent
-                entry={rightEntry}
-                pageNum={rightPageNum}
+                entry={mobileEntry}
+                pageNum={mobilePageNum}
                 isRight={true}
                 userId={userId}
                 onAddNote={(action) => {
-                  if (action === 'prompt') setAddNoteSpread(spread);
+                  if (action === 'prompt') setAddNoteSpread(page);
                   else reload();
                 }}
               />
+
+              {/* Flip animation overlay — mobile */}
+              {flipState && (
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  transformStyle: 'preserve-3d',
+                  transformOrigin: flipState.dir === 'next' ? 'left center' : 'right center',
+                  animation: `${flipState.dir === 'next' ? 'jrnl-flip-fwd' : 'jrnl-flip-bwd'} 0.48s cubic-bezier(.45,0,.55,1) forwards`,
+                  zIndex: 20, pointerEvents: 'none',
+                }}>
+                  <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', background: PAGE_BG, overflow: 'hidden' }}>
+                    <PageContent entry={mobileEntry} pageNum={mobilePageNum} isRight userId={userId} />
+                  </div>
+                  <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)', background: PAGE_BG, overflow: 'hidden' }}>
+                    {(() => {
+                      const nextIdx = flipState.dir === 'next' ? page + 1 : page - 1;
+                      return <PageContent entry={mobilePages[nextIdx] ?? null} pageNum={nextIdx + 1} isRight userId={userId} />;
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {/* Add note overlay — mobile */}
+              {addNoteSpread === page && (
+                <div style={{ position: 'absolute', inset: 0, zIndex: 30, background: 'rgba(253,251,244,.97)', display: 'flex', flexDirection: 'column', padding: 24, borderRadius: 3 }}>
+                  <div style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: 18, color: INK, marginBottom: 14 }}>Add a journal entry</div>
+                  <textarea autoFocus value={addNoteDraft} onChange={e => setAddNoteDraft(e.target.value)} placeholder="Write your note here…" rows={8}
+                    style={{ flex: 1, fontFamily: FONT.read, fontSize: 15, lineHeight: 1.75, color: INK, background: 'transparent', border: 'none', borderBottom: `1px solid ${PAGE_LINE}`, outline: 'none', resize: 'none', padding: '8px 0' }} />
+                  <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                    <button onClick={handleAddNoteFromPage} disabled={addNoteSaving} style={{ flex: 1, fontFamily: FONT.body, fontSize: 13, background: '#4A2010', border: 'none', color: '#FBF6E8', padding: '11px', borderRadius: 2, cursor: 'pointer' }}>
+                      {addNoteSaving ? 'Saving…' : 'Save to journal'}
+                    </button>
+                    <button onClick={() => { setAddNoteSpread(null); setAddNoteDraft(''); }} style={{ fontFamily: FONT.body, fontSize: 13, background: 'transparent', border: '1px solid rgba(120,80,40,.3)', color: INK_MUTED, padding: '11px 14px', borderRadius: 2, cursor: 'pointer' }}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* Flipping page overlay */}
-            {flipState && (
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                ...(flipState.dir === 'next'
-                  ? { left: 'calc(50% + 9px)', width: 'calc(50% - 9px)', transformOrigin: 'left center' }
-                  : { left: 0, width: 'calc(50% - 9px)', transformOrigin: 'right center' }
-                ),
-                height: '100%',
-                transformStyle: 'preserve-3d',
-                animation: `${flipState.dir === 'next' ? 'jrnl-flip-fwd' : 'jrnl-flip-bwd'} 0.58s cubic-bezier(.45,0,.55,1) forwards`,
-                zIndex: 20,
-                pointerEvents: 'none',
-              }}>
-                {/* Front face */}
-                <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', background: PAGE_BG, boxShadow: flipState.dir === 'next' ? '-4px 0 20px rgba(0,0,0,.25)' : '4px 0 20px rgba(0,0,0,.25)', overflow: 'hidden' }}>
-                  <PageContent
-                    entry={flipState.dir === 'next' ? rightEntry : leftEntry}
-                    pageNum={flipState.dir === 'next' ? rightPageNum : leftPageNum}
-                    isRight={flipState.dir === 'next'}
-                    userId={userId}
-                  />
-                </div>
-                {/* Back face (pre-rotated 180°) */}
-                <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)', background: PAGE_BG, overflow: 'hidden' }}>
-                  {(() => {
-                    const nextSpread = flipState.dir === 'next' ? spread + 1 : spread - 1;
-                    const backLeft = pages[nextSpread * 2] ?? null;
-                    const backRight = pages[nextSpread * 2 + 1] ?? null;
-                    const backEntry = flipState.dir === 'next' ? backLeft : backRight;
-                    const backPageNum = flipState.dir === 'next' ? nextSpread * 2 + 1 : nextSpread * 2 + 2;
-                    return <PageContent entry={backEntry} pageNum={backPageNum} isRight={flipState.dir !== 'next'} userId={userId} />;
-                  })()}
-                </div>
-              </div>
-            )}
-
-            {/* Add note overlay */}
-            {addNoteSpread === spread && (
-              <div style={{ position: 'absolute', inset: 0, zIndex: 30, background: 'rgba(253,251,244,.96)', backdropFilter: 'blur(2px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, borderRadius: 2 }}>
-                <div style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: 20, color: INK, marginBottom: 18 }}>Add a journal entry</div>
-                <textarea
-                  autoFocus
-                  value={addNoteDraft}
-                  onChange={e => setAddNoteDraft(e.target.value)}
-                  placeholder="Write your note here…"
-                  rows={6}
-                  style={{ width: '100%', maxWidth: 480, fontFamily: FONT.read, fontSize: 14, lineHeight: 1.75, color: INK, background: 'transparent', border: 'none', borderBottom: `1px solid ${PAGE_LINE}`, outline: 'none', resize: 'none', padding: '8px 0' }}
-                />
-                <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-                  <button onClick={handleAddNoteFromPage} disabled={addNoteSaving} style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: '.06em', background: '#4A2010', border: 'none', color: '#FBF6E8', padding: '9px 22px', borderRadius: 2, cursor: 'pointer' }}>
-                    {addNoteSaving ? 'Saving…' : 'Save to journal'}
-                  </button>
-                  <button onClick={() => { setAddNoteSpread(null); setAddNoteDraft(''); }} style={{ fontFamily: FONT.body, fontSize: 12, background: 'transparent', border: '1px solid rgba(120,80,40,.3)', color: INK_MUTED, padding: '9px 16px', borderRadius: 2, cursor: 'pointer' }}>
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
-        </div>
+        ) : (
+        /* ── DESKTOP: two-page spread ──────────────────────────────────── */
+          <div style={{ perspective: '1400px', flexShrink: 0 }}>
+            <div style={{
+              position: 'relative',
+              width: 'min(860px, calc(100vw - 140px))',
+              height: 'min(560px, 80vh)',
+              display: 'flex',
+              boxShadow: '0 20px 60px rgba(0,0,0,.7), 0 4px 12px rgba(0,0,0,.5)',
+              borderRadius: 2,
+            }}>
+              {/* Left page */}
+              <div style={{ width: '50%', height: '100%', background: PAGE_BG, borderRadius: '2px 0 0 2px', boxShadow: 'inset -4px 0 12px rgba(0,0,0,.12)', position: 'relative', overflow: 'hidden' }}>
+                <PageContent entry={leftEntry} pageNum={leftPageNum} isRight={false} userId={userId} onAddNote={reload} />
+              </div>
+              {/* Spine */}
+              <div style={{ width: 18, flexShrink: 0, background: 'linear-gradient(90deg,#3A1A08 0%,#7A3F1A 35%,#8B4A28 50%,#7A3F1A 65%,#3A1A08 100%)', boxShadow: '0 0 12px rgba(0,0,0,.5)', zIndex: 2 }} />
+              {/* Right page */}
+              <div style={{ width: '50%', height: '100%', background: PAGE_BG, borderRadius: '0 2px 2px 0', boxShadow: 'inset 4px 0 12px rgba(0,0,0,.12)', position: 'relative', overflow: 'hidden' }}>
+                <PageContent entry={rightEntry} pageNum={rightPageNum} isRight userId={userId}
+                  onAddNote={(action) => { if (action === 'prompt') setAddNoteSpread(page); else reload(); }} />
+              </div>
+
+              {/* Flipping page overlay — desktop */}
+              {flipState && (
+                <div style={{
+                  position: 'absolute', top: 0,
+                  ...(flipState.dir === 'next'
+                    ? { left: 'calc(50% + 9px)', width: 'calc(50% - 9px)', transformOrigin: 'left center' }
+                    : { left: 0, width: 'calc(50% - 9px)', transformOrigin: 'right center' }),
+                  height: '100%', transformStyle: 'preserve-3d',
+                  animation: `${flipState.dir === 'next' ? 'jrnl-flip-fwd' : 'jrnl-flip-bwd'} 0.48s cubic-bezier(.45,0,.55,1) forwards`,
+                  zIndex: 20, pointerEvents: 'none',
+                }}>
+                  <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', background: PAGE_BG, boxShadow: flipState.dir === 'next' ? '-4px 0 20px rgba(0,0,0,.25)' : '4px 0 20px rgba(0,0,0,.25)', overflow: 'hidden' }}>
+                    <PageContent entry={flipState.dir === 'next' ? rightEntry : leftEntry} pageNum={flipState.dir === 'next' ? rightPageNum : leftPageNum} isRight={flipState.dir === 'next'} userId={userId} />
+                  </div>
+                  <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)', background: PAGE_BG, overflow: 'hidden' }}>
+                    {(() => {
+                      const np = flipState.dir === 'next' ? page + 1 : page - 1;
+                      const bL = spreadPages[np * 2] ?? null;
+                      const bR = spreadPages[np * 2 + 1] ?? null;
+                      const bE = flipState.dir === 'next' ? bL : bR;
+                      const bN = flipState.dir === 'next' ? np * 2 + 1 : np * 2 + 2;
+                      return <PageContent entry={bE} pageNum={bN} isRight={flipState.dir !== 'next'} userId={userId} />;
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {/* Add note overlay — desktop */}
+              {addNoteSpread === page && (
+                <div style={{ position: 'absolute', inset: 0, zIndex: 30, background: 'rgba(253,251,244,.96)', backdropFilter: 'blur(2px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, borderRadius: 2 }}>
+                  <div style={{ fontFamily: FONT.display, fontStyle: 'italic', fontSize: 20, color: INK, marginBottom: 18 }}>Add a journal entry</div>
+                  <textarea autoFocus value={addNoteDraft} onChange={e => setAddNoteDraft(e.target.value)} placeholder="Write your note here…" rows={6}
+                    style={{ width: '100%', maxWidth: 480, fontFamily: FONT.read, fontSize: 14, lineHeight: 1.75, color: INK, background: 'transparent', border: 'none', borderBottom: `1px solid ${PAGE_LINE}`, outline: 'none', resize: 'none', padding: '8px 0' }} />
+                  <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+                    <button onClick={handleAddNoteFromPage} disabled={addNoteSaving} style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: '.06em', background: '#4A2010', border: 'none', color: '#FBF6E8', padding: '9px 22px', borderRadius: 2, cursor: 'pointer' }}>
+                      {addNoteSaving ? 'Saving…' : 'Save to journal'}
+                    </button>
+                    <button onClick={() => { setAddNoteSpread(null); setAddNoteDraft(''); }} style={{ fontFamily: FONT.body, fontSize: 12, background: 'transparent', border: '1px solid rgba(120,80,40,.3)', color: INK_MUTED, padding: '9px 16px', borderRadius: 2, cursor: 'pointer' }}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Next arrow */}
-        <button
-          onClick={() => flip('next')}
-          disabled={!canNext || !!flipState}
-          style={{ width: 44, height: 44, borderRadius: '50%', background: canNext ? 'rgba(194,163,94,.15)' : 'rgba(255,255,255,.04)', border: `1px solid ${canNext ? `${GOLD}0.4)` : 'rgba(255,255,255,.08)'}`, color: canNext ? `${GOLD}0.9)` : 'rgba(255,255,255,.15)', fontSize: 18, cursor: canNext ? 'pointer' : 'default', transition: 'all .2s', flexShrink: 0 }}
-          aria-label="Next page"
-        >›</button>
+        {(() => {
+          const disabled = isMobile ? (!mobileCanNext || !!flipState) : (!canNext || !!flipState);
+          return (
+            <button onClick={() => flip('next')} disabled={disabled}
+              style={{ width: 40, height: 40, borderRadius: '50%', background: !disabled ? 'rgba(194,163,94,.15)' : 'rgba(255,255,255,.04)', border: `1px solid ${!disabled ? `${GOLD}0.4)` : 'rgba(255,255,255,.08)'}`, color: !disabled ? `${GOLD}0.9)` : 'rgba(255,255,255,.15)', fontSize: 20, cursor: !disabled ? 'pointer' : 'default', transition: 'all .2s', flexShrink: 0 }}
+              aria-label="Next page">›</button>
+          );
+        })()}
       </div>
 
       {/* Page indicator */}
       <div style={{ textAlign: 'center', paddingBottom: 20, fontFamily: FONT.body, fontSize: 11, letterSpacing: '.12em', color: `${GOLD}0.4)` }}>
-        {entries.length === 0 ? 'No entries yet' : `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} · Page ${leftPageNum}–${rightPageNum}`}
+        {entries.length === 0 ? 'No entries yet'
+          : isMobile
+            ? `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} · Page ${mobilePageNum} of ${totalMobilePages}`
+            : `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} · Pages ${leftPageNum}–${rightPageNum}`}
       </div>
     </div>
   );
