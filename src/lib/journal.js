@@ -5,7 +5,7 @@ const key = (userId, year) => `${userId}:journal:${year}`;
 export async function loadJournalEntries(userId, year) {
   try {
     const res = await storage.get(key(userId, year));
-    return res ? JSON.parse(res.value ?? res) : [];
+    return res ? JSON.parse(res.value) : [];
   } catch { return []; }
 }
 
