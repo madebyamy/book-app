@@ -45,7 +45,7 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
       }
 
       if (!olDoc && !gbItem) {
-        setFetchError("No results found — try adjusting the title or author spelling.");
+        setFetchError("no-results");
         setFetching(false);
         return;
       }
@@ -149,9 +149,14 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
               </button>
             </div>
           </div>
-          {fetchError && (
+          {fetchError === "no-results" ? (
+            <div style={{ fontFamily: FONT.body, fontSize: 13, background: "rgba(191,117,90,.08)", border: "1px solid rgba(191,117,90,.3)", borderRadius: 4, padding: "12px 14px" }}>
+              <div style={{ color: BRAND.ink, fontWeight: 500, marginBottom: 4 }}>No match found in our book databases.</div>
+              <div style={{ color: BRAND.muted, lineHeight: 1.5 }}>Fill in the details below and click <strong>Add book to catalogue</strong> — you can always auto-fill more info later from the book's detail page.</div>
+            </div>
+          ) : fetchError ? (
             <div style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.coral, background: "rgba(242,92,92,.08)", border: "1px solid rgba(242,92,92,.25)", borderRadius: 4, padding: "10px 14px" }}>{fetchError}</div>
-          )}
+          ) : null}
           {fetchedPreview && (
             <div style={{ background: BRAND.cream, border: `1px solid ${BRAND.line}`, borderRadius: 4, overflow: "hidden" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", borderBottom: (fetchedPreview.desc || fetchedPreview.pages) ? `1px solid ${BRAND.line}` : "none" }}>
@@ -182,11 +187,19 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
               <input type="number" min="1" value={pages} onChange={(e) => setPages(e.target.value)} placeholder="e.g. 304" style={inputStyle} />
             </div>
             <div>
+              <label style={labelStyle}>Year published</label>
+              <input type="number" min="1000" max="2099" value={year} onChange={(e) => setYear(e.target.value)} placeholder="e.g. 2021" style={inputStyle} />
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Cover image URL <span style={{ textTransform: "none", letterSpacing: 0, opacity: .6 }}>(optional)</span></label>
+            <input value={cover || ""} onChange={(e) => setCover(e.target.value || null)} placeholder="https://…" style={inputStyle} />
+          </div>
+          <div>
               <label style={labelStyle}>File in drawer</label>
               <select value={drawerId} onChange={(e) => setDrawerId(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
                 {drawers.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
-            </div>
           </div>
           <div>
             <label style={labelStyle}>Short summary <span style={{ textTransform: "none", letterSpacing: 0, opacity: .6 }}>(optional)</span></label>
