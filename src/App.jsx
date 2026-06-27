@@ -7,6 +7,7 @@ import { LoginScreen } from "./components/layout/LoginScreen.jsx";
 import { TopNav } from "./components/layout/TopNav.jsx";
 import { BookDashboard } from "./components/dashboard/BookDashboard.jsx";
 import { MyBooksHome } from "./components/marginalia/MyBooksHome.jsx";
+import { BookJournal } from "./components/journal/BookJournal.jsx";
 import { UserHome } from "./components/home/UserHome.jsx";
 
 function parseLocation(userId) {
@@ -127,6 +128,8 @@ export default function App() {
     content = null;
   } else if (activeBook && activeUser) {
     content = <BookDashboard userId={activeUser.id} book={activeBook} onBack={() => navigate(prevScreen, null)} onLogout={handleLogout} />;
+  } else if (screen === "journal" && activeUser) {
+    content = <BookJournal userId={activeUser.id} onBack={() => navigate("userHome")} />;
   } else if (screen === "myBooks" && activeUser) {
     content = <MyBooksHome userId={activeUser.id} userAccent={activeUser.accent} staticBooks={staticBooks}
       onSelect={(id) => navigate("userHome", id)} onBack={() => navigate("userHome", null)} onLogout={handleLogout}

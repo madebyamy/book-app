@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { USERS } from '../../constants.js';
 import { loadNotations, saveNotations } from '../../lib/books.js';
+import { addJournalEntry } from '../../lib/journal.js';
 
 const TAGS = [
   { id: "observation", label: "Observation" },
@@ -49,6 +50,7 @@ export function YourNotations({ userId, book, theme }) {
     const updated = [...items, newItem];
     setItems(updated); setText(""); setPage(""); setTag("");
     await saveNotations(userId, book.id, updated);
+    addJournalEntry(userId, { type: 'note', bookId: book.id, bookTitle: book.title, content: trimmed, bookPage: page.trim() || null });
   }, [userId, text, page, tag, items, book.id]);
 
   const handleDelete = useCallback(async (id) => {

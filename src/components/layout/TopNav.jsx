@@ -5,6 +5,7 @@ export function TopNav({ screen, activeBook, onNavigate, onLogout, userName }) {
   const items = [
     { label: "Home",       key: "userHome" },
     { label: "Marginalia", key: "myBooks"  },
+    { label: "Journal",    key: "journal"  },
   ];
 
   const activeKey = activeBook ? null : screen;

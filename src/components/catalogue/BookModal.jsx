@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BRAND, FONT } from '../../constants.js';
 import { loadProgress, saveProgress, saveStatus, loadBooks, saveBooks } from '../../lib/books.js';
+import { addJournalEntry } from '../../lib/journal.js';
 
 function spineColor(book) {
   const SPINE_COLORS = ["#BF755A","#F25C5C","#2A201B","#D9A282","#9a6a3f","#6B4A3A","#3E7C57","#3a6ea5"];
@@ -56,6 +57,7 @@ export function BookModal({ userId, book, drawers, currentDrawer, onMove, onClos
     setProg(next);
     await saveStatus(userId, book.id, "read");
     onMove("read");
+    addJournalEntry(userId, { type: 'finished', bookId: book.id, bookTitle: book.title, content: `Finished reading "${book.title}" by ${book.author}.` });
     if (onBooksChanged) onBooksChanged();
   };
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { USERS } from '../../constants.js';
 import { loadQuotes, saveQuotes } from '../../lib/books.js';
+import { addJournalEntry } from '../../lib/journal.js';
 
 export function YourQuotes({ userId, book, theme }) {
   theme = theme || book.theme || {};
@@ -25,6 +26,7 @@ export function YourQuotes({ userId, book, theme }) {
     const updated = [...quotes, newItem];
     setQuotes(updated); setText(""); setPage(""); setLink("");
     await saveQuotes(userId, book.id, updated);
+    addJournalEntry(userId, { type: 'quote', bookId: book.id, bookTitle: book.title, content: trimmed, bookPage: page.trim() || null });
   }, [userId, text, page, link, quotes, book.id]);
 
   const handleDelete = useCallback(async (id) => {

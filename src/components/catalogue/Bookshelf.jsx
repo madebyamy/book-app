@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { addJournalEntry } from '../../lib/journal.js';
 import { storage } from '../../storage.js';
 import { BRAND, FONT, DEFAULT_DRAWERS, DRAWER_TO_STATUS, OAK_FACE, BRASS_GRAD, BRASS_GRAD_V, BRASS_BORDER, CC_DRAWER_STORE, CC_ASSIGN_STORE } from '../../constants.js';
 import { loadBooks, saveBooks, saveStatus } from '../../lib/books.js';
@@ -303,6 +304,7 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
     const updated = [...allBooks, newBook];
     await updateBooks(updated);
     await saveStatus(userId, id, DRAWER_TO_STATUS[targetDrawer] || "to-read");
+    addJournalEntry(userId, { type: 'added', bookId: id, bookTitle: title, content: `Added "${title}" by ${author} to the reading list.` });
     setShowAddBook(false);
     setOpenDrawer(targetDrawer);
   };
@@ -310,6 +312,7 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
   const handleRateBook = async (book, rating) => {
     const updated = allBooks.map((b) => b.id === book.id ? { ...b, rating } : b);
     await updateBooks(updated);
+    if (rating > 0) addJournalEntry(userId, { type: 'rating', bookId: book.id, bookTitle: book.title, stars: rating, content: `Gave ${rating} star${rating !== 1 ? 's' : ''} to this book.` });
   };
 
   const handleToggleMarginalia = async (book) => {
