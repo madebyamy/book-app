@@ -175,6 +175,8 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
   const [showAddBook, setShowAddBook] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteDrawerTarget, setDeleteDrawerTarget] = useState(null);
+  const [moveDestination, setMoveDestination] = useState("");
   const [soundEnabled, setSoundEnabled] = useState(() => {
     try { return localStorage.getItem(SFX_KEY) !== "off"; } catch { return true; }
   });
@@ -253,13 +255,22 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
   const removeDrawer = (e, id) => {
     e.stopPropagation();
     if (drawers.length <= 1) return;
-    const nextDrawers = drawers.filter((d) => d.id !== id);
-    const fallback = nextDrawers[0].id;
-    const updated = allBooks.map((b) => b.drawerId === id ? { ...b, drawerId: fallback } : b);
+    const otherDrawers = drawers.filter((d) => d.id !== id);
+    setMoveDestination(otherDrawers[0]?.id || "");
+    setDeleteDrawerTarget(id);
+    if (openDrawer === id) setOpenDrawer(null);
+  };
+
+  const confirmDeleteDrawer = () => {
+    if (!deleteDrawerTarget) return;
+    const dest = moveDestination || drawers.filter((d) => d.id !== deleteDrawerTarget)[0]?.id;
+    const nextDrawers = drawers.filter((d) => d.id !== deleteDrawerTarget);
+    const updated = allBooks.map((b) => b.drawerId === deleteDrawerTarget ? { ...b, drawerId: dest } : b);
     setDrawers(nextDrawers);
     persistDrawers(nextDrawers);
     updateBooks(updated);
-    if (openDrawer === id) setOpenDrawer(null);
+    setDeleteDrawerTarget(null);
+    setMoveDestination("");
   };
 
   const handleAddBook = async ({ title, author, pages, summary, cover, year, drawerId, workId, inMarginalia }) => {
@@ -349,6 +360,50 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
           onCancel={() => setDeleteTarget(null)}
         />
       )}
+
+      {deleteDrawerTarget && (() => {
+        const drawer = drawers.find((d) => d.id === deleteDrawerTarget);
+        const booksInIt = allBooks.filter((b) => (b.drawerId || "want") === deleteDrawerTarget);
+        const otherDrawers = drawers.filter((d) => d.id !== deleteDrawerTarget);
+        return (
+          <div onClick={() => setDeleteDrawerTarget(null)} style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(38,32,32,.68)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ background: BRAND.paper, border: `1px solid ${BRAND.line}`, borderRadius: 6, width: "min(460px,100%)", boxShadow: "0 20px 50px rgba(20,30,50,.22)", animation: "cc-pop .22s cubic-bezier(.16,1,.3,1)" }}>
+              <div style={{ background: BRAND.espresso, padding: "20px 26px 16px", borderRadius: "6px 6px 0 0", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(242,92,92,.2)", border: "1px solid rgba(242,92,92,.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>🗑</div>
+                <div>
+                  <div style={{ fontFamily: FONT.body, fontSize: 10, letterSpacing: ".2em", textTransform: "uppercase", color: BRAND.tan }}>Delete drawer</div>
+                  <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 19, color: BRAND.cream, lineHeight: 1.1, marginTop: 2 }}>{drawer?.name}</div>
+                </div>
+              </div>
+              <div style={{ padding: "22px 26px 26px", display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ fontFamily: FONT.read, fontSize: 14, lineHeight: 1.6, color: BRAND.ink }}>
+                  {booksInIt.length > 0
+                    ? <>This drawer contains <strong>{booksInIt.length} {booksInIt.length === 1 ? "book" : "books"}</strong>. Where would you like to move {booksInIt.length === 1 ? "it" : "them"} before deleting?</>
+                    : <>This drawer is empty. Are you sure you want to delete it?</>}
+                </div>
+                {booksInIt.length > 0 && (
+                  <div>
+                    <label style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase", color: BRAND.muted, display: "block", marginBottom: 8 }}>Move books to</label>
+                    <select value={moveDestination} onChange={(e) => setMoveDestination(e.target.value)}
+                      style={{ width: "100%", fontFamily: FONT.body, fontSize: 14, color: BRAND.ink, background: BRAND.cream, border: `1px solid ${BRAND.line2}`, borderRadius: 3, padding: "10px 12px", cursor: "pointer" }}>
+                      {otherDrawers.map((d) => <option key={d.id} value={d.id}>{d.name} ({allBooks.filter(b => (b.drawerId || "want") === d.id).length} books)</option>)}
+                    </select>
+                  </div>
+                )}
+                <div style={{ background: "rgba(242,92,92,.06)", border: "1px solid rgba(242,92,92,.2)", borderRadius: 4, padding: "10px 14px", fontFamily: FONT.body, fontSize: 12.5, color: BRAND.coral, lineHeight: 1.5 }}>
+                  ⚠ This cannot be undone. The drawer will be permanently deleted.
+                </div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => setDeleteDrawerTarget(null)} style={{ flex: 1, fontFamily: FONT.body, fontSize: 13, background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "11px", borderRadius: 3, cursor: "pointer" }}>Cancel</button>
+                  <button onClick={confirmDeleteDrawer} style={{ flex: 2, fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: BRAND.coral, border: "none", color: "#fff", padding: "11px", borderRadius: 3, cursor: "pointer", fontWeight: 500 }}>
+                    {booksInIt.length > 0 ? `Move & delete drawer` : "Delete drawer"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <section style={{ maxWidth: 1040, margin: "0 auto", padding: "clamp(16px,2.5vw,28px) 28px clamp(48px,7vw,80px)" }}>
         {!loaded ? (

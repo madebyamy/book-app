@@ -158,41 +158,39 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
             <div style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.coral, background: "rgba(242,92,92,.08)", border: "1px solid rgba(242,92,92,.25)", borderRadius: 4, padding: "10px 14px" }}>{fetchError}</div>
           ) : null}
           {fetchedPreview && (
-            <div style={{ background: BRAND.cream, border: `1px solid ${BRAND.line}`, borderRadius: 4, overflow: "hidden" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", borderBottom: (fetchedPreview.desc || fetchedPreview.pages) ? `1px solid ${BRAND.line}` : "none" }}>
-                {fetchedPreview.cover && (
-                  <img src={fetchedPreview.cover} alt="" style={{ width: 44, height: 64, objectFit: "cover", borderRadius: 2, boxShadow: "0 2px 6px rgba(0,0,0,.15)", flexShrink: 0 }} onError={(e) => e.target.style.display = "none"} />
-                )}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 15, color: BRAND.ink, lineHeight: 1.2 }}>{fetchedPreview.title}</div>
-                  <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13, color: BRAND.muted, marginTop: 3 }}>{fetchedPreview.author}</div>
-                  <div style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.terracotta, marginTop: 4 }}>✓ Info pulled from Google Books</div>
-                </div>
-              </div>
-              {(fetchedPreview.desc || fetchedPreview.pages) && (
-                <div style={{ padding: "10px 14px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
-                  {fetchedPreview.desc && (
-                    <p style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.55, color: BRAND.ink, margin: 0, display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{fetchedPreview.desc}</p>
-                  )}
-                  {fetchedPreview.pages && (
-                    <div style={{ fontFamily: FONT.type, fontSize: 11, color: BRAND.muted }}>{fetchedPreview.pages} pages</div>
-                  )}
-                </div>
+            <div style={{ background: BRAND.cream, border: `1px solid ${BRAND.line}`, borderRadius: 4, padding: "10px 14px" }}>
+              <div style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.terracotta }}>✓ Info filled in from Google Books / Open Library</div>
+              {fetchedPreview.desc && (
+                <p style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.55, color: BRAND.ink, margin: "6px 0 0", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{fetchedPreview.desc}</p>
               )}
             </div>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            <div>
-              <label style={labelStyle}>Pages</label>
-              <input type="number" min="1" value={pages} onChange={(e) => setPages(e.target.value)} placeholder="e.g. 304" style={inputStyle} />
+
+          {/* Cover + pages/year side by side — cover preview on left, fields on right */}
+          <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+            <div style={{ flexShrink: 0 }}>
+              <label style={labelStyle}>Cover</label>
+              {cover ? (
+                <img src={cover} alt="" style={{ width: 72, height: 104, objectFit: "cover", borderRadius: 3, boxShadow: "0 4px 12px rgba(0,0,0,.18)", display: "block" }} onError={(e) => e.target.style.display = "none"} />
+              ) : (
+                <div style={{ width: 72, height: 104, background: BRAND.cream, border: `1px dashed ${BRAND.line2}`, borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontFamily: FONT.body, fontSize: 10, color: BRAND.muted, textAlign: "center", lineHeight: 1.4 }}>No cover yet</span>
+                </div>
+              )}
             </div>
-            <div>
-              <label style={labelStyle}>Year published</label>
-              <input type="number" min="1000" max="2099" value={year} onChange={(e) => setYear(e.target.value)} placeholder="e.g. 2021" style={inputStyle} />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Pages</label>
+                <input type="number" min="1" value={pages} onChange={(e) => setPages(e.target.value)} placeholder="e.g. 304" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Year published</label>
+                <input type="number" min="1000" max="2099" value={year} onChange={(e) => setYear(e.target.value)} placeholder="e.g. 2021" style={inputStyle} />
+              </div>
             </div>
           </div>
           <div>
-            <label style={labelStyle}>Cover image URL <span style={{ textTransform: "none", letterSpacing: 0, opacity: .6 }}>(optional)</span></label>
+            <label style={labelStyle}>Cover image URL <span style={{ textTransform: "none", letterSpacing: 0, opacity: .6 }}>(optional — auto-filled by lookup)</span></label>
             <input value={cover || ""} onChange={(e) => setCover(e.target.value || null)} placeholder="https://…" style={inputStyle} />
           </div>
           <div>
