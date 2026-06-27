@@ -111,6 +111,18 @@ export function ReadingRoom({ user, friends, tooltips }) {
   return (
     <section style={{ position: "relative", background: "#1A1008", overflow: "hidden", padding: "clamp(40px,6vw,64px) 0" }}>
 
+      {/* Background room image */}
+      <div style={{
+        position: "absolute", inset: 0,
+        backgroundImage: "url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=1920&q=80')",
+        backgroundSize: "cover", backgroundPosition: "center",
+        filter: "brightness(0.28) saturate(0.7)",
+        zIndex: 0,
+      }} />
+
+      {/* Dark overlay for readability */}
+      <div style={{ position: "absolute", inset: 0, background: "rgba(10,5,0,0.55)", zIndex: 0 }} />
+
       {/* Rain canvas */}
       <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1 }} />
 
