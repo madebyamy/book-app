@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { addJournalEntry } from '../../lib/journal.js';
 import { BRAND, FONT, USERS, ADMIN_USER_ID } from '../../constants.js';
 import { loadBooks, loadProgress, loadStatus, loadDateAdded, saveProgress } from '../../lib/books.js';
 import { loadConnections, getConnectedUsers } from '../../lib/users.js';
@@ -63,7 +64,21 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
     const pages = parseInt(logPageInput, 10);
     if (!pages || pages < 0) { setLogBookId(null); return; }
     const existing = book.prog || {};
-    await saveProgress(user.id, book.id, { ...existing, pagesRead: Math.min(pages, existing.totalPages ?? book.pages ?? 9999) });
+    const total = existing.totalPages ?? book.pages ?? null;
+    const newPage = total ? Math.min(pages, total) : pages;
+    const prevPage = book.pagesRead || 0;
+    const readSince = Math.max(0, newPage - prevPage);
+    const pagesLeft = total ? Math.max(0, total - newPage) : null;
+    const pctLeft = total ? Math.round((pagesLeft / total) * 100) : null;
+    const pctDone = total ? Math.min(100, Math.round((newPage / total) * 100)) : null;
+
+    await saveProgress(user.id, book.id, { ...existing, pagesRead: newPage });
+
+    let content = `Now on page ${newPage}`;
+    if (readSince > 0) content += ` — read ${readSince} page${readSince !== 1 ? 's' : ''} since last log`;
+    if (total) content += `. ${pagesLeft} page${pagesLeft !== 1 ? 's' : ''} left (${pctLeft}% remaining, ${pctDone}% done)`;
+    addJournalEntry(user.id, { type: 'pages', bookId: book.id, bookTitle: book.title, content });
+
     setLogBookId(null);
     setLogPageInput("");
     loadTrackers();

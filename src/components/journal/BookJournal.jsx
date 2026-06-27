@@ -14,6 +14,7 @@ const TYPE_META = {
   finished: { icon: '✅', label: 'Finished a book' },
   quote:    { icon: '❝', label: 'Quoted' },
   note:     { icon: '✍️', label: 'Note' },
+  pages:    { icon: '📖', label: 'Reading progress' },
   manual:   { icon: '📝', label: 'Journal entry' },
 };
 
