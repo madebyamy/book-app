@@ -407,11 +407,6 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
                   );
                 })}
 
-                <button onClick={addDrawer}
-                  style={{ height: 166, cursor: "pointer", borderRadius: 3, border: "2px dashed rgba(251,246,232,.4)", background: "rgba(0,0,0,.18)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: "rgba(251,246,232,.78)" }}>
-                  <span style={{ width: 34, height: 34, borderRadius: "50%", border: `1px solid ${BRAND.brass}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: "#E8CF93" }}>+</span>
-                  <span style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase" }}>Add a drawer</span>
-                </button>
               </div>
             </div>
 
