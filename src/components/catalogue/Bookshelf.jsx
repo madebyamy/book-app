@@ -357,11 +357,18 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
           <>
             <div style={{ padding: 14, borderRadius: 5, background: "linear-gradient(180deg,#6E4422,#4A2C16)", boxShadow: "0 16px 40px rgba(20,30,50,.16),inset 0 1px 0 rgba(255,255,255,.14)", border: "2px solid #3a230f" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                <button onClick={() => setShowAddBook(true)} style={{ background: BRASS_GRAD, border: BRASS_BORDER, borderRadius: 2, padding: "5px 22px", boxShadow: "0 1px 2px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.5)", fontFamily: FONT.body, fontSize: 11, letterSpacing: ".34em", textTransform: "uppercase", color: "#3a2c12", cursor: "pointer", transition: "filter .18s", outline: "none" }}
-                  onMouseEnter={(e) => e.currentTarget.style.filter = "brightness(1.08)"}
-                  onMouseLeave={(e) => e.currentTarget.style.filter = ""}>
-                  + Add a Book
-                </button>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setShowAddBook(true)} style={{ background: BRASS_GRAD, border: BRASS_BORDER, borderRadius: 2, padding: "5px 22px", boxShadow: "0 1px 2px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.5)", fontFamily: FONT.body, fontSize: 11, letterSpacing: ".34em", textTransform: "uppercase", color: "#3a2c12", cursor: "pointer", transition: "filter .18s", outline: "none" }}
+                    onMouseEnter={(e) => e.currentTarget.style.filter = "brightness(1.08)"}
+                    onMouseLeave={(e) => e.currentTarget.style.filter = ""}>
+                    + Add a Book
+                  </button>
+                  <button onClick={addDrawer} style={{ background: "rgba(0,0,0,.28)", border: BRASS_BORDER, borderRadius: 2, padding: "5px 16px", boxShadow: "0 1px 2px rgba(0,0,0,.4)", fontFamily: FONT.body, fontSize: 11, letterSpacing: ".24em", textTransform: "uppercase", color: "#E8CF93", cursor: "pointer", transition: "filter .18s", outline: "none" }}
+                    onMouseEnter={(e) => e.currentTarget.style.filter = "brightness(1.15)"}
+                    onMouseLeave={(e) => e.currentTarget.style.filter = ""}>
+                    + Add a Drawer
+                  </button>
+                </div>
                 <button onClick={toggleSfx} title={soundEnabled ? "Mute drawer sound" : "Enable drawer sound"}
                   style={{ background: "rgba(0,0,0,.28)", border: BRASS_BORDER, borderRadius: 2, padding: "5px 10px", boxShadow: "0 1px 2px rgba(0,0,0,.4)", fontFamily: FONT.body, fontSize: 14, color: soundEnabled ? "#E8CF93" : "rgba(251,246,232,.35)", cursor: "pointer", lineHeight: 1, transition: "color .2s", outline: "none" }}>
                   {soundEnabled ? "🔊" : "🔇"}
