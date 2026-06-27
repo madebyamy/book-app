@@ -169,6 +169,19 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
   const [openDrawer, setOpenDrawer] = useState(null);
   const [openingDrawer, setOpeningDrawer] = useState(null);
   const [selectedBook, setSelectedBook] = useState(null);
+
+  // Push a history entry when a book modal opens so back closes it instead of exiting the site
+  const openBook = (book) => {
+    window.history.pushState({ bookModal: book.id }, "");
+    setSelectedBook(book);
+  };
+  const closeBook = () => { setSelectedBook(null); };
+
+  useEffect(() => {
+    const onPop = () => { if (selectedBook) setSelectedBook(null); };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [selectedBook]);
   const [editing, setEditing] = useState(null);
   const [draft, setDraft] = useState("");
   const [hoveredDrawer, setHoveredDrawer] = useState(null);
@@ -346,7 +359,7 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
           drawers={drawers}
           currentDrawer={(allBooks.find((b) => b.id === selectedBook.id) || selectedBook).drawerId || "want"}
           onMove={(drawerId) => moveBook(selectedBook, drawerId)}
-          onClose={() => setSelectedBook(null)}
+          onClose={closeBook}
           onToggleMarginalia={() => handleToggleMarginalia(selectedBook)}
           onBooksChanged={onBooksChanged}
         />
@@ -517,7 +530,7 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
                           {/* Tab strip — title tabs visible above cards like a real catalog */}
                           <div style={{ display: "flex", gap: 2, overflowX: "auto", paddingBottom: 0, scrollbarWidth: "none" }}>
                             {openBooks.map((book) => (
-                              <div key={book.id} onClick={() => setSelectedBook(book)}
+                              <div key={book.id} onClick={() => openBook(book)}
                                 style={{ flexShrink: 0, width: 108, height: 26, background: "#F6EEDD", border: "1px solid #C9B79A", borderBottom: "none", borderRadius: "4px 4px 0 0", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 6px", cursor: "pointer", overflow: "hidden" }}>
                                 <span style={{ fontFamily: FONT.type, fontSize: 9.5, color: "#4a3a28", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{book.title}</span>
                               </div>
@@ -526,7 +539,7 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
                           {/* Cards in scrollable horizontal row */}
                           <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 14, alignItems: "flex-start", borderTop: "3px solid #C9B79A", paddingTop: 14, scrollbarWidth: "thin", scrollbarColor: "#5C3418 #1E0F04" }}>
                             {openBooks.map((book, i) => (
-                              <IndexCard key={book.id} book={book} delay={i * 25} onOpen={() => setSelectedBook(book)} onDelete={(b) => setDeleteTarget(b)} onRate={(r) => handleRateBook(book, r)} />
+                              <IndexCard key={book.id} book={book} delay={i * 25} onOpen={() => openBook(book)} onDelete={(b) => setDeleteTarget(b)} onRate={(r) => handleRateBook(book, r)} />
                             ))}
                           </div>
                           <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".08em", color: "rgba(251,246,232,.35)", marginTop: 4, textAlign: "center" }}>
