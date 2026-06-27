@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { storage } from '../../storage.js';
 import { BRAND, FONT, DEFAULT_DRAWERS, DRAWER_TO_STATUS, OAK_FACE, BRASS_GRAD, BRASS_GRAD_V, BRASS_BORDER, CC_DRAWER_STORE, CC_ASSIGN_STORE } from '../../constants.js';
 import { loadBooks, saveBooks, saveStatus } from '../../lib/books.js';
@@ -169,19 +169,29 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
   const [openDrawer, setOpenDrawer] = useState(null);
   const [openingDrawer, setOpeningDrawer] = useState(null);
   const [selectedBook, setSelectedBook] = useState(null);
+  const selectedBookRef = useRef(null);
 
   // Push a history entry when a book modal opens so back closes it instead of exiting the site
   const openBook = (book) => {
-    window.history.pushState({ bookModal: book.id }, "");
+    window.history.pushState({ bookModal: book.id }, "", window.location.href);
     setSelectedBook(book);
+    selectedBookRef.current = book;
   };
-  const closeBook = () => { setSelectedBook(null); };
+  const closeBook = () => {
+    setSelectedBook(null);
+    selectedBookRef.current = null;
+  };
 
   useEffect(() => {
-    const onPop = () => { if (selectedBook) setSelectedBook(null); };
+    const onPop = () => {
+      if (selectedBookRef.current) {
+        setSelectedBook(null);
+        selectedBookRef.current = null;
+      }
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, [selectedBook]);
+  }, []);
   const [editing, setEditing] = useState(null);
   const [draft, setDraft] = useState("");
   const [hoveredDrawer, setHoveredDrawer] = useState(null);

@@ -47,6 +47,8 @@ export default function App() {
     const onPop = (e) => {
       const userId = localStorage.getItem(SESSION_KEY);
       if (!userId) { setLoggedInUserId(null); return; }
+      // bookModal entries have no screen — Bookshelf handles those via its own listener
+      if (e.state?.bookModal) return;
       const { screen: s, activeBookId: b } = e.state || parseLocation(userId);
       setScreen(s || "userHome");
       setActiveBookId(b || null);
