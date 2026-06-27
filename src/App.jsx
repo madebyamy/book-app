@@ -55,6 +55,18 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
+  // Stamp the initial history entry with app state so back-button never exits the site
+  useEffect(() => {
+    const userId = loggedInUserId;
+    if (userId) {
+      window.history.replaceState(
+        { screen, activeBookId, userId },
+        "",
+        window.location.pathname
+      );
+    }
+  }, []);
+
   useEffect(() => {
     Promise.all([loadDynamicUsers(), loadTooltips()]).then(([{ dynamicUsers: du, dynamicPasswords: dp }, tt]) => {
       setDynamicUsers(du);
