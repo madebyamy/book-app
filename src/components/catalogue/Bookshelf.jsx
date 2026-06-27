@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { addJournalEntry } from '../../lib/journal.js';
 import { storage } from '../../storage.js';
 import { BRAND, FONT, DEFAULT_DRAWERS, DRAWER_TO_STATUS, OAK_FACE, BRASS_GRAD, BRASS_GRAD_V, BRASS_BORDER, CC_DRAWER_STORE, CC_ASSIGN_STORE } from '../../constants.js';
-import { loadBooks, saveBooks, saveStatus } from '../../lib/books.js';
+import { loadBooks, saveBooks, saveStatus, saveProgress } from '../../lib/books.js';
 import { AddBookModal } from './AddBookModal.jsx';
 import { BookModal } from './BookModal.jsx';
 
@@ -297,13 +297,14 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
     setMoveDestination("");
   };
 
-  const handleAddBook = async ({ title, author, pages, summary, cover, year, drawerId, workId, inMarginalia }) => {
+  const handleAddBook = async ({ title, author, pages, summary, cover, year, drawerId, workId, inMarginalia, dateFinished }) => {
     const id = `book-${userId}-${Date.now().toString(36)}`;
     const targetDrawer = drawerId || openDrawer || "want";
     const newBook = { id, title, author, pages: pages || null, summary: summary || null, cover: cover || null, year: year || null, accent: userAccent, drawerId: targetDrawer, inMarginalia: inMarginalia !== false, shared: false, workId: workId || null, nodes: [], theme: null };
     const updated = [...allBooks, newBook];
     await updateBooks(updated);
     await saveStatus(userId, id, DRAWER_TO_STATUS[targetDrawer] || "to-read");
+    if (dateFinished) await saveProgress(userId, id, { totalPages: pages || null, pagesRead: pages || 0, dateFinished, finishDate: "" });
     addJournalEntry(userId, { type: 'added', bookId: id, bookTitle: title, content: `Added "${title}" by ${author} to the reading list.` });
     setShowAddBook(false);
     setOpenDrawer(targetDrawer);

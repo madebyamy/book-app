@@ -8,13 +8,21 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
   const [summary, setSummary] = useState("");
   const [cover, setCover] = useState(null);
   const [year, setYear] = useState("");
+  const [dateFinished, setDateFinished] = useState("");
   const [drawerId, setDrawerId] = useState(drawers[0]?.id || "want");
   const [error, setError] = useState("");
   const [fetching, setFetching] = useState(false);
   const [fetchedPreview, setFetchedPreview] = useState(null);
   const [fetchError, setFetchError] = useState("");
   const [workId, setWorkId] = useState(null);
-  const [addToMarginalia, setAddToMarginalia] = useState(true);
+  const [addToMarginalia, setAddToMarginalia] = useState(false);
+
+  const clearDetails = () => {
+    setPages(""); setSummary(""); setCover(null); setYear("");
+    setDateFinished(""); setDrawerId(drawers[0]?.id || "want");
+    setFetchedPreview(null); setFetchError(""); setWorkId(null);
+    setAddToMarginalia(false); setError("");
+  };
 
   const fetchBookInfo = async () => {
     if (!title.trim()) return;
@@ -78,7 +86,7 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
       } catch {}
       setFetching(false);
     }
-    onAdd({ title: title.trim(), author: author.trim(), pages: finalPages, summary: finalSummary, cover: finalCover, year: finalYear, drawerId, workId: workId || null, inMarginalia: addToMarginalia });
+    onAdd({ title: title.trim(), author: author.trim(), pages: finalPages, summary: finalSummary, cover: finalCover, year: finalYear, drawerId, workId: workId || null, inMarginalia: addToMarginalia, dateFinished: dateFinished || null });
   };
 
   const inputStyle = { width: "100%", fontFamily: FONT.body, fontSize: 14, color: BRAND.ink, background: BRAND.cream, border: `1px solid ${BRAND.line2}`, borderRadius: 3, padding: "10px 12px", outline: "none", boxSizing: "border-box" };
@@ -157,6 +165,10 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
               </select>
           </div>
           <div>
+            <label style={labelStyle}>Date finished <span style={{ textTransform: "none", letterSpacing: 0, opacity: .6 }}>(optional)</span></label>
+            <input type="date" value={dateFinished} onChange={(e) => setDateFinished(e.target.value)} style={inputStyle} />
+          </div>
+          <div>
             <label style={labelStyle}>Short summary <span style={{ textTransform: "none", letterSpacing: 0, opacity: .6 }}>(optional)</span></label>
             <textarea value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="A brief description of the book — appears on the index card." rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.55 }} />
           </div>
@@ -170,6 +182,7 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
           </label>
           <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
             <button type="button" onClick={onClose} style={{ flex: 1, fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "12px", borderRadius: 3, cursor: "pointer" }}>Cancel</button>
+            <button type="button" onClick={clearDetails} style={{ flex: 1, fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "12px", borderRadius: 3, cursor: "pointer" }}>Clear</button>
             <button type="submit" style={{ flex: 2, fontFamily: FONT.body, fontSize: 13, letterSpacing: ".06em", textTransform: "uppercase", background: BRAND.coral, border: "none", color: "#fff", padding: "12px", borderRadius: 3, cursor: "pointer", fontWeight: 500 }}>Add book to catalogue</button>
           </div>
         </form>
