@@ -161,9 +161,6 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
 
               return (
                 <div key={book.id} style={{ display: "flex", alignItems: "center", gap: 18, background: "rgba(255,255,255,.04)", border: "1px solid rgba(217,162,130,.18)", borderRadius: 5, padding: "16px 18px" }}>
-                  <div style={{ position: "relative", width: 46, height: 66, flexShrink: 0, borderRadius: "2px 3px 3px 2px", background: spine, boxShadow: "inset -6px 0 0 rgba(0,0,0,.16),0 4px 12px rgba(20,30,50,.10)" }}>
-                    <span style={{ position: "absolute", left: 6, top: 7, bottom: 7, width: 1, background: "rgba(255,255,255,.25)", display: "block" }} />
-                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 14, marginBottom: 9 }}>
                       <div style={{ minWidth: 0 }}>

@@ -89,18 +89,8 @@ function FriendChallenge({ friendId, year }) {
             {pct >= 100 ? `🎉 ${friend.name} hit their goal!` : `${pct}% — ${Math.max(0, goal - count)} to go`}
           </div>
           {booksRead.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {booksRead.map((book) => (
-                <div key={book.id} title={`${book.title} — ${book.author}`}>
-                  {book.cover ? (
-                    <img src={book.cover} alt={book.title} style={{ width: 36, height: 52, objectFit: "cover", borderRadius: 2, boxShadow: "0 2px 6px rgba(20,30,50,.12)", display: "block" }} onError={(e) => { e.target.style.display = "none"; }} />
-                  ) : (
-                    <div style={{ width: 36, height: 52, background: book.accent || friend.accent, borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(20,30,50,.12)" }}>
-                      <span style={{ fontSize: "0.85rem" }}>📗</span>
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div style={{ fontFamily: FONT.read, fontSize: 13, color: BRAND.muted, fontStyle: "italic" }}>
+              {booksRead.map((b) => b.title).join(" · ")}
             </div>
           )}
         </>
@@ -227,20 +217,14 @@ export function BookChallenge({ userId, userAccent, friends, tooltipText }) {
             {goal ? `No books finished in ${year} yet — mark a book as "read" to see it here.` : `Set a goal above to start your ${year} reading challenge.`}
           </div>
         ) : (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {booksRead.map((book) => (
-              <div key={book.id} title={`${book.title} — ${book.author}`} style={{ position: "relative" }}>
-                {book.cover ? (
-                  <img src={book.cover} alt={book.title} style={{ width: 44, height: 64, objectFit: "cover", borderRadius: 2, boxShadow: "0 2px 6px rgba(20,30,50,.12)", display: "block" }} onError={(e) => { e.target.style.display = "none"; }} />
-                ) : (
-                  <div style={{ width: 44, height: 64, background: book.accent || BRAND.terracotta, borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(20,30,50,.12)" }}>
-                    <span style={{ fontSize: "0.9rem" }}>📗</span>
-                  </div>
-                )}
+              <div key={book.id} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                <span style={{ fontFamily: FONT.read, fontSize: 14, color: BRAND.ink }}>{book.title}</span>
                 {book.finishDate && (
-                  <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontFamily: FONT.type, fontSize: "0.42rem", color: BRAND.muted, whiteSpace: "nowrap" }}>
+                  <span style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.muted, flexShrink: 0 }}>
                     {book.finishDate.slice(5).replace("-", "/")}
-                  </div>
+                  </span>
                 )}
               </div>
             ))}
