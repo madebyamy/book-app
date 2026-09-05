@@ -73,32 +73,40 @@ export function BookModal({ userId, book, drawers, currentDrawer, onMove, onClos
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 75, background: "rgba(38,32,32,.62)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "cc-fade .2s cubic-bezier(.16,1,.3,1)" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(820px,100%)", maxHeight: "88vh", overflowY: "auto", display: "grid", gridTemplateColumns: "min(280px,40%) 1fr", background: BRAND.paper, borderRadius: 6, border: `1px solid ${BRAND.line}`, boxShadow: "0 16px 40px rgba(20,30,50,.16)", animation: "cc-pop .26s cubic-bezier(.16,1,.3,1)" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(820px,100%)", maxHeight: "88vh", overflowY: "auto", background: BRAND.paper, borderRadius: 6, border: `1px solid ${BRAND.line}`, boxShadow: "0 16px 40px rgba(20,30,50,.16)", animation: "cc-pop .26s cubic-bezier(.16,1,.3,1)" }}>
         <button onClick={onClose} style={{ position: "absolute", top: 14, right: 14, zIndex: 2, width: 34, height: 34, borderRadius: "50%", border: `1px solid ${BRAND.line2}`, background: BRAND.paper, color: BRAND.ink, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-        {/* Left — espresso cover */}
-        <div style={{ background: BRAND.espresso, padding: "34px 28px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18 }}>
-          {showCover ? (
-            <img src={book.cover} alt={book.title} style={{ width: 140, height: 204, objectFit: "cover", borderRadius: "3px 5px 5px 3px", boxShadow: "inset -10px 0 0 rgba(0,0,0,.18),0 8px 28px rgba(0,0,0,.45)" }} onError={() => setCoverFailed(true)} />
-          ) : (
-            <div style={{ position: "relative", width: 148, height: 216, borderRadius: "3px 5px 5px 3px", background: spine, boxShadow: "inset -12px 0 0 rgba(0,0,0,.18),0 16px 40px rgba(20,30,50,.16)", display: "flex", flexDirection: "column", justifyContent: "center", padding: "20px 18px 20px 26px" }}>
-              <span style={{ position: "absolute", left: 13, top: 14, bottom: 14, width: 1.5, background: "rgba(255,255,255,.28)", display: "block" }} />
-              <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 19, lineHeight: 1.08, color: "#fff", textShadow: "0 1px 4px rgba(0,0,0,.3)" }}>{book.title}</div>
-              <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 12, color: "rgba(255,255,255,.82)", marginTop: 8 }}>{book.author}</div>
+
+        {/* Single panel — paper background */}
+        <div style={{ padding: "32px 32px 28px" }}>
+          {/* Call number */}
+          <div style={{ fontFamily: FONT.type, fontSize: 10, letterSpacing: ".06em", color: BRAND.terracotta, borderBottom: `1px solid ${BRAND.line}`, paddingBottom: 9, marginBottom: 20 }}>{callNo}</div>
+
+          {/* Two-column header: cover left, title+meta right */}
+          <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "20px 24px", alignItems: "start", marginBottom: 24 }}>
+            {/* Cover */}
+            <div style={{ flexShrink: 0 }}>
+              {showCover ? (
+                <img src={book.cover} alt={book.title} style={{ width: 100, height: 148, objectFit: "cover", borderRadius: "3px 5px 5px 3px", boxShadow: "inset -8px 0 0 rgba(0,0,0,.14),0 6px 20px rgba(20,30,50,.18)", display: "block" }} onError={() => setCoverFailed(true)} />
+              ) : (
+                <div style={{ position: "relative", width: 100, height: 148, borderRadius: "3px 5px 5px 3px", background: spine, boxShadow: "inset -10px 0 0 rgba(0,0,0,.18),0 8px 24px rgba(20,30,50,.16)", display: "flex", flexDirection: "column", justifyContent: "center", padding: "14px 12px 14px 18px" }}>
+                  <span style={{ position: "absolute", left: 10, top: 10, bottom: 10, width: 1.5, background: "rgba(255,255,255,.28)" }} />
+                  <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 13, lineHeight: 1.1, color: "#fff" }}>{book.title}</div>
+                  <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 10, color: "rgba(255,255,255,.8)", marginTop: 6 }}>{book.author}</div>
+                </div>
+              )}
             </div>
-          )}
-          <div style={{ display: "flex", gap: 14, fontFamily: FONT.body, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "rgba(242,239,235,.7)" }}>
-            {book.year && <span>{book.year}</span>}
-            {book.year && book.pages && <span style={{ opacity: .4 }}>·</span>}
-            {book.pages && <span>{book.pages} pp</span>}
-            {readHours && <><span style={{ opacity: .4 }}>·</span><span>~{readHours}h</span></>}
+            {/* Title + meta */}
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: "clamp(22px,3vw,30px)", lineHeight: 1.05, color: BRAND.ink, margin: "0 0 4px" }}>{book.title}</h2>
+              {book.subtitle && <div style={{ fontFamily: FONT.read, fontSize: 13, color: BRAND.muted, marginBottom: 4 }}>{book.subtitle}</div>}
+              <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 15, color: BRAND.muted, marginBottom: 12 }}>by {book.author}</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px", fontFamily: FONT.body, fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase", color: BRAND.muted }}>
+                {book.year && <span>{book.year}</span>}
+                {book.pages && <span>{book.pages} pp</span>}
+                {readHours && <span>~{readHours}h to read</span>}
+              </div>
+            </div>
           </div>
-        </div>
-        {/* Right — paper details */}
-        <div style={{ padding: "34px 32px 28px" }}>
-          <div style={{ fontFamily: FONT.type, fontSize: 10, letterSpacing: ".06em", color: BRAND.terracotta, borderBottom: `1px solid ${BRAND.line}`, paddingBottom: 9, marginBottom: 16 }}>{callNo}</div>
-          <h2 style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 30, lineHeight: 1.05, color: BRAND.ink, margin: "0 0 4px" }}>{book.title}</h2>
-          {book.subtitle && <div style={{ fontFamily: FONT.read, fontSize: 14, color: BRAND.muted, marginBottom: 4 }}>{book.subtitle}</div>}
-          <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 15, color: BRAND.muted, marginBottom: 18 }}>by {book.author}</div>
           <div style={{ marginBottom: 24 }}>
             {editingSummary ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
