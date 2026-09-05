@@ -108,17 +108,20 @@ export async function saveTooltips(tooltips) {
   try { await storage.set(TOOLTIPS_KEY, JSON.stringify(tooltips)); } catch {}
 }
 
-// Load a friend's shared book that matches the given book, along with their quotes/progress
+// Load a friend's shared book that matches the given book, along with their shared quotes/notations/progress
 export async function loadFriendSharedData(friendId, myBook) {
   try {
     const friendBooks = await loadBooks(friendId);
     const match = friendBooks.find((b) => b.shared && b.inMarginalia && booksMatch(b, myBook));
     if (!match) return null;
-    const [quotes, progress, status] = await Promise.all([
+    const [allQuotes, allNotations, progress, status] = await Promise.all([
       loadQuotes(friendId, match.id),
+      loadNotations(friendId, match.id),
       loadProgress(friendId, match.id),
       loadStatus(friendId, match.id),
     ]);
-    return { book: match, quotes, progress, status };
+    const quotes = allQuotes.filter((q) => q.shared === true);
+    const notations = allNotations.filter((n) => n.shared === true);
+    return { book: match, quotes, notations, progress, status };
   } catch { return null; }
 }

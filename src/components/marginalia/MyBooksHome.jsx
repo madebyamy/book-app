@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BRAND, FONT, USERS } from '../../constants.js';
 import { loadBooks, saveBooks } from '../../lib/books.js';
 import { CatalogCard } from '../catalogue/CatalogCard.jsx';
@@ -17,6 +17,12 @@ export function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack,
   const userMarginalia = userBooks.filter((b) => b.inMarginalia);
   const staticIds = new Set(staticBooks.map((b) => b.id));
   const allBooks = [...staticBooks, ...userMarginalia.filter((b) => !staticIds.has(b.id))];
+
+  const handleToggleShared = useCallback(async (bookId) => {
+    const updated = userBooks.map((b) => b.id === bookId ? { ...b, shared: !b.shared } : b);
+    await saveBooks(userId, updated);
+    setUserBooks(updated);
+  }, [userId, userBooks]);
 
   const handleRemoveFromMarginalia = async (bookId) => {
     const updated = userBooks.map((b) => b.id === bookId ? { ...b, inMarginalia: false } : b);
@@ -61,10 +67,23 @@ export function MyBooksHome({ userId, userAccent, staticBooks, onSelect, onBack,
           <div style={{ fontFamily: FONT.body, fontSize: 14, color: BRAND.muted, padding: "1.5rem 0" }}>Loading…</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {allBooks.map((book) => (
-              <CatalogCard key={book.id} userId={userId} book={book} onSelect={onSelect}
-                onDelete={userMarginalia.some((b) => b.id === book.id) ? () => setRemoveConfirm(book.id) : undefined} />
-            ))}
+            {allBooks.map((book) => {
+              const isUserBook = userMarginalia.some((b) => b.id === book.id);
+              return (
+                <div key={book.id} style={{ position: "relative" }}>
+                  <CatalogCard userId={userId} book={book} onSelect={onSelect}
+                    onDelete={isUserBook ? () => setRemoveConfirm(book.id) : undefined} />
+                  {isUserBook && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleToggleShared(book.id); }}
+                      title={book.shared ? "Shared with connections — click to make private" : "Share this book's notes with connections"}
+                      style={{ position: "absolute", bottom: 14, right: 14, fontFamily: FONT.body, fontSize: 11, letterSpacing: ".06em", background: book.shared ? BRAND.terracotta : "transparent", border: `1px solid ${book.shared ? BRAND.terracotta : BRAND.line2}`, color: book.shared ? "#fff" : BRAND.muted, padding: "5px 12px", borderRadius: 3, cursor: "pointer", transition: "all .2s" }}>
+                      {book.shared ? "✓ Shared" : "Share"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

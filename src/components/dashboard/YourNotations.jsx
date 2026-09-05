@@ -48,7 +48,7 @@ export function YourNotations({ userId, book, theme }) {
     e.preventDefault();
     const trimmed = text.trim();
     if (!trimmed) return;
-    const newItem = { id: Date.now().toString(36), text: trimmed, page: page.trim(), tag: tag || "", addedAt: new Date().toISOString() };
+    const newItem = { id: Date.now().toString(36), text: trimmed, page: page.trim(), tag: tag || "", addedAt: new Date().toISOString(), shared: false };
     const updated = [...items, newItem];
     setItems(updated); setText(""); setPage(""); setTag("");
     await saveNotations(userId, book.id, updated);
@@ -63,6 +63,12 @@ export function YourNotations({ userId, book, theme }) {
 
   const startEdit = (n) => { setEditId(n.id); setEditText(n.text); setEditPage(n.page || ""); setEditTag(n.tag || ""); };
   const cancelEdit = () => { setEditId(null); setEditText(""); setEditPage(""); setEditTag(""); };
+
+  const toggleShared = useCallback(async (id) => {
+    const updated = items.map((n) => n.id === id ? { ...n, shared: !n.shared } : n);
+    setItems(updated);
+    await saveNotations(userId, book.id, updated);
+  }, [userId, items, book.id]);
 
   const saveEdit = useCallback(async (id) => {
     const trimmed = editText.trim();
@@ -192,7 +198,12 @@ export function YourNotations({ userId, book, theme }) {
                         {n.addedAt && <span style={{ fontFamily: theme.mono, fontSize: "0.68rem", color: theme.inkFaint }}>{new Date(n.addedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>}
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: "0.2rem", flexShrink: 0 }}>
+                    <div style={{ display: "flex", gap: "0.2rem", flexShrink: 0, alignItems: "center" }}>
+                      <button onClick={() => toggleShared(n.id)} aria-label={n.shared ? "Stop sharing" : "Share with connections"}
+                        title={n.shared ? "Shared with connections — click to make private" : "Click to share with connections"}
+                        style={{ ...btnStyle, fontSize: "0.68rem", color: n.shared ? book.accent : theme.inkFaint, border: `1px solid ${n.shared ? book.accent + "66" : theme.border}`, borderRadius: 3, padding: "2px 7px" }}>
+                        {n.shared ? "✓ shared" : "share"}
+                      </button>
                       <button onClick={() => startEdit(n)} aria-label="Edit notation" style={{ ...btnStyle, fontSize: "0.85rem" }}>✎</button>
                       <button onClick={() => handleDelete(n.id)} aria-label="Delete notation" style={{ ...btnStyle, fontSize: "1.1rem" }}>×</button>
                     </div>

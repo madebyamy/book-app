@@ -29,7 +29,7 @@ export function YourQuotes({ userId, book, theme }) {
     e.preventDefault();
     const trimmed = text.trim();
     if (!trimmed) return;
-    const newItem = { id: Date.now().toString(36), text: trimmed, page: page.trim(), link: link.trim() };
+    const newItem = { id: Date.now().toString(36), text: trimmed, page: page.trim(), link: link.trim(), shared: false };
     const updated = [...quotes, newItem];
     setQuotes(updated); setText(""); setPage(""); setLink("");
     await saveQuotes(userId, book.id, updated);
@@ -50,6 +50,12 @@ export function YourQuotes({ userId, book, theme }) {
   };
 
   const cancelEdit = () => { setEditId(null); setEditText(""); setEditPage(""); setEditLink(""); };
+
+  const toggleShared = useCallback(async (id) => {
+    const updated = quotes.map((q) => q.id === id ? { ...q, shared: !q.shared } : q);
+    setQuotes(updated);
+    await saveQuotes(userId, book.id, updated);
+  }, [userId, quotes, book.id]);
 
   const saveEdit = useCallback(async (id) => {
     const trimmed = editText.trim();
@@ -133,7 +139,12 @@ export function YourQuotes({ userId, book, theme }) {
                         {q.link && <a href={q.link} target="_blank" rel="noopener noreferrer" style={{ fontFamily: theme.mono, fontSize: "0.72rem", color: book.accent, textDecoration: "none", borderBottom: `1px solid ${book.accent}` }}>source link ↗</a>}
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: "0.2rem", flexShrink: 0 }}>
+                    <div style={{ display: "flex", gap: "0.2rem", flexShrink: 0, alignItems: "center" }}>
+                      <button onClick={() => toggleShared(q.id)} aria-label={q.shared ? "Stop sharing" : "Share with connections"}
+                        title={q.shared ? "Shared with connections — click to make private" : "Click to share with connections"}
+                        style={{ ...btnStyle, fontSize: "0.68rem", color: q.shared ? book.accent : theme.inkFaint, border: `1px solid ${q.shared ? book.accent + "66" : theme.border}`, borderRadius: 3, padding: "2px 7px" }}>
+                        {q.shared ? "✓ shared" : "share"}
+                      </button>
                       <button onClick={() => startEdit(q)} aria-label="Edit quote" style={{ ...btnStyle, fontSize: "0.85rem" }}>✎</button>
                       <button onClick={() => handleDelete(q.id)} aria-label="Delete quote" style={{ ...btnStyle, fontSize: "1.1rem" }}>×</button>
                     </div>

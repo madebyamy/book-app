@@ -5,6 +5,9 @@ import { BRAND, FONT, DEFAULT_DRAWERS, DRAWER_TO_STATUS, OAK_FACE, BRASS_GRAD, B
 import { loadBooks, saveBooks, saveStatus, saveProgress } from '../../lib/books.js';
 import { AddBookModal } from './AddBookModal.jsx';
 import { BookModal } from './BookModal.jsx';
+import { RecommendationsPanel } from './RecommendationsPanel.jsx';
+
+const RECS_DRAWER_ID = "recommendations";
 
 function BrassLabelHolder({ name, isEditing, draft, onInput, onKey, onCommit }) {
   return (
@@ -97,7 +100,12 @@ function IndexCard({ book, delay, onOpen, onDelete, onRate }) {
           <div style={{ background: "#F6EEDD", border: "1px solid #E2D4BC", borderTop: "none", borderRadius: "0 0 3px 3px", padding: "14px 16px 12px" }}>
             <div style={{ fontFamily: FONT.type, fontSize: 10, letterSpacing: ".04em", color: BRAND.terracotta, borderBottom: "1px solid #C9B79A", paddingBottom: 8, marginBottom: 10 }}>{callNo}</div>
             <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 18, lineHeight: 1.1, color: BRAND.ink, marginBottom: 4 }}>{book.title}</div>
-            <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 12.5, color: BRAND.muted, marginBottom: 9 }}>{book.author}</div>
+            <div style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 12.5, color: BRAND.muted, marginBottom: book.recommendedBy ? 4 : 9 }}>{book.author}</div>
+            {book.recommendedBy && (
+              <div style={{ fontFamily: FONT.body, fontSize: 10, letterSpacing: ".04em", color: BRAND.terracotta, background: "rgba(191,117,90,.08)", border: "1px solid rgba(191,117,90,.22)", borderRadius: 2, padding: "3px 7px", marginBottom: 9, display: "inline-block" }}>
+                rec'd by {book.recommendedBy}
+              </div>
+            )}
             {summary ? (
               <div style={{ fontFamily: FONT.read, fontSize: 11.5, lineHeight: 1.5, color: "#5a4a38", marginBottom: 9, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{summary}</div>
             ) : (
@@ -310,6 +318,15 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
     setOpenDrawer(targetDrawer);
   };
 
+  const handleAddFromRecommendation = async (rec, fromName) => {
+    const id = `book-${userId}-${Date.now().toString(36)}`;
+    const newBook = { id, title: rec.bookTitle, author: rec.bookAuthor, pages: null, summary: rec.bookDesc || null, cover: rec.bookCover || null, year: null, accent: userAccent, drawerId: "want", inMarginalia: false, shared: false, workId: null, nodes: [], theme: null, recommendedBy: fromName || "a friend" };
+    const updated = [...allBooks, newBook];
+    await updateBooks(updated);
+    await saveStatus(userId, id, "to-read");
+    addJournalEntry(userId, { type: 'added', bookId: id, bookTitle: rec.bookTitle, content: `Added "${rec.bookTitle}" to the reading list (recommended by ${fromName || "a friend"}).` });
+  };
+
   const handleRateBook = async (book, rating) => {
     const updated = allBooks.map((b) => b.id === book.id ? { ...b, rating } : b);
     await updateBooks(updated);
@@ -489,6 +506,28 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
                   );
                 })}
 
+                {/* Recommendations drawer — always visible */}
+                {(() => {
+                  const isOpen = openDrawer === RECS_DRAWER_ID;
+                  const isHovered = hoveredDrawer === RECS_DRAWER_ID;
+                  return (
+                    <div onClick={() => setOpenDrawer((prev) => prev === RECS_DRAWER_ID ? null : RECS_DRAWER_ID)}
+                      onMouseEnter={() => setHoveredDrawer(RECS_DRAWER_ID)}
+                      onMouseLeave={() => setHoveredDrawer(null)}
+                      style={{ position: "relative", height: 166, cursor: "pointer", borderRadius: 3, border: "1px solid #4A2C16", background: OAK_FACE, boxShadow: isOpen ? "inset 0 3px 6px rgba(0,0,0,.35),0 1px 2px rgba(0,0,0,.3)" : "0 2px 4px rgba(0,0,0,.3)", transform: isHovered && !isOpen ? "translateY(2px)" : isOpen ? "translateY(3px)" : "none", transition: "transform .26s cubic-bezier(.16,1,.3,1),box-shadow .26s cubic-bezier(.16,1,.3,1)" }}>
+                      <div style={{ position: "absolute", left: "50%", top: 30, transform: "translateX(-50%)", width: 132, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                        <div style={{ width: 132, background: BRASS_GRAD_V, border: BRASS_BORDER, borderRadius: 3, padding: 4, boxShadow: "0 2px 3px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.55)" }}>
+                          <div style={{ background: "#FBF6E8", border: "1px solid #ddceac", borderRadius: 1, minHeight: 42, display: "flex", alignItems: "center", justifyContent: "center", padding: "6px 7px", boxShadow: "inset 0 1px 2px rgba(0,0,0,.14)" }}>
+                            <span style={{ fontFamily: FONT.type, fontSize: 11, fontWeight: 600, letterSpacing: "0.03em", color: "#1A1610", textAlign: "center", lineHeight: 1.2 }}>Recommendations</span>
+                          </div>
+                        </div>
+                        <div style={{ width: 2, height: 18, background: "linear-gradient(180deg,#8F7233,#C2A35E)" }} />
+                        <div style={{ width: 28, height: 14, borderRadius: "50%", background: "radial-gradient(circle at 38% 30%,#E8CF93,#C2A35E)", border: BRASS_BORDER, boxShadow: "0 2px 5px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.6)" }} />
+                      </div>
+                    </div>
+                  );
+                })()}
+
               </div>
             </div>
 
@@ -496,8 +535,40 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
               Pull a drawer to open it · hover to rename
             </div>
 
+            {/* Recommendations drawer popup */}
+            {openDrawer === RECS_DRAWER_ID && (
+              <div onClick={() => setOpenDrawer(null)}
+                style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(10,5,0,.72)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", alignItems: "flex-end", justifyContent: "center", animation: "cc-fade-in .22s ease" }}>
+                <div onClick={(e) => e.stopPropagation()}
+                  style={{ width: "min(980px,100%)", maxHeight: "82vh", display: "flex", flexDirection: "column", animation: "drawer-slide-up .38s cubic-bezier(.16,1,.3,1)" }}>
+                  <div style={{ background: "linear-gradient(180deg,#C8924E 0%,#A0682A 40%,#7A4A1C 100%)", borderRadius: "8px 8px 0 0", border: "2px solid #3a200a", borderBottom: "none", padding: "14px 24px 0", boxShadow: "0 -6px 24px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.18)", flexShrink: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 14 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                        <span style={{ width: 16, height: 16, borderRadius: "50%", background: "radial-gradient(circle at 38% 30%,#E8CF93,#C2A35E)", border: BRASS_BORDER, flexShrink: 0, boxShadow: "0 1px 3px rgba(0,0,0,.5)" }} />
+                        <div>
+                          <div style={{ fontFamily: FONT.body, fontSize: 9.5, letterSpacing: ".26em", textTransform: "uppercase", color: "rgba(251,246,232,.55)" }}>Open drawer</div>
+                          <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 22, color: "#FBF6E8", lineHeight: 1 }}>Recommendations</div>
+                        </div>
+                      </div>
+                      <button onClick={() => setOpenDrawer(null)}
+                        style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".1em", textTransform: "uppercase", background: "rgba(0,0,0,.35)", color: "#FBF6E8", border: "1px solid rgba(251,246,232,.28)", cursor: "pointer", padding: "7px 14px", borderRadius: 2 }}>
+                        Push shut ✕
+                      </button>
+                    </div>
+                    <div style={{ height: 8, background: "linear-gradient(180deg,#E8CF93 0%,#C2A35E 45%,#8F7233 100%)", borderRadius: "3px 3px 0 0", boxShadow: "0 2px 4px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.5)", border: "1px solid #6b5220", borderBottom: "none" }} />
+                  </div>
+                  <div style={{ background: "linear-gradient(180deg,#2A1608 0%,#1E0F04 100%)", border: "2px solid #3a200a", borderTop: "none", overflowY: "auto", flex: 1, scrollbarWidth: "thin", scrollbarColor: "#5C3418 #1E0F04" }}>
+                    <div style={{ padding: "24px 32px 36px" }}>
+                      <RecommendationsPanel userId={userId} onAddBook={handleAddFromRecommendation} />
+                    </div>
+                  </div>
+                  <div style={{ height: 16, background: "linear-gradient(180deg,#7A4A1C,#4A2C16)", border: "2px solid #3a200a", borderTop: "none", borderRadius: "0 0 4px 4px", flexShrink: 0 }} />
+                </div>
+              </div>
+            )}
+
             {/* Drawer modal popup */}
-            {openDrawer && (
+            {openDrawer && openDrawer !== RECS_DRAWER_ID && (
               <div onClick={() => toggleDrawer(openDrawer)}
                 style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(10,5,0,.72)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", alignItems: "flex-end", justifyContent: "center", animation: "cc-fade-in .22s ease" }}>
                 <div onClick={(e) => e.stopPropagation()}
