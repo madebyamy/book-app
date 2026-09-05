@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { FONT, USERS, SESSION_KEY, PASSWORDS } from "./constants.js";
 import { loadBooks } from "./lib/books.js";
 import { loadTooltips } from "./lib/books.js";
-import { loadDynamicUsers } from "./lib/users.js";
+import { loadDynamicUsers, getConnectedUsers, loadConnections } from "./lib/users.js";
 import { LoginScreen } from "./components/layout/LoginScreen.jsx";
 import { TopNav } from "./components/layout/TopNav.jsx";
 import { BookDashboard } from "./components/dashboard/BookDashboard.jsx";
@@ -32,6 +32,7 @@ export default function App() {
   const [dynamicPasswords, setDynamicPasswords] = useState({});
   const [usersLoaded, setUsersLoaded] = useState(false);
   const [tooltips, setTooltips] = useState({});
+  const [connections, setConnections] = useState(null);
 
   const navigate = useCallback((nextScreen, nextBookId = null, userId = loggedInUserId) => {
     if (!userId) return;
@@ -71,16 +72,18 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    Promise.all([loadDynamicUsers(), loadTooltips()]).then(([{ dynamicUsers: du, dynamicPasswords: dp }, tt]) => {
+    Promise.all([loadDynamicUsers(), loadTooltips(), loadConnections()]).then(([{ dynamicUsers: du, dynamicPasswords: dp }, tt, conns]) => {
       setDynamicUsers(du);
       setDynamicPasswords(dp);
       setTooltips(tt);
+      setConnections(conns);
       setUsersLoaded(true);
     });
   }, []);
 
   const allPasswords = { ...PASSWORDS, ...dynamicPasswords };
   const activeUser = loggedInUserId ? USERS[loggedInUserId] : null;
+  const friends = activeUser && connections ? getConnectedUsers(activeUser.id, connections) : [];
 
   useEffect(() => {
     if (!loggedInUserId) { setAllUserBooks([]); setBooksReady(false); return; }
@@ -146,7 +149,7 @@ export default function App() {
         @media (max-width: 720px) { .casefile-grid { grid-template-columns: 1fr !important; } .quote-form { grid-template-columns: 1fr !important; } }
         * { box-sizing: border-box; }
       `}</style>
-      <TopNav screen={screen} activeBook={activeBook} onNavigate={(key) => navigate(key)} onLogout={handleLogout} userName={activeUser?.name} />
+      <TopNav screen={screen} activeBook={activeBook} onNavigate={(key) => navigate(key)} onLogout={handleLogout} userName={activeUser?.name} userId={activeUser?.id} friends={friends} />
       {content}
     </div>
   );
