@@ -114,20 +114,12 @@ export function RecommendationsPanel({ userId, onAddBook }) {
     if (!title.trim()) return;
     setFetching(true); setFetchError(""); setPreview(null);
     try {
-      const url = `https://openlibrary.org/search.json?title=${encodeURIComponent(title.trim())}${author.trim() ? `&author=${encodeURIComponent(author.trim())}` : ""}&limit=3&fields=key,author_name,cover_i`;
-      const res = await fetch(url);
+      const params = new URLSearchParams({ title: title.trim() });
+      if (author.trim()) params.set("author", author.trim());
+      const res = await fetch(`/api/lookup-book?${params}`);
       const data = await res.json();
-      const doc = data.docs?.[0];
-      if (!doc) { setFetchError("No book found — try adjusting the title or adding the author."); setFetching(false); return; }
-      const cover = doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : null;
-      let desc = "";
-      try {
-        const workRes = await fetch(`https://openlibrary.org${doc.key}.json`);
-        const workData = await workRes.json();
-        const raw = workData.description;
-        desc = (typeof raw === "string" ? raw : raw?.value || "").slice(0, 300);
-      } catch {}
-      setPreview({ title: title.trim(), author: doc.author_name?.[0] || author.trim(), cover, desc });
+      if (!data.found) { setFetchError("No book found — try adjusting the title or adding the author."); setFetching(false); return; }
+      setPreview({ title: data.title || title.trim(), author: data.author || author.trim(), cover: data.cover || null, desc: data.desc || "" });
     } catch { setFetchError("Lookup failed — check your connection."); }
     setFetching(false);
   }, [title, author]);
