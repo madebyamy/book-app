@@ -58,14 +58,6 @@ export function LoginScreen({ onLogin, allPasswords }) {
           <p style={{ fontFamily: FONT.read, fontSize: "clamp(16px,1.4vw,19px)", lineHeight: 1.6, color: BRAND.muted, maxWidth: "32em", margin: "0 0 36px" }}>
             Book Brain is a warm, quiet place to catalogue your books, track every page, and share your reading life with the people you love.
           </p>
-          <div style={{ display: "flex", gap: "clamp(20px,4vw,48px)", flexWrap: "wrap" }}>
-            {[["38k+","Shelves built"],["2.1M","Pages tracked"],["4.9★","Reader rating"]].map(([n,l]) => (
-              <div key={l}>
-                <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 32, color: BRAND.ink, lineHeight: 1 }}>{n}</div>
-                <div style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: BRAND.muted, marginTop: 4 }}>{l}</div>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Login form panel */}
@@ -90,9 +82,6 @@ export function LoginScreen({ onLogin, allPasswords }) {
             </button>
           </form>
 
-          <p style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 14, color: BRAND.muted, margin: "20px 0 0", lineHeight: 1.5 }}>
-            "It finally feels like my books all live in one warm room."
-          </p>
         </div>
       </section>
 
@@ -126,24 +115,6 @@ export function LoginScreen({ onLogin, allPasswords }) {
               <p style={{ fontFamily: FONT.body, fontSize: 14.5, lineHeight: 1.65, color: BRAND.muted, margin: 0, fontWeight: 300 }}>{f.body}</p>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* Pull quote */}
-      <section style={{ background: BRAND.terracotta, color: "#fff", padding: "clamp(56px,8vw,100px) 24px", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", right: -40, top: "50%", transform: "translateY(-50%)", fontFamily: FONT.display, fontSize: "clamp(200px,30vw,400px)", lineHeight: 1, color: "rgba(255,255,255,.08)", fontWeight: 600, pointerEvents: "none" }}>"</div>
-        <div style={{ maxWidth: 860, margin: "0 auto", position: "relative" }}>
-          <div style={{ fontFamily: FONT.body, fontSize: 12.5, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(255,255,255,.7)", marginBottom: 24 }}>From a member</div>
-          <blockquote style={{ fontFamily: FONT.display, fontWeight: 500, fontStyle: "italic", fontSize: "clamp(26px,4vw,48px)", lineHeight: 1.18, margin: 0, color: "#fff" }}>
-            It finally feels like my books all live in one warm room — even the ones I lent out and the ones I'm still pretending I'll finish.
-          </blockquote>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 28 }}>
-            <span style={{ width: 42, height: 42, borderRadius: "50%", background: BRAND.cream, color: BRAND.terracotta, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.display, fontWeight: 600, fontSize: 20 }}>E</span>
-            <div>
-              <div style={{ fontFamily: FONT.body, fontSize: 15, color: "#fff" }}>Esme Larkin</div>
-              <div style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,.7)" }}>1,204 books · Member since 2023</div>
-            </div>
-          </div>
         </div>
       </section>
 
