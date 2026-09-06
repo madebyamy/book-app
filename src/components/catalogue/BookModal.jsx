@@ -116,6 +116,9 @@ export function BookModal({ userId, book, drawers, currentDrawer, onMove, onClos
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 75, background: "rgba(38,32,32,.62)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "cc-fade .2s cubic-bezier(.16,1,.3,1)" }}>
       <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(820px,100%)", maxHeight: "88vh", overflowY: "auto", background: BRAND.paper, borderRadius: 6, border: `1px solid ${BRAND.line}`, boxShadow: "0 16px 40px rgba(20,30,50,.16)", animation: "cc-pop .26s cubic-bezier(.16,1,.3,1)" }}>
         <button onClick={onClose} style={{ position: "absolute", top: 14, right: 14, zIndex: 2, width: 34, height: 34, borderRadius: "50%", border: `1px solid ${BRAND.line2}`, background: BRAND.paper, color: BRAND.ink, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+        <button onClick={() => setConfirmDelete(true)} title="Remove from library" style={{ position: "absolute", top: 14, right: 56, zIndex: 2, width: 34, height: 34, borderRadius: "50%", border: `1px solid rgba(200,60,60,.3)`, background: BRAND.paper, color: "rgba(200,60,60,.7)", cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center" }}
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(200,60,60,.08)"; e.currentTarget.style.borderColor = "rgba(200,60,60,.6)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = BRAND.paper; e.currentTarget.style.borderColor = "rgba(200,60,60,.3)"; }}>🗑</button>
 
         {/* Single panel — paper background */}
         <div style={{ padding: "32px 32px 28px" }}>
@@ -296,17 +299,6 @@ export function BookModal({ userId, book, drawers, currentDrawer, onMove, onClos
             </div>
           )}
 
-          {/* Delete book */}
-          <div style={{ marginTop: 28, paddingTop: 20, borderTop: `1px solid ${BRAND.line}` }}>
-            <button
-              onClick={() => setConfirmDelete(true)}
-              style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: "transparent", border: `1px solid rgba(217,80,80,.35)`, color: "rgba(200,60,60,.8)", padding: "10px 18px", borderRadius: 3, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(217,80,80,.08)"; e.currentTarget.style.borderColor = "rgba(217,80,80,.6)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(217,80,80,.35)"; }}
-            >
-              🗑 Remove from library
-            </button>
-          </div>
         </div>
       </div>
     </div>
