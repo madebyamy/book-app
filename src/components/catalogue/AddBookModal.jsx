@@ -16,12 +16,13 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
   const [fetchError, setFetchError] = useState("");
   const [workId, setWorkId] = useState(null);
   const [addToMarginalia, setAddToMarginalia] = useState(false);
+  const [candidates, setCandidates] = useState(null); // array when picker is shown
 
   const clearDetails = () => {
     setPages(""); setSummary(""); setCover(null); setYear("");
     setDateFinished(""); setDrawerId(drawers[0]?.id || "want");
     setFetchedPreview(null); setFetchError(""); setWorkId(null);
-    setAddToMarginalia(false); setError("");
+    setAddToMarginalia(false); setError(""); setCandidates(null);
   };
 
   const fetchBookInfo = async () => {
@@ -29,6 +30,7 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
     setFetching(true);
     setFetchError("");
     setFetchedPreview(null);
+    setCandidates(null);
     try {
       const params = new URLSearchParams({ title: title.trim(), author: author.trim() });
       const res = await fetch(`/api/lookup-book?${params}`);
@@ -41,17 +43,51 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
         return;
       }
 
-      if (data.desc) setSummary(data.desc);
-      if (data.pages) setPages(String(data.pages));
-      if (data.author) setAuthor(data.author);
-      if (data.title) setTitle(data.title);
-      if (data.year) setYear(data.year);
-      if (data.cover) setCover(data.cover);
-      if (data.workId) setWorkId(data.workId);
-      setFetchedPreview({ title: data.title, author: data.author, cover: data.cover, desc: data.desc, pages: data.pages });
+      // Multiple candidates returned — show picker
+      if (data.candidates) {
+        setCandidates(data.candidates);
+        setFetching(false);
+        return;
+      }
+
+      // Single best match — fill fields
+      applyResult(data);
     } catch (err) {
       setFetchError("Lookup failed. Check your connection and try again.");
     }
+    setFetching(false);
+  };
+
+  const applyResult = (data) => {
+    if (data.desc) setSummary(data.desc);
+    if (data.pages) setPages(String(data.pages));
+    if (data.author) setAuthor(data.author);
+    if (data.title) setTitle(data.title);
+    if (data.year) setYear(data.year);
+    if (data.cover) setCover(data.cover);
+    if (data.workId) setWorkId(data.workId);
+    setFetchedPreview({ title: data.title, author: data.author, cover: data.cover, desc: data.desc, pages: data.pages });
+    setCandidates(null);
+  };
+
+  // When user picks a candidate, fetch its full details then apply
+  const pickCandidate = async (candidate) => {
+    setFetching(true);
+    setCandidates(null);
+    try {
+      const params = new URLSearchParams({ title: candidate.title, author: candidate.author || "" });
+      const res = await fetch(`/api/lookup-book?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.found && !data.candidates) {
+          applyResult(data);
+          setFetching(false);
+          return;
+        }
+      }
+    } catch {}
+    // Fallback: apply candidate data without description
+    applyResult({ ...candidate, desc: "" });
     setFetching(false);
   };
 
@@ -102,18 +138,49 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
         <form onSubmit={handleSubmit} style={{ padding: "24px 26px 26px", display: "flex", flexDirection: "column", gap: 18 }}>
           <div>
             <label style={labelStyle}>Book title *</label>
-            <input value={title} onChange={(e) => { setTitle(e.target.value); setFetchedPreview(null); }} placeholder="e.g. The Midnight Library" style={inputStyle} autoFocus />
-          </div>
-          <div>
-            <label style={labelStyle}>Author *</label>
             <div style={{ display: "flex", gap: 8 }}>
-              <input value={author} onChange={(e) => { setAuthor(e.target.value); setFetchedPreview(null); }} placeholder="e.g. Matt Haig" style={{ ...inputStyle, flex: 1 }} />
-              <button type="button" onClick={fetchBookInfo} disabled={!title.trim() || !author.trim() || fetching}
-                style={{ flexShrink: 0, fontFamily: FONT.body, fontSize: 12, letterSpacing: ".04em", background: BRAND.espresso, border: "none", color: BRAND.cream, padding: "10px 14px", borderRadius: 3, cursor: title.trim() && author.trim() && !fetching ? "pointer" : "not-allowed", opacity: title.trim() && author.trim() && !fetching ? 1 : 0.5, whiteSpace: "nowrap" }}>
+              <input value={title} onChange={(e) => { setTitle(e.target.value); setFetchedPreview(null); setCandidates(null); }} placeholder="e.g. The Midnight Library" style={{ ...inputStyle, flex: 1 }} autoFocus />
+              <button type="button" onClick={fetchBookInfo} disabled={!title.trim() || fetching}
+                style={{ flexShrink: 0, fontFamily: FONT.body, fontSize: 12, letterSpacing: ".04em", background: BRAND.espresso, border: "none", color: BRAND.cream, padding: "10px 14px", borderRadius: 3, cursor: title.trim() && !fetching ? "pointer" : "not-allowed", opacity: title.trim() && !fetching ? 1 : 0.5, whiteSpace: "nowrap" }}>
                 {fetching ? "Looking up…" : "🔍 Look up"}
               </button>
             </div>
           </div>
+
+          {/* Candidate picker */}
+          {candidates && candidates.length > 0 && (
+            <div style={{ border: `1px solid ${BRAND.line}`, borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: BRAND.muted, padding: "8px 12px", borderBottom: `1px solid ${BRAND.line}`, background: BRAND.cream }}>
+                Select the right book
+              </div>
+              {candidates.map((c, i) => (
+                <button key={i} type="button" onClick={() => pickCandidate(c)}
+                  style={{ display: "flex", gap: 12, alignItems: "center", width: "100%", padding: "10px 12px", background: "none", border: "none", borderBottom: i < candidates.length - 1 ? `1px solid ${BRAND.line2}` : "none", cursor: "pointer", textAlign: "left" }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = BRAND.cream}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "none"}>
+                  {c.cover ? (
+                    <img src={c.cover} alt="" style={{ width: 36, height: 52, objectFit: "cover", borderRadius: 2, flexShrink: 0 }} onError={(e) => e.target.style.display = "none"} />
+                  ) : (
+                    <div style={{ width: 36, height: 52, background: BRAND.line2, borderRadius: 2, flexShrink: 0 }} />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: FONT.body, fontSize: 13.5, fontWeight: 500, color: BRAND.ink, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</div>
+                    <div style={{ fontFamily: FONT.body, fontSize: 12, color: BRAND.muted }}>{c.author || "Unknown author"}{c.year ? ` · ${c.year}` : ""}{c.pages ? ` · ${c.pages} pp.` : ""}</div>
+                  </div>
+                </button>
+              ))}
+              <button type="button" onClick={() => setCandidates(null)}
+                style={{ display: "block", width: "100%", padding: "8px 12px", background: "none", border: "none", borderTop: `1px solid ${BRAND.line2}`, fontFamily: FONT.body, fontSize: 12, color: BRAND.muted, cursor: "pointer", textAlign: "center" }}>
+                None of these — enter manually
+              </button>
+            </div>
+          )}
+
+          <div>
+            <label style={labelStyle}>Author *</label>
+            <input value={author} onChange={(e) => { setAuthor(e.target.value); setFetchedPreview(null); setCandidates(null); }} placeholder="e.g. Matt Haig" style={inputStyle} />
+          </div>
+
           {fetchError === "no-results" ? (
             <div style={{ fontFamily: FONT.body, fontSize: 13, background: "rgba(191,117,90,.08)", border: "1px solid rgba(191,117,90,.3)", borderRadius: 4, padding: "12px 14px" }}>
               <div style={{ color: BRAND.ink, fontWeight: 500, marginBottom: 4 }}>No match found in our book databases.</div>
@@ -124,14 +191,14 @@ export function AddBookModal({ drawers, onAdd, onClose }) {
           ) : null}
           {fetchedPreview && (
             <div style={{ background: BRAND.cream, border: `1px solid ${BRAND.line}`, borderRadius: 4, padding: "10px 14px" }}>
-              <div style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.terracotta }}>✓ Info filled in from Google Books / Open Library</div>
+              <div style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.terracotta }}>✓ Info filled in from Open Library</div>
               {fetchedPreview.desc && (
                 <p style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.55, color: BRAND.ink, margin: "6px 0 0", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{fetchedPreview.desc}</p>
               )}
             </div>
           )}
 
-          {/* Cover + pages/year side by side — cover preview on left, fields on right */}
+          {/* Cover + pages/year side by side */}
           <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
             <div style={{ flexShrink: 0 }}>
               <label style={labelStyle}>Cover</label>
