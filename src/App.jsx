@@ -5,6 +5,7 @@ import { loadTooltips } from "./lib/books.js";
 import { loadDynamicUsers, getConnectedUsers, loadConnections } from "./lib/users.js";
 import { LoginScreen } from "./components/layout/LoginScreen.jsx";
 import { TopNav } from "./components/layout/TopNav.jsx";
+import { LoginNotifModal } from "./components/layout/LoginNotifModal.jsx";
 import { BookDashboard } from "./components/dashboard/BookDashboard.jsx";
 import { MyBooksHome } from "./components/marginalia/MyBooksHome.jsx";
 import { BookJournal } from "./components/journal/BookJournal.jsx";
@@ -33,6 +34,7 @@ export default function App() {
   const [usersLoaded, setUsersLoaded] = useState(false);
   const [tooltips, setTooltips] = useState({});
   const [connections, setConnections] = useState(null);
+  const [showLoginNotif, setShowLoginNotif] = useState(false);
 
   const navigate = useCallback((nextScreen, nextBookId = null, userId = loggedInUserId) => {
     if (!userId) return;
@@ -78,6 +80,13 @@ export default function App() {
       setTooltips(tt);
       setConnections(conns);
       setUsersLoaded(true);
+      // Show login notification popup once per session if user is already logged in
+      const uid = localStorage.getItem(SESSION_KEY);
+      if (uid) {
+        try {
+          if (!sessionStorage.getItem(`loginNotif:seen:${uid}`)) setShowLoginNotif(true);
+        } catch {}
+      }
     });
   }, []);
 
@@ -105,6 +114,9 @@ export default function App() {
     window.history.pushState({ screen: "userHome", activeBookId: null, userId }, "", `/${userId}`);
     setScreen("userHome");
     setActiveBookId(null);
+    try {
+      if (!sessionStorage.getItem(`loginNotif:seen:${userId}`)) setShowLoginNotif(true);
+    } catch {}
   };
 
   const handleLogout = () => {
@@ -151,6 +163,9 @@ export default function App() {
       `}</style>
       <TopNav screen={screen} activeBook={activeBook} onNavigate={(key) => navigate(key)} onLogout={handleLogout} userName={activeUser?.name} userId={activeUser?.id} friends={friends} />
       {content}
+      {showLoginNotif && activeUser && connections && (
+        <LoginNotifModal userId={activeUser.id} friends={friends} onClose={() => setShowLoginNotif(false)} />
+      )}
     </div>
   );
 }
