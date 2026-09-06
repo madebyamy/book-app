@@ -48,7 +48,7 @@ function DateAddedInverted({ userId, book, theme }) {
   );
 }
 
-export function BookDashboard({ userId, book: initialBook, onBack, onLogout }) {
+export function BookDashboard({ userId, book: initialBook, friends, onBack, onLogout }) {
   const [book, setBook] = useState(initialBook);
   const theme = { ...DEFAULT_THEME, ...(book.theme || {}) };
   const hasAcademic = !!(book.nodes && book.nodes.length && book.caseFile && book.keyLines && book.thread);
@@ -84,7 +84,7 @@ export function BookDashboard({ userId, book: initialBook, onBack, onLogout }) {
             {book.tagline && <p style={{ fontSize: "1rem", color: theme.inkSoft, margin: 0, maxWidth: "60ch", lineHeight: 1.5 }}>{book.tagline}</p>}
           </div>
         </div>
-        <PageTracker userId={userId} book={book} theme={theme} />
+        <PageTracker userId={userId} book={book} friends={friends} theme={theme} />
         <BookEditorPanel userId={userId} book={book} theme={theme} onSaved={setBook} />
         {hasAcademic && <AcademicSections book={book} theme={theme} openNode={openNode} setOpenNode={setOpenNode} />}
         <YourQuotes userId={userId} book={book} theme={theme} />

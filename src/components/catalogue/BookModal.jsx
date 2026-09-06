@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BRAND, FONT } from '../../constants.js';
-import { loadProgress, saveProgress, saveStatus, loadBooks, saveBooks } from '../../lib/books.js';
+import { loadProgress, saveProgress, saveStatus, loadBooks, saveBooks, loadNotations, saveNotations } from '../../lib/books.js';
 import { addJournalEntry } from '../../lib/journal.js';
 
 function spineColor(book) {
@@ -25,6 +25,34 @@ export function BookModal({ userId, book, drawers, currentDrawer, onMove, onClos
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [notes, setNotes] = useState([]);
+  const [noteText, setNoteText] = useState("");
+  const [notePage, setNotePage] = useState("");
+  const [noteShare, setNoteShare] = useState(false);
+  const [notesLoaded, setNotesLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!userId) return;
+    loadNotations(userId, book.id).then(rows => { setNotes(rows); setNotesLoaded(true); });
+  }, [userId, book.id]);
+
+  const handleAddNote = async (e) => {
+    e.preventDefault();
+    const trimmed = noteText.trim();
+    if (!trimmed) return;
+    const newNote = { id: Date.now().toString(36), text: trimmed, page: notePage.trim(), tag: "", shared: noteShare, addedAt: new Date().toISOString() };
+    const updated = [...notes, newNote];
+    setNotes(updated);
+    setNoteText(""); setNotePage(""); setNoteShare(false);
+    await saveNotations(userId, book.id, updated);
+    addJournalEntry(userId, { type: 'note', bookId: book.id, bookTitle: book.title, content: trimmed, bookPage: notePage.trim() || null });
+  };
+
+  const handleToggleNoteShare = async (id) => {
+    const updated = notes.map(n => n.id === id ? { ...n, shared: !n.shared } : n);
+    setNotes(updated);
+    await saveNotations(userId, book.id, updated);
+  };
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -225,6 +253,48 @@ export function BookModal({ userId, book, drawers, currentDrawer, onMove, onClos
               </>
             )}
           </div>
+
+          {/* Quick notes */}
+          {userId && (
+            <div style={{ marginTop: 28, paddingTop: 20, borderTop: `1px solid ${BRAND.line}` }}>
+              <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: BRAND.muted, marginBottom: 12 }}>Your Notes</div>
+              <form onSubmit={handleAddNote} style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+                <textarea value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Add a note, reaction, or annotation…" rows={2}
+                  style={{ fontFamily: FONT.read, fontSize: 13.5, lineHeight: 1.55, color: BRAND.ink, background: BRAND.cream, border: `1px solid ${BRAND.line2}`, borderRadius: 3, padding: "8px 10px", resize: "vertical", width: "100%", boxSizing: "border-box", outline: "none" }} />
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <input value={notePage} onChange={e => setNotePage(e.target.value)} placeholder="Page (optional)"
+                    style={{ width: 130, fontFamily: FONT.body, fontSize: 12, color: BRAND.ink, background: BRAND.cream, border: `1px solid ${BRAND.line2}`, borderRadius: 3, padding: "7px 10px", outline: "none" }} />
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: FONT.body, fontSize: 12, color: BRAND.muted, cursor: "pointer", userSelect: "none" }}>
+                    <input type="checkbox" checked={noteShare} onChange={e => setNoteShare(e.target.checked)} style={{ accentColor: BRAND.terracotta, width: 14, height: 14 }} />
+                    Share with readers
+                  </label>
+                  <button type="submit" disabled={!noteText.trim()} style={{ marginLeft: "auto", fontFamily: FONT.body, fontSize: 12, letterSpacing: ".04em", background: noteText.trim() ? BRAND.espresso : BRAND.line, border: "none", color: noteText.trim() ? BRAND.cream : BRAND.muted, padding: "8px 16px", borderRadius: 3, cursor: noteText.trim() ? "pointer" : "default" }}>
+                    Save note
+                  </button>
+                </div>
+              </form>
+              {notesLoaded && notes.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {notes.slice(-3).reverse().map(n => (
+                    <div key={n.id} style={{ background: BRAND.cream, border: `1px solid ${BRAND.line}`, borderRadius: 3, padding: "9px 12px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontFamily: FONT.read, fontSize: 13, lineHeight: 1.55, color: BRAND.ink, margin: "0 0 4px" }}>{n.text}</p>
+                        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                          {n.page && <span style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.muted }}>p. {n.page}</span>}
+                          {n.shared && <span style={{ fontFamily: FONT.body, fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase", color: BRAND.terracotta }}>✓ shared</span>}
+                        </div>
+                      </div>
+                      <button onClick={() => handleToggleNoteShare(n.id)} title={n.shared ? "Stop sharing" : "Share with readers"}
+                        style={{ fontFamily: FONT.body, fontSize: 10, letterSpacing: ".05em", background: n.shared ? "rgba(191,117,90,.12)" : "transparent", border: `1px solid ${n.shared ? BRAND.terracotta : BRAND.line2}`, color: n.shared ? BRAND.terracotta : BRAND.muted, padding: "3px 8px", borderRadius: 3, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
+                        {n.shared ? "Shared" : "Share"}
+                      </button>
+                    </div>
+                  ))}
+                  {notes.length > 3 && <div style={{ fontFamily: FONT.body, fontSize: 11, color: BRAND.muted, fontStyle: "italic" }}>+{notes.length - 3} more — open the book to see all notes</div>}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Delete book */}
           <div style={{ marginTop: 28, paddingTop: 20, borderTop: `1px solid ${BRAND.line}` }}>

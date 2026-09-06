@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { loadProgress, saveProgress } from '../../lib/books.js';
 import { todayISO, formatCatalogDate, daysBetween } from '../../lib/helpers.js';
+import { getNewSharedNotes } from '../../lib/sharedNotes.js';
+import { SharedNotePopup } from './SharedNotePopup.jsx';
 
-export function PageTracker({ userId, book, theme }) {
+export function PageTracker({ userId, book, friends, theme }) {
   theme = theme || book.theme || {};
   const accent = book.accent;
   const [loaded, setLoaded] = useState(false);
@@ -16,6 +18,7 @@ export function PageTracker({ userId, book, theme }) {
   const [saving, setSaving] = useState(false);
   const [loggingPages, setLoggingPages] = useState(false);
   const [logDraft, setLogDraft] = useState("");
+  const [sharedNotePopup, setSharedNotePopup] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -54,6 +57,13 @@ export function PageTracker({ userId, book, theme }) {
     setSaved(next); setTotalDraft(String(total)); setPageDraft(String(current)); setDateFinishedDraft(dateFinishedFinal);
 
     setJustSaved(true); setTimeout(() => setJustSaved(false), 1800);
+
+    // Check for newly unlocked shared notes from friends
+    if (friends && friends.length > 0) {
+      getNewSharedNotes(userId, book.id, friends, current).then(newNotes => {
+        if (newNotes.length > 0) setSharedNotePopup(newNotes);
+      });
+    }
   };
 
   const handleAddToTracker = async () => {
@@ -99,6 +109,7 @@ export function PageTracker({ userId, book, theme }) {
   }
 
   return (
+    <>
     <div style={{ marginBottom: "2.4rem", background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 4, overflow: "hidden" }}>
 
       {/* Now Reading banner */}
@@ -206,5 +217,15 @@ export function PageTracker({ userId, book, theme }) {
         </div>
       </div>
     </div>
+
+    {sharedNotePopup && (
+      <SharedNotePopup
+        userId={userId}
+        bookId={book.id}
+        notes={sharedNotePopup}
+        onClose={() => setSharedNotePopup(null)}
+      />
+    )}
+    </>
   );
 }

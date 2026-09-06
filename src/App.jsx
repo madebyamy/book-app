@@ -142,7 +142,7 @@ export default function App() {
   if (activeBookId && !activeBook) {
     content = null;
   } else if (activeBook && activeUser) {
-    content = <BookDashboard userId={activeUser.id} book={activeBook} onBack={() => navigate(prevScreen, null)} onLogout={handleLogout} />;
+    content = <BookDashboard userId={activeUser.id} book={activeBook} friends={friends} onBack={() => navigate(prevScreen, null)} onLogout={handleLogout} />;
   } else if (screen === "journal" && activeUser) {
     content = <BookJournal userId={activeUser.id} onBack={() => navigate("userHome")} />;
   } else if (screen === "myBooks" && activeUser) {
