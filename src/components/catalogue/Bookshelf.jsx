@@ -354,6 +354,7 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
       storage.delete(`${userId}:dateAdded:${book.id}`),
     ]);
     setDeleteTarget(null);
+    setSelectedBook(null);
   };
 
   const booksInDrawer = (id) => allBooks.filter((b) => (b.drawerId || "want") === id);
@@ -392,6 +393,7 @@ export function Bookshelf({ userId, userAccent, onBack, onLogout, onBooksChanged
           onMove={(drawerId) => moveBook(selectedBook, drawerId)}
           onClose={closeBook}
           onToggleMarginalia={() => handleToggleMarginalia(selectedBook)}
+          onDelete={(b) => handleDeleteBook(b)}
           onBooksChanged={onBooksChanged}
         />
       )}

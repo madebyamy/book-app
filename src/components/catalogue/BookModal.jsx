@@ -13,7 +13,7 @@ function estimateReadTime(pages) {
   return Math.round(((pages * 250) / 200 / 60) * 10) / 10;
 }
 
-export function BookModal({ userId, book, drawers, currentDrawer, onMove, onClose, onToggleMarginalia, onBooksChanged }) {
+export function BookModal({ userId, book, drawers, currentDrawer, onMove, onClose, onToggleMarginalia, onDelete, onBooksChanged }) {
   const spine = spineColor(book);
   const callNo = book.call || `${book.year || "????"} · ${(book.author || "").split(" ").pop().slice(0, 3).toUpperCase()}`;
   const readHours = estimateReadTime(book.pages);
@@ -57,10 +57,7 @@ export function BookModal({ userId, book, drawers, currentDrawer, onMove, onClos
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      const books = await loadBooks(userId);
-      await saveBooks(userId, books.filter(b => b.id !== book.id));
-      onBooksChanged?.();
-      onClose();
+      await onDelete?.(book);
     } catch { setDeleting(false); }
   };
 
