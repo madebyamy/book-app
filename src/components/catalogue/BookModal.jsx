@@ -23,6 +23,19 @@ export function BookModal({ userId, book, drawers, currentDrawer, onMove, onClos
   const [summaryDraft, setSummaryDraft] = useState(book.summary || book.tagline || "");
   const [savingSummary, setSavingSummary] = useState(false);
 
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const books = await loadBooks(userId);
+      await saveBooks(userId, books.filter(b => b.id !== book.id));
+      onBooksChanged?.();
+      onClose();
+    } catch { setDeleting(false); }
+  };
+
   const [prog, setProg] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [projEndDate, setProjEndDate] = useState("");
@@ -212,8 +225,40 @@ export function BookModal({ userId, book, drawers, currentDrawer, onMove, onClos
               </>
             )}
           </div>
+
+          {/* Delete book */}
+          <div style={{ marginTop: 28, paddingTop: 20, borderTop: `1px solid ${BRAND.line}` }}>
+            <button
+              onClick={() => setConfirmDelete(true)}
+              style={{ fontFamily: FONT.body, fontSize: 13, letterSpacing: ".04em", background: "transparent", border: `1px solid rgba(217,80,80,.35)`, color: "rgba(200,60,60,.8)", padding: "10px 18px", borderRadius: 3, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(217,80,80,.08)"; e.currentTarget.style.borderColor = "rgba(217,80,80,.6)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(217,80,80,.35)"; }}
+            >
+              🗑 Remove from library
+            </button>
+          </div>
         </div>
       </div>
     </div>
+
+    {/* Delete confirmation */}
+    {confirmDelete && (
+      <div onClick={() => setConfirmDelete(false)} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(38,32,32,.65)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <div onClick={e => e.stopPropagation()} style={{ width: "min(400px,100%)", background: BRAND.paper, borderRadius: 8, border: `1px solid ${BRAND.line}`, boxShadow: "0 16px 48px rgba(20,30,50,.2)", padding: "28px 28px 24px", animation: "cc-pop .22s cubic-bezier(.16,1,.3,1)" }}>
+          <div style={{ fontFamily: FONT.display, fontWeight: 600, fontSize: 22, color: BRAND.ink, marginBottom: 10 }}>Remove this book?</div>
+          <p style={{ fontFamily: FONT.read, fontSize: 14, lineHeight: 1.6, color: BRAND.muted, margin: "0 0 22px" }}>
+            <strong style={{ color: BRAND.ink }}>{book.title}</strong> will be removed from your library. This cannot be undone.
+          </p>
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+            <button onClick={() => setConfirmDelete(false)} style={{ fontFamily: FONT.body, fontSize: 13, background: "transparent", border: `1px solid ${BRAND.line2}`, color: BRAND.muted, padding: "10px 18px", borderRadius: 3, cursor: "pointer" }}>
+              Cancel
+            </button>
+            <button onClick={handleDelete} disabled={deleting} style={{ fontFamily: FONT.body, fontSize: 13, fontWeight: 500, background: "#C83C3C", border: "none", color: "#fff", padding: "10px 20px", borderRadius: 3, cursor: deleting ? "default" : "pointer", opacity: deleting ? .7 : 1 }}>
+              {deleting ? "Removing…" : "Yes, remove it"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   );
 }
