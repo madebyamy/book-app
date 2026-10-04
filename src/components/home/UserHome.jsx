@@ -47,9 +47,9 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
     );
     const trackers = withProgress.filter((b) => {
       const total = b.prog?.totalPages ?? b.pages;
-      return b.prog?.tracking === true && total && (b.prog.pagesRead ?? b.prog.currentPage ?? 0) < total;
+      return b.prog?.tracking === true && (!total || (b.prog.pagesRead ?? b.prog.currentPage ?? 0) < total);
     });
-    setNowReading(trackers.map((b) => ({ ...b, pagesRead: b.prog.pagesRead ?? b.prog.currentPage ?? 0, totalPages: b.prog?.totalPages ?? b.pages })));
+    setNowReading(trackers.map((b) => ({ ...b, pagesRead: b.prog.pagesRead ?? b.prog.currentPage ?? 0, totalPages: b.prog?.totalPages ?? b.pages ?? null })));
     const readThisYear = withProgress.filter((b) => {
       if (b.status !== "read") return false;
       const date = b.prog?.dateFinished || b.dateAdded;
@@ -153,7 +153,7 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
                 No trackers yet — open a book and log your page to start tracking.
               </div>
             ) : nowReading.map((book) => {
-              const pct = Math.min(100, Math.round((book.pagesRead / book.totalPages) * 100));
+              const pct = book.totalPages ? Math.min(100, Math.round((book.pagesRead / book.totalPages) * 100)) : null;
               const spineColors = ["#BF755A","#F25C5C","#D9A282","#9a6a3f","#6B4A3A","#3E7C57","#3a6ea5"];
               const spine = book.accent || spineColors[Math.abs((book.id || "").charCodeAt(0)) % spineColors.length];
               const isLogging = logBookId === book.id;
@@ -184,12 +184,12 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
                       </div>
                       <div style={{ textAlign: "right", flexShrink: 0 }}>
                         <div style={{ fontFamily: FONT.body, fontSize: 13, color: "#FBF6E8", fontWeight: 500, whiteSpace: "nowrap" }}>
-                          p. {book.pagesRead} <span style={{ color: "rgba(251,246,232,.5)" }}>/ {book.totalPages}</span>
+                          p. {book.pagesRead}{book.totalPages ? <span style={{ color: "rgba(251,246,232,.5)" }}> / {book.totalPages}</span> : null}
                         </div>
-                        <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.coral, marginTop: 2 }}>{pct}%</div>
+                        <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: BRAND.coral, marginTop: 2 }}>{pct !== null ? `${pct}%` : "in progress"}</div>
                       </div>
                     </div>
-                    <div style={{ height: 7, width: "100%", background: "rgba(255,255,255,.1)", borderRadius: 99, overflow: "hidden" }}>
+                    <div style={{ height: 7, width: "100%", background: "rgba(255,255,255,.1)", borderRadius: 99, overflow: "hidden", display: pct === null ? "none" : "block" }}>
                       <div style={{ height: "100%", width: `${pct}%`, background: BRAND.coral, borderRadius: 99 }} />
                     </div>
                     {paceLabel && (
@@ -203,7 +203,7 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
                         <input type="number" min={0} max={book.totalPages || 9999} value={logPageInput} onChange={(e) => setLogPageInput(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") handleLogPages(book); if (e.key === "Escape") { setLogBookId(null); setLogPageInput(""); } }}
-                          placeholder={`Current page (max ${book.totalPages})`} autoFocus
+                          placeholder={book.totalPages ? `Current page (max ${book.totalPages})` : "Current page"} autoFocus
                           style={{ fontFamily: FONT.body, fontSize: 13, background: "rgba(255,255,255,.1)", border: "1px solid rgba(217,162,130,.4)", borderRadius: 2, color: "#FBF6E8", padding: "6px 10px", width: 180, outline: "none" }} />
                         <button onClick={() => handleLogPages(book)} style={{ fontFamily: FONT.body, fontSize: 12, padding: "6px 13px", borderRadius: 2, border: "none", background: BRAND.coral, color: "#fff", cursor: "pointer" }}>Save</button>
                         <button onClick={() => { setLogBookId(null); setLogPageInput(""); }} style={{ fontFamily: FONT.body, fontSize: 12, padding: "6px 10px", borderRadius: 2, border: "1px solid rgba(251,246,232,.2)", background: "transparent", color: "rgba(251,246,232,.6)", cursor: "pointer" }}>Cancel</button>
@@ -254,7 +254,7 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
             <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.terracotta }}>Card Catalogue</div>
             <button onClick={onOpenMyBooks} style={{ fontFamily: FONT.body, fontSize: 13, color: BRAND.coral, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.03em" }}>Marginalia →</button>
           </div>
-          <Bookshelf userId={user.id} userAccent={user.accent} onBooksChanged={onBooksChanged} inline />
+          <Bookshelf userId={user.id} userAccent={user.accent} onBooksChanged={() => { onBooksChanged && onBooksChanged(); loadTrackers(); }} inline />
         </div>
       </div>
 
