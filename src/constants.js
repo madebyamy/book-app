@@ -151,6 +151,35 @@ export const MARGINALIA_THEME = {
 };
 
 // ---------------------------------------------------------------------------
+// THE REEL — access control and theme
+// ---------------------------------------------------------------------------
+export const REEL_ENABLED_USERS = new Set(["amy"]);
+
+export const REEL_THEME = {
+  bg: "#0E0E10",
+  surface: "#16161A",
+  surface2: "#1E1E24",
+  surface3: "#26262E",
+  ink: "#EEE9E3",
+  inkSoft: "rgba(238,233,227,0.62)",
+  inkFaint: "rgba(238,233,227,0.36)",
+  accent: "#E8A020",
+  accentHi: "#F0B835",
+  accentLo: "#B57C18",
+  slate: "#7A8899",
+  line: "rgba(238,233,227,0.09)",
+  line2: "rgba(238,233,227,0.05)",
+  coral: "#E8625A",
+  muted: "#7A8899",
+};
+
+export const REEL_DRAWERS = [
+  { id: "watching", label: "Now Watching", icon: "🎬" },
+  { id: "want",     label: "To Watch",     icon: "👀" },
+  { id: "watched",  label: "Finished",     icon: "✓"  },
+];
+
+// ---------------------------------------------------------------------------
 // TOOLTIPS
 // ---------------------------------------------------------------------------
 export const TOOLTIPS_KEY = "admin:tooltips";

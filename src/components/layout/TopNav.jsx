@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BRAND, FONT } from '../../constants.js';
+import { BRAND, FONT, REEL_ENABLED_USERS } from '../../constants.js';
 import { NotificationCenter } from './NotificationCenter.jsx';
 
 export function TopNav({ screen, activeBook, onNavigate, onLogout, userName, userId, friends }) {
@@ -9,6 +9,7 @@ export function TopNav({ screen, activeBook, onNavigate, onLogout, userName, use
     { label: "Home",       key: "userHome" },
     { label: "Marginalia", key: "myBooks"  },
     { label: "Journal",    key: "journal"  },
+    ...(userId && REEL_ENABLED_USERS.has(userId) ? [{ label: "The Reel", key: "theReel" }] : []),
   ];
 
   const activeKey = activeBook ? null : screen;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { FONT, USERS, SESSION_KEY, PASSWORDS } from "./constants.js";
+import { FONT, USERS, SESSION_KEY, PASSWORDS, REEL_ENABLED_USERS } from "./constants.js";
 import { loadBooks } from "./lib/books.js";
 import { loadTooltips } from "./lib/books.js";
 import { loadDynamicUsers, getConnectedUsers, loadConnections } from "./lib/users.js";
@@ -10,6 +10,7 @@ import { BookDashboard } from "./components/dashboard/BookDashboard.jsx";
 import { MyBooksHome } from "./components/marginalia/MyBooksHome.jsx";
 import { BookJournal } from "./components/journal/BookJournal.jsx";
 import { UserHome } from "./components/home/UserHome.jsx";
+import { TheReel } from "./components/reel/TheReel.jsx";
 
 function parseLocation(userId) {
   const path = window.location.pathname;
@@ -145,6 +146,8 @@ export default function App() {
     content = <BookDashboard userId={activeUser.id} book={activeBook} friends={friends} onBack={() => navigate(prevScreen, null)} onLogout={handleLogout} />;
   } else if (screen === "journal" && activeUser) {
     content = <BookJournal userId={activeUser.id} onBack={() => navigate("userHome")} />;
+  } else if (screen === "theReel" && activeUser && REEL_ENABLED_USERS.has(activeUser.id)) {
+    content = <TheReel userId={activeUser.id} onBack={() => navigate("userHome")} />;
   } else if (screen === "myBooks" && activeUser) {
     content = <MyBooksHome userId={activeUser.id} userAccent={activeUser.accent} staticBooks={staticBooks}
       onSelect={(id) => navigate("userHome", id)} onBack={() => navigate("userHome", null)} onLogout={handleLogout}
