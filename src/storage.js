@@ -86,6 +86,19 @@ async function sbList(prefix) {
   return { keys: rows.map((r) => r.key.slice(PREFIX.length)), prefix };
 }
 
+async function sbGetPrefix(prefix) {
+  const fullPrefix = fullKey(prefix);
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/storage?key=like.${encodeURIComponent(fullPrefix + "%")}&select=key,value`,
+    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+  );
+  if (!res.ok) throw new Error(`Supabase GET prefix failed: ${res.status}`);
+  const rows = await res.json();
+  const out = {};
+  rows.forEach((r) => { out[r.key.slice(fullPrefix.length)] = r.value; });
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // localStorage helpers (fallback)
 // ---------------------------------------------------------------------------
@@ -113,6 +126,17 @@ const local = {
       return { keys, prefix };
     } catch { return null; }
   },
+  async getPrefix(prefix = "") {
+    const out = {};
+    try {
+      const fullPrefix = fullKey(prefix);
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(fullPrefix)) out[k.slice(fullPrefix.length)] = localStorage.getItem(k);
+      }
+    } catch {}
+    return out;
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -134,6 +158,11 @@ export const storage = {
   async list(prefix = "") {
     if (USE_SUPABASE) return sbList(prefix).catch(() => local.list(prefix));
     return local.list(prefix);
+  },
+  // Read-only: returns { suffix: value } for every key under the prefix.
+  async getPrefix(prefix = "") {
+    if (USE_SUPABASE) return sbGetPrefix(prefix).catch(() => local.getPrefix(prefix));
+    return local.getPrefix(prefix);
   },
 };
 

@@ -248,7 +248,7 @@ export function UserHome({ user, onOpenMyBooks, onLogout, onBooksChanged, dynami
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
             <span style={{ fontFamily: FONT.display, fontStyle: "italic", fontSize: 17, color: BRAND.terracotta, whiteSpace: "nowrap" }}>Card Catalogue</span>
             <span style={{ flex: 1, height: 1, background: BRAND.line, display: "block" }} />
-            <span style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13.5, color: BRAND.muted, textAlign: "right" }}>Pull a drawer to browse. Click a card to open notes, quotes & status. <em style={{ color: BRAND.ink }}>Hover a card to rate it with stars.</em></span>
+            <span style={{ fontFamily: FONT.read, fontStyle: "italic", fontSize: 13.5, color: BRAND.muted, textAlign: "right" }}>Pull a drawer and thumb through the cards. <em style={{ color: BRAND.ink }}>Open a card to rate it, add notes, or refile it.</em></span>
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div style={{ fontFamily: FONT.body, fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: BRAND.terracotta }}>Card Catalogue</div>
